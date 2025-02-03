@@ -22,6 +22,7 @@ HELM_CHART_PATH = GIT_ROOT / "services-api-helm-chart"
 SAVE_DIRECTORY = GIT_ROOT / "bin" / "minikube" / "build"
 POSTGRES_HELM_CHART_VERSION = "16.3.2"
 SEAWEEDFS_HELM_CHART_VERSION = "4.5.1"
+SEAWEEDFS_DOCKER_IMAGE_TAG = "3.83.0-debian-12-r0"
 
 SEAWEED_FS_PORT = 8333
 
@@ -773,12 +774,12 @@ def create_seaweedfs(
     mariadb_password = secrets.token_hex(16)
     mariadb_root_password = secrets.token_hex(16)
 
-
     values_to_set = [
         f"mariadb.auth.rootPassword={mariadb_password}",
         f"mariadb.auth.password={mariadb_root_password}",
         "s3.enabled=true",
         "iam.enabled=true",
+        f"image.tag={SEAWEEDFS_DOCKER_IMAGE_TAG}"
     ]
 
     values = list(chain.from_iterable(["--set", v] for v in values_to_set))

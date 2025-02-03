@@ -90,6 +90,9 @@ api:
   sharedStoragePath: ""
   awsEndpointUrl: ""
 
+  storageAdminAccessKeyId: ""
+  storageAdminSecretAccessKey: ""
+
   awsStorageAccountAccessKeyId: ""
   awsStorageAccountSecretAccessKey: ""
 
