@@ -93,13 +93,26 @@ Define the default app env variables
                 configMapKeyRef:
                   name: avatar-config
                   key: SHARED_STORAGE_PATH
-            {{- if .Values.api.awsEndpointUrl }}
-            - name: AWS_ENDPOINT_URL
+            - name: STORAGE_ENDPOINT_HOST
               valueFrom:
                 configMapKeyRef:
                   name: avatar-config
-                  key: AWS_ENDPOINT_URL
-            {{- end }}
+                  key: STORAGE_ENDPOINT_HOST
+            - name: STORAGE_ENDPOINT_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: avatar-config
+                  key: STORAGE_ENDPOINT_PORT
+            - name: ACCESS_CONTROL_ENDPOINT_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: avatar-config
+                  key: ACCESS_CONTROL_ENDPOINT_HOST
+            - name: ACCESS_CONTROL_ENDPOINT_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: avatar-config
+                  key: ACCESS_CONTROL_ENDPOINT_PORT
             - name: AVATAR_PDFGENERATOR_URL
               valueFrom:
                 configMapKeyRef:

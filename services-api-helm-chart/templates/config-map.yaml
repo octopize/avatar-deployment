@@ -21,3 +21,7 @@ data:
   MAX_ALLOWED_LINES_PER_DATASET: {{ .Values.api.maxAllowedLinesPerDataset | quote }}
   LOG_LEVEL: {{ .Values.api.logLevel | quote }}
   DELETE_FILES_USING_CRONJOB: {{ .Values.api.deleteFilesUsingCronjob | quote }}
+  STORAGE_ENDPOINT_HOST: {{ .Values.api.storageEndpointHost | quote }}
+  STORAGE_ENDPOINT_PORT: {{ .Values.api.storageEndpointPort | quote }}
+  ACCESS_CONTROL_ENDPOINT_HOST: {{ .Values.api.accessControlEndpointHost | quote }}
+  ACCESS_CONTROL_ENDPOINT_PORT: {{ .Values.api.accessControlEndpointPort | quote }}
