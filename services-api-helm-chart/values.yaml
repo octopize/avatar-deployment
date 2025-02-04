@@ -3,6 +3,7 @@ envName: test.helm
 
 image:
   pullPolicy: IfNotPresent
+  repository: quay.io/octopize/avatar-service-api
 
 # The image tag version. It's a good idea to pin it to something specific.
 # Avoid using "latest".
