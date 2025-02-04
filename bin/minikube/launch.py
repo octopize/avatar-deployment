@@ -32,7 +32,7 @@ class AuthKind(Enum):
     USERNAME = "username"
 
 
-DEFAULT_AVATAR_VERSION = "0.0.12"
+DEFAULT_AVATAR_VERSION = "0.0.15"
 DEFAULT_API_BASE_URL = "http://localhost:8000"
 
 DEFAULT_IS_SENTRY_ENABLED = False
