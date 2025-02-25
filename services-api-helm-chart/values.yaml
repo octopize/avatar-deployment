@@ -11,7 +11,7 @@ avatarServiceApiVersion: 0.0.1
 pdfgeneratorVersion: 0.1.4
 
 # Octopize will provide you with this, it should be base64 encoded.
-dockerPullSecret: ""
+dockerPullSecret: "TODO"
 
 # Db connection
 dbHost: 127.0.0.1

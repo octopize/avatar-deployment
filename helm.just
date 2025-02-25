@@ -12,11 +12,55 @@ PATH_TO_VALUES := PATH_TO_CHART / "values.yaml"
 HELM_PACKAGE_DIR := "/tmp/helm-chart-builds"
 OCI_IMAGE_NAME := "helm" + "/" + RELEASE_NAME
 
-render:
-    @helm template {{RELEASE_NAME}} {{PATH_TO_CHART}} --namespace {{NAMESPACE}}
+bootstrap: (install-yamllint)
+
+install-yamllint:
+    pip install yamllint
+
+render: 
+    just template {{PATH_TO_CHART}}
+
+template *PATHS:
+    @helm template {{RELEASE_NAME}} {{PATHS}} --namespace {{NAMESPACE}}
+
+# Split the rendered output into individual yaml files
+[private]
+split-yaml:
+    #!/usr/bin/env python
+    import re
+    import sys
+    from pathlib import Path
+    split_re = re.compile("^---$", re.MULTILINE)
+    grab_source_re = re.compile("^# Source: (.+)$", re.MULTILINE)
+    files_written = []
+    for doc in re.split(split_re, sys.stdin.read()):
+
+        source = grab_source_re.search(doc)
+        filename = source.group(1) if source else None
+        if not filename:
+            continue
+
+        # Discard the first line of the doc (Source)
+        doc = "\n".join(doc.split("\n")[2:])
+
+        new_file = Path('/tmp', filename)
+        new_file.parent.mkdir(parents=True, exist_ok=True)
+        files_written.append(new_file.as_posix())
+        with open(new_file, "w") as f:
+            f.write(doc)
+
+    print(" ".join(files_written))
 
 lint:
-    @echo $(just render) | yamllint -
+    #!/usr/bin/env bash
+    {{SHOPTS}}
+    # Verify helm syntax so that it can be installed
+    helm lint {{PATH_TO_CHART}}
+
+    # Verify consistency of yaml files
+    rendered_output=$(just render)
+    split_filenames=$(echo "$rendered_output" | just split-yaml)
+    yamllint $split_filenames 
 
 install:
     @helm install  \

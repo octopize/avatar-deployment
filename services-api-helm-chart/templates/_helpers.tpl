@@ -104,7 +104,7 @@ Define the default app env variables
                   name: avatar-config
                   key: STORAGE_ENDPOINT_PORT
             - name: AWS_DEFAULT_REGION
-              value: 'us-east-1' 
+              value: 'us-east-1'
             - name: ACCESS_CONTROL_ENDPOINT_HOST
               valueFrom:
                 configMapKeyRef:
@@ -140,7 +140,7 @@ Define the default app env variables
                 configMapKeyRef:
                   name: avatar-config
                   key: DELETE_FILES_USING_CRONJOB
-            - name: DASK_SCHEDULER:
+            - name: DASK_SCHEDULER
               valueFrom:
                 configMapKeyRef:
                   name: avatar-config

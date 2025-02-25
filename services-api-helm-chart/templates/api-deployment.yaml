@@ -60,7 +60,7 @@ spec:
                 configMapKeyRef:
                   name: avatar-config
                   key: USE_EMAIL_AUTHENTICATION
-            {{ if .Values.debug.storage.useLocal }}
+            {{- if .Values.debug.storage.useLocal }}
             - name: USER_ID
               value: "1000"
             - name: GROUP_ID
@@ -76,8 +76,8 @@ spec:
               path: "/health"
               port: 8000
               httpHeaders:
-              - name: Host
-                value: "127.0.0.1"
+                - name: Host
+                  value: "127.0.0.1"
             failureThreshold: 3
             periodSeconds: 30
             timeoutSeconds: 2
@@ -87,8 +87,8 @@ spec:
               path: "/health"
               port: 8000
               httpHeaders:
-              - name: Host
-                value: "127.0.0.1"
+                - name: Host
+                  value: "127.0.0.1"
             failureThreshold: 3
             periodSeconds: 30
             timeoutSeconds: 2

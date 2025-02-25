@@ -37,8 +37,8 @@ spec:
               path: "/health"
               port: 8000
               httpHeaders:
-              - name: Host
-                value: "127.0.0.1"
+                - name: Host
+                  value: "127.0.0.1"
             failureThreshold: 3
             periodSeconds: 30
             timeoutSeconds: 2
@@ -48,8 +48,8 @@ spec:
               path: "/health"
               port: 8000
               httpHeaders:
-              - name: Host
-                value: "127.0.0.1"
+                - name: Host
+                  value: "127.0.0.1"
             failureThreshold: 3
             periodSeconds: 30
             timeoutSeconds: 2
