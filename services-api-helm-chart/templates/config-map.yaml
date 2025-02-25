@@ -25,3 +25,4 @@ data:
   STORAGE_ENDPOINT_PORT: {{ .Values.api.storageEndpointPort | quote }}
   ACCESS_CONTROL_ENDPOINT_HOST: {{ .Values.api.accessControlEndpointHost | quote }}
   ACCESS_CONTROL_ENDPOINT_PORT: {{ .Values.api.accessControlEndpointPort | quote }}
+  DASK_SCHEDULER: {{ .Values.api.daskSchedulerUrl | quote }}

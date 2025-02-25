@@ -140,5 +140,10 @@ Define the default app env variables
                 configMapKeyRef:
                   name: avatar-config
                   key: DELETE_FILES_USING_CRONJOB
+            - name: DASK_SCHEDULER:
+              valueFrom:
+                configMapKeyRef:
+                  name: avatar-config
+                  key: DASK_SCHEDULER
 {{- end }}
 

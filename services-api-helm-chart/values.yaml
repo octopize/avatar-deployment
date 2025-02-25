@@ -67,6 +67,8 @@ api:
   # Externally accessible API url (should be with https)
   baseUrl: https://avatar.yourcompany.com
 
+  daskSchedulerUrl: "dask-scheduler:8786"
+
   isTelemetryEnabled: true
   isSentryEnabled: true
   logLevel: "INFO"
