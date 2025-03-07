@@ -33,7 +33,6 @@ resources:
   apiCpuRequest: "1000m"
   pdfgeneratorCpuRequest: "1000m"
 
-
 # TODO: Nest these in a pdfgenerator: subsection
 pdfgeneratorHost: "avatar-pdf"
 pdfgeneratorPort: 8001
@@ -58,6 +57,18 @@ debug:
     # Otherwise, we expect the shared storage to be specified in the ConfigMap and point
     # to a remote storage (s3:// or gs://).
     useLocal: false
+
+web:
+  image: 
+    registry: quay.io
+    repository: octopize/avatar-web
+    tag: "0.0.6"
+    pullPolicy: "IfNotPresent"
+  replicas: 1
+  resources: 
+    memoryRequest: "2Gi"
+    cpuRequest: "500m"
+  port: 3000
 
 api:
   # TODO: Nest all of these in a config: subsection,

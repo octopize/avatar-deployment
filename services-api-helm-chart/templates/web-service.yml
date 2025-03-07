@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: avatar-web
+  labels:
+    {{- include "avatar.labels" . | nindent 4 }}
+
+spec:
+  selector:
+    app.kubernetes.io/component: web
+  ports:
+    - protocol: TCP
+      port: {{ .Values.web.port }}
+      targetPort: web
+  type: ClusterIP

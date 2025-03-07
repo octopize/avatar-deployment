@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: avatar-web
+  labels:
+    {{- include "avatar.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: web
+  replicas: {{ .Values.web.replicas }}
+  template:
+    metadata:
+      labels:
+        {{- include "avatar.labels" . | nindent 8 }}
+        app.kubernetes.io/component: web
+    spec:
+      containers:
+        - name: web
+          image: {{ .Values.web.image.registry }}/{{ .Values.web.image.repository }}:{{ .Values.web.image.tag }}
+          imagePullPolicy: {{ .Values.web.image.pullPolicy }}
+          resources:
+            requests:
+              memory: {{ .Values.web.resources.memoryRequest }}
+              cpu: {{ .Values.web.resources.cpuRequest }}
+            limits:
+              memory: {{ .Values.web.resources.memoryRequest }}
+              cpu: {{ .Values.web.resources.cpuRequest }}
+          ports:
+            - name: web
+              containerPort: 3000
+
+      imagePullSecrets:
+        - name: docker-local-pull-secret
