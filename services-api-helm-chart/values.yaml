@@ -76,7 +76,8 @@ api:
   #       not only the API deployment/pod.
   #       This will require modifying the values in the pulumi program
   # Externally accessible API url (should be with https)
-  baseUrl: https://avatar.yourcompany.com
+  baseUrl: https://avatar.yourcompany.com/api
+  webClientUrl: https://avatar.yourcompany.com
 
   daskSchedulerUrl: "dask-scheduler:8786"
 

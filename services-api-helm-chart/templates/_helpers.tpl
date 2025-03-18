@@ -68,6 +68,11 @@ Define the default app env variables
                 configMapKeyRef:
                   name: avatar-config
                   key: AVATAR_API_URL
+            - name: AVATAR_WEB_CLIENT_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: avatar-config
+                  key: AVATAR_WEB_CLIENT_URL
             - name: IS_SENTRY_ENABLED
               valueFrom:
                 configMapKeyRef:
