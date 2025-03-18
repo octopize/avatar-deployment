@@ -77,6 +77,9 @@ api:
   #       This will require modifying the values in the pulumi program
   # Externally accessible API url (should be with https)
   baseUrl: https://avatar.yourcompany.com/api
+  
+  # This Url is the customer facing url for the web client
+  # It will typically be used to format emails.
   webClientUrl: https://avatar.yourcompany.com
 
   daskSchedulerUrl: "dask-scheduler:8786"
