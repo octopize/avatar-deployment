@@ -80,7 +80,8 @@ push-helm-chart:
 
     output=$(just package)
     # Extract out the name from Successfully packaged chart and saved it to: /tmp/helm-chart-builds/avatar-0.0.1.tgz
-    chart_file=$(echo "$output" | grep -oP '(?<=Successfully packaged chart and saved it to: ).*')
+    echo $output
+    chart_file=$(echo "$output" | sed -n 's#\(.*saved it to: \)\(.*\)#\2#p')
 
     helm push "$chart_file" oci://{{OCI_REPO}}/{{OCI_IMAGE_NAME}}
 
