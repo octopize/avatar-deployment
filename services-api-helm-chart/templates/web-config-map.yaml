@@ -6,7 +6,7 @@ metadata:
     {{- include "avatar.labels" . | nindent 4 }}
 
 data:
-  AVATAR_STORAGE_ENDPOINT_PUBLIC_URL: "{{ .Values.web.config.storageEndpointPublicHost }}:{{ .Values.web.config.storageEndpointPublicPort }}"
+  AVATAR_STORAGE_ENDPOINT_PUBLIC_URL: "{{ .Values.web.config.storageEndpointPublicHost }}{{ if .Values.web.config.storageEndpointPublicPort }}:{{ .Values.web.config.storageEndpointPublicPort }}{{ end }}"
   AVATAR_STORAGE_ENDPOINT_INTERNAL_URL: "{{ .Values.web.config.storageEndpointInternalHost }}:{{ .Values.web.config.storageEndpointInternalPort }}"
-  AVATAR_API_PUBLIC_URL: "{{ .Values.web.config.apiPublicHost }}:{{ .Values.web.config.apiPublicPort }}"
+  AVATAR_API_PUBLIC_URL: "{{ .Values.web.config.apiPublicHost }}{{ if .Values.web.config.apiPublicPort }}:{{ .Values.web.config.apiPublicPort }}{{ end }}"
   AVATAR_API_INTERNAL_URL: "{{ .Values.web.config.apiInternalHost }}:{{ .Values.web.config.apiInternalPort }}"
