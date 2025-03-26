@@ -35,7 +35,7 @@ spec:
             - name: USE_EMAIL_AUTHENTICATION
               valueFrom:
                 configMapKeyRef:
-                  name: avatar-config
+                  name: avatar-api-config
                   key: USE_EMAIL_AUTHENTICATION
 
       containers:
@@ -58,7 +58,7 @@ spec:
             - name: USE_EMAIL_AUTHENTICATION
               valueFrom:
                 configMapKeyRef:
-                  name: avatar-config
+                  name: avatar-api-config
                   key: USE_EMAIL_AUTHENTICATION
             {{- if .Values.debug.storage.useLocal }}
             - name: USER_ID
