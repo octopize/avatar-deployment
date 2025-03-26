@@ -21,6 +21,27 @@ spec:
         - name: web
           image: {{ .Values.web.image.registry }}/{{ .Values.web.image.repository }}:{{ .Values.web.image.tag }}
           imagePullPolicy: {{ .Values.web.image.pullPolicy }}
+          env:
+            - name: AVATAR_STORAGE_ENDPOINT_PUBLIC_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: avatar-web-config
+                  key: AVATAR_STORAGE_ENDPOINT_PUBLIC_URL
+            - name: AVATAR_STORAGE_ENDPOINT_INTERNAL_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: avatar-web-config
+                  key: AVATAR_STORAGE_ENDPOINT_INTERNAL_URL
+            - name: AVATAR_API_PUBLIC_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: avatar-web-config
+                  key: AVATAR_API_PUBLIC_URL
+            - name: AVATAR_API_INTERNAL_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: avatar-web-config
+                  key: AVATAR_API_INTERNAL_URL
           resources:
             requests:
               memory: {{ .Values.web.resources.memoryRequest }}

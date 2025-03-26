@@ -79,7 +79,7 @@ push-helm-chart:
     {{SHOPTS}}
 
     output=$(just package)
-    # Extract out the name from Successfully packaged chart and saved it to: /tmp/helm-chart-builds/avatar-0.0.1.tgz
+    # Extract out the name from 'Successfully packaged chart and saved it to: /tmp/helm-chart-builds/avatar-0.0.1.tgz'
     echo $output
     chart_file=$(echo "$output" | sed -n 's#\(.*saved it to: \)\(.*\)#\2#p')
 

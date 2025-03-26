@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: avatar-config
+  name: avatar-api-config
   labels:
     {{- include "avatar.labels" . | nindent 4 }}
 
@@ -13,8 +13,8 @@ data:
   ENV_NAME: {{ .Values.envName | quote }}
   # Set to externally accessible API url (should be with https)
   AVATAR_API_URL: {{ .Values.api.baseUrl | quote }}
-  AVATAR_WEB_CLIENT_URL: {{ .Values.api.webClientUrl | quote }}
   AVATAR_PDFGENERATOR_URL: http://{{ .Values.pdfgeneratorHost }}:{{ .Values.pdfgeneratorPort }}
+  AVATAR_WEB_CLIENT_URL: {{ .Values.api.webClientUrl | quote }}
   SHARED_STORAGE_PATH: {{ .Values.api.sharedStoragePath | quote }}
   USE_EMAIL_AUTHENTICATION: {{ .Values.api.useEmailAuthentication | default "false" | quote }}
   MAX_ALLOWED_DIMENSIONS_PER_DATASET: {{ .Values.api.maxAllowedDimensionsPerDataset | quote }}

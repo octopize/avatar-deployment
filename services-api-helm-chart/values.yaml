@@ -69,6 +69,15 @@ web:
     memoryRequest: "2Gi"
     cpuRequest: "500m"
   port: 3000
+  config:
+    storageEndpointPublicHost: "https://avatar.storage.yourcompany.com"
+    storageEndpointPublicPort: 443
+    storageEndpointInternalHost: ""
+    storageEndpointInternalPort: 8333
+    apiPublicHost: "https://avatar.yourcompany.com/api"
+    apiPublicPort: 443
+    apiInternalHost: "http://avatar-api"
+    apiInternalPort: 8000
 
 api:
   # TODO: Nest all of these in a config: subsection,
