@@ -1,16 +1,31 @@
-version: "3.9"
-
 x-logging: &default-logging
   options:
     max-size: "12m"
     max-file: "5"
   driver: json-file
 
+x-environment: &api-environment
+  environment:
+    # These take precedence over the environment variables defined in the env_file
+    ENV_NAME: ${ENV_NAME}
+    DB_HOST: db
+    STORAGE_ENDPOINT_HOST: http://s3
+    ACCESS_CONTROL_ENDPOINT_HOST: http://iam
+    DASK_SCHEDULER: my-dask-scheduler:8786
+  env_file:
+    - path: api/.env.${ENV_NAME}
+      required: false
+
+x-defaults:
+  platform: linux/amd64
+
+name: octopize-avatar
+
 services:
   api:
-    image: quay.io/octopize/api:${AVATAR_API_VERSION}
+    image: &api-image-version quay.io/octopize/avatar-service-api:${AVATAR_API_VERSION}
     restart: &default-restart on-failure:10
-    platform: &default-platform linux/x86_64
+    platform: &default-platform linux/amd64
     logging: *default-logging
     hostname: api
     networks:
@@ -19,31 +34,10 @@ services:
       - ${HOST_SHARED_STORAGE_PATH}:/home/${CONTAINER_USER_NAME-avatar}/shared # only used for local or on-premise
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 2s
-      retries: 3
+      interval: 5s
+      retries: 10
       start_period: 10s
-    environment:
-      ENV_NAME: ${ENV_NAME}
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT:-5432}
-      TASK_MAX_TIME_LIMIT: ${TASK_MAX_TIME_LIMIT}
-      RATELIMIT_REDIS_URL: "redis://redis:6379/2"
-      CELERY_BROKER_URL: "redis://redis:6379/0"
-      CELERY_RESULT_BACKEND: "redis://redis:6379/1"
-      BASE_API_URL: ${BASE_API_URL}
-      WEB_CLIENT_URL: ${WEB_CLIENT_URL}
-      PDFGENERATOR_URL: "http://pdfgenerator:8000/"
-      SHARED_STORAGE_PATH: ${SHARED_STORAGE_PATH} # only specified when using something else than filesystem
-      USE_EMAIL_AUTHENTICATION: ${USE_EMAIL_AUTHENTICATION}
-      MAX_ALLOWED_DIMENSIONS_PER_DATASET: ${MAX_ALLOWED_DIMENSIONS_PER_DATASET}
-      MAX_ALLOWED_LINES_PER_DATASET: ${MAX_ALLOWED_LINES_PER_DATASET}
-      IS_TELEMETRY_ENABLED: ${IS_TELEMETRY_ENABLED}
-      IS_SENTRY_ENABLED: ${IS_SENTRY_ENABLED}
-      COMPATIBILITY_MAPPING_FILEPATH: ${COMPATIBILITY_MAPPING_FILEPATH}
-      USER_ID: ${USER_ID} # user id of the user executing the container
-      GROUP_ID: ${GROUP_ID} # group id of the user executing the container
-
+    <<: *api-environment
     secrets:
       - db_name
       - db_user
@@ -51,7 +45,42 @@ services:
       - organization_name
       - pepper
       - authjwt_secret_key
-      - file_encryption_key
+      # If using username-password authentication
+      - avatar_first_user_name
+      - avatar_first_user_password
+
+      # If using email-password authentication
+      # - admin_emails
+      # - aws_mail_account_access_key_id
+      # - aws_mail_account_secret_access_key
+
+      - file_jwt_secret_key
+      - storage_admin_access_key_id
+      - storage_admin_secret_access_key
+
+      # If using clevercloud
+      - clevercloud_sso_salt
+    depends_on:
+      init-db:
+        condition: service_completed_successfully
+
+  init-db:
+    image: *api-image-version
+    platform: *default-platform
+    command: ["sh", "-c", "cd /app/avatar && python bin/dbtool.py setup"]
+    restart: *default-restart
+    logging: *default-logging
+    hostname: init-db
+    networks:
+      - default
+    <<: *api-environment
+    secrets:
+      - db_name
+      - db_user
+      - db_password
+      - organization_name
+      - pepper
+      - authjwt_secret_key
 
       # If using username-password authentication
       - avatar_first_user_name
@@ -62,180 +91,282 @@ services:
       # - aws_mail_account_access_key_id
       # - aws_mail_account_secret_access_key
 
-      # If clevercloud is accessible
-      - clevercloud_sso_salt
+      - file_jwt_secret_key
+      - storage_admin_access_key_id
+      - storage_admin_secret_access_key
 
-  worker:
-    image: quay.io/octopize/api:${AVATAR_API_VERSION}
-    platform: *default-platform
+      - db_admin_user
+      - db_admin_password
+    depends_on:
+      db:
+        condition: service_started
+
+  init-storage:
+    image: chrislusf/seaweedfs
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      [
+        'echo "s3.configure -apply -user power_user -access_key $(cat /var/run/secrets/storage_admin_access_key_id) -secret_key  $(cat /var/run/secrets/storage_admin_secret_access_key)  -actions Admin" | weed shell -master=master:9333 -filer=filer:8888',
+      ]
     restart: *default-restart
     logging: *default-logging
-    hostname: worker
+    hostname: init-storage
     networks:
       - default
-    # celery defaults its concurrency to the number of CPUs available
-    command: celery -A api.lib.task worker --loglevel=info
-    environment:
-      ENV_NAME: ${ENV_NAME}
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT:-5432}
-      TASK_MAX_TIME_LIMIT: ${TASK_MAX_TIME_LIMIT}
-      CELERY_BROKER_URL: "redis://redis:6379/0"
-      CELERY_RESULT_BACKEND: "redis://redis:6379/1"
-      BASE_API_URL: ${BASE_API_URL}
-      PDFGENERATOR_URL: "http://pdfgenerator:8000/"
-      MAX_ALLOWED_DIMENSIONS_PER_DATASET: ${MAX_ALLOWED_DIMENSIONS_PER_DATASET}
-      MAX_ALLOWED_LINES_PER_DATASET: ${MAX_ALLOWED_LINES_PER_DATASET}
-      IS_TELEMETRY_ENABLED: ${IS_TELEMETRY_ENABLED}
-      IS_SENTRY_ENABLED: ${IS_SENTRY_ENABLED}
-      USER_ID: ${USER_ID} # user id of the user executing the container
-      GROUP_ID: ${GROUP_ID} # group id of the user executing the container
-      # SHARED_STORAGE_PATH should only be set when using non-filesystem based storage.
-      # It's best to let the API choose the default location for filesystem storage
-      # on the container.
-      # Where this maps on the host side can be chosen with the HOST_SHARED_STORAGE_PATH
-      # environment variable.
-      SHARED_STORAGE_PATH: ${SHARED_STORAGE_PATH} # only specified when using something else than filesystem
-      REMAP_SIGTERM: "SIGQUIT" # Use SIGQUIT so that celery does a cold shutdown on SIGTERM
-
+    secrets:
+      - storage_admin_access_key_id
+      - storage_admin_secret_access_key
     depends_on:
-      - api
-      - redis
+      filer:
+        condition: service_healthy
+      master:
+        condition: service_healthy
+
+  dask-scheduler:
+    image: *api-image-version
+    platform: *default-platform
+    command: ["dask", "scheduler"]
+    restart: *default-restart
+    logging: *default-logging
+    hostname: my-dask-scheduler
+    networks:
+      - default
     volumes:
       - ${HOST_SHARED_STORAGE_PATH}:/home/${CONTAINER_USER_NAME-avatar}/shared # only used for local or on-premise
+    <<: *api-environment
     secrets:
-      - db_password
-      - file_encryption_key
       - db_name
       - db_user
+      - db_password
+      - organization_name
+      - pepper
+      - authjwt_secret_key
+      # If using username-password authentication
+      - avatar_first_user_name
+      - avatar_first_user_password
+      # - admin_emails
+      # If using AWS
+      # - aws_mail_account_access_key_id
+      # - aws_mail_account_secret_access_key
+      - file_jwt_secret_key
+      - storage_admin_access_key_id
+      - storage_admin_secret_access_key
 
-  cron:
-    image: quay.io/octopize/api:${AVATAR_API_VERSION}
+  dask-worker:
+    image: *api-image-version
     platform: *default-platform
+    command: ["dask", "worker", "my-dask-scheduler:8786"]
     restart: *default-restart
     logging: *default-logging
-    hostname: cron
+    hostname: my-dask-worker
     networks:
       - default
-    command: celery -A api.lib.task beat --loglevel=info -s /tmp/celerybeat-schedule
-    depends_on:
-      - redis
-    environment:
-      ENV_NAME: ${ENV_NAME}
-      TASK_MAX_TIME_LIMIT: ${TASK_MAX_TIME_LIMIT}
-      RATELIMIT_REDIS_URL: "redis://redis:6379/2"
-      CELERY_BROKER_URL: "redis://redis:6379/0"
-      CELERY_RESULT_BACKEND: "redis://redis:6379/1"
-      BASE_API_URL: ${BASE_API_URL}
-      SHARED_STORAGE_PATH: ${SHARED_STORAGE_PATH}
-      PDFGENERATOR_URL: "http://pdfgenerator:8000/"
-      IS_TELEMETRY_ENABLED: ${IS_TELEMETRY_ENABLED}
-      IS_SENTRY_ENABLED: ${IS_SENTRY_ENABLED}
-      USER_ID: ${USER_ID} # user id of the user executing the container
-      GROUP_ID: ${GROUP_ID} # group id of the user executing the container
+    volumes:
+      - ${HOST_SHARED_STORAGE_PATH}:/home/${CONTAINER_USER_NAME-avatar}/shared # only used for local or on-premise
+    <<: *api-environment
+    secrets:
+      - db_name
+      - db_user
+      - db_password
+      - organization_name
+      - pepper
+      - authjwt_secret_key
+      # If using username-password authentication
+      - avatar_first_user_name
+      - avatar_first_user_password
+      # - admin_emails
+      # If using AWS
+      # - aws_mail_account_access_key_id
+      # - aws_mail_account_secret_access_key
+      - file_jwt_secret_key
+      - storage_admin_access_key_id
+      - storage_admin_secret_access_key
 
   db:
     image: postgres:14.0
     restart: *default-restart
     logging: *default-logging
+    platform: *default-platform
     hostname: db
     networks:
       - default
     environment:
       # Appending any env variable with '_FILE' allows the file content to
       # be used to create the database
-      POSTGRES_DB_FILE: /run/secrets/db_name
-      POSTGRES_USER_FILE: /run/secrets/db_user
-      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      # Source: https://hub.docker.com/_/postgres/
+      POSTGRES_USER_FILE: /run/secrets/db_admin_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_admin_password
     secrets:
-      - db_password
-      - db_user
-      - db_name
+      - db_admin_user
+      - db_admin_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  web:
-    image: quay.io/octopize/web:${AVATAR_WEB_VERSION}
-    restart: *default-restart
+  nginx:
+    image: nginx:1.27.3
     logging: *default-logging
-    hostname: web
-    networks:
-      - default
-    profiles: ["with-web"]
-
-  redis:
-    image: redis:6.2.6-alpine
+    platform: *default-platform
     restart: *default-restart
-    logging: *default-logging
-    hostname: redis
-    networks:
-      - default
-
-  caddy:
-    image: caddy:2.4.6-alpine
-    logging: *default-logging
-    restart: *default-restart
-    hostname: caddy
-    networks:
-      - default
+    hostname: nginx
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    environment:
+      AVATAR_API_URL: ${AVATAR_API_URL}
     ports:
       - "443:443"
-    environment:
-      BASE_API_URL: ${BASE_API_URL}
-      WEB_CLIENT_URL: ${WEB_CLIENT_URL}
-      CADDY_TLS_CONFIG: ${CADDY_TLS_CONFIG}
-    volumes:
-      - caddy-data:/data
-      - caddy-config:/config
-      - ./caddy/Caddyfile:/etc/caddy/Caddyfile
+      - "8080:8080"
+      - "8081:8081"
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_started
+      s3:
+        condition: service_healthy
 
   pdfgenerator:
     image: quay.io/octopize/pdfgenerator:${AVATAR_PDFGENERATOR_VERSION}
     restart: *default-restart
     logging: *default-logging
+    platform: *default-platform
     hostname: pdfgenerator
     networks:
       - default
 
-  notebook-hub:
-    image: quay.io/octopize/notebook-hub:${AVATAR_NOTEBOOK_HUB_VERSION}
-    restart: *default-restart
+  web:
+    image: quay.io/octopize/avatar-web:${AVATAR_WEB_VERSION}
+    platform: *default-platform
     logging: *default-logging
-    hostname: notebook-hub
+    restart: *default-restart
     networks:
       - default
-    container_name: jupyterhub
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      AVATAR_API_PUBLIC_URL: ${AVATAR_API_URL}
+      AVATAR_API_INTERNAL_URL: "http://api:8000"
+      AVATAR_STORAGE_ENDPOINT_PUBLIC_URL: ${AVATAR_STORAGE_ENDPOINT_PUBLIC_URL}
+      AVATAR_STORAGE_ENDPOINT_INTERNAL_URL: ${AVATAR_STORAGE_ENDPOINT_INTERNAL_URL}
+
+  master:
+    image: chrislusf/seaweedfs:${AVATAR_SEAWEEDFS_VERSION}
+    logging: *default-logging
+    restart: *default-restart
+    networks:
+      - default
+    command: "-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} master -ip=master -volumeSizeLimitMB=10 -raftBootstrap -raftHashicorp -electionTimeout=1s"
+    healthcheck:
+      test:
+        ["CMD", "echo", "--fail", "-I", "http://localhost:9333/cluster/healthz"]
+      interval:
+        5s
+        # Wait for 5s seconds to wait for the master to be up, before starting healthchecks.
+        # This is a workaround for the fact that the master and filer are not fully ready when they are declared healthy
+      start_interval: 5s
+      start_period: 5s
     volumes:
-      # Bind Docker socket on the host so we can connect to the daemon from
-      # within the container
-      - "/var/run/docker.sock:/var/run/docker.sock:rw"
-      # Bind Docker volume on host for JupyterHub database and cookie secrets
-      - "notebook-hub-data:/data"
-      - "~/.docker/config.json:/root/.docker/config.json"
+      - ./tls:/etc/seaweedfs/tls
+  volume:
+    image: chrislusf/seaweedfs:${AVATAR_SEAWEEDFS_VERSION}
+    logging: *default-logging
+    restart: *default-restart
+    networks:
+      - default
+    command: "-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} volume -mserver=master:9333 -port=8080 -ip=volume -preStopSeconds=1 -max=10000"
+    healthcheck:
+      test: ["CMD", "echo", "--fail", "-I", "http://volume:8080/status"]
+      interval: 5s
+    depends_on:
+      master:
+        condition: service_healthy
+    volumes:
+      - ./tls:/etc/seaweedfs/tls
+  filer:
+    image: chrislusf/seaweedfs:${AVATAR_SEAWEEDFS_VERSION}
+    logging: *default-logging
+    restart: *default-restart
+    networks:
+      - default
+    command: '-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} filer -ip.bind=0.0.0.0 -master="master:9333"'
+    healthcheck:
+      test: ["CMD", "echo", "--fail", "-I", "http://localhost:8888"]
+      interval: 5s
+    depends_on:
+      master:
+        condition: service_healthy
+      volume:
+        condition: service_healthy
+
+    volumes:
+      - ./tls:/etc/seaweedfs/tls
+      - seaweedfs-data:/data
+
+  iam:
+    image: chrislusf/seaweedfs:${AVATAR_SEAWEEDFS_VERSION}
+    logging: *default-logging
+    restart: *default-restart
+    networks:
+      - default
+    command: '-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} iam -filer="filer:8888" -master="master:9333"'
+    depends_on:
+      master:
+        condition: service_healthy
+      volume:
+        condition: service_healthy
+      filer:
+        condition: service_healthy
+
+    volumes:
+      - ./tls:/etc/seaweedfs/tls
+  s3:
+    image: chrislusf/seaweedfs:${AVATAR_SEAWEEDFS_VERSION}
+    logging: *default-logging
+    restart: *default-restart
+    networks:
+      - default
     ports:
-      - "8002:8002"
+      - 8333:8333
+    command: '-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} s3 -filer="filer:8888" -ip.bind=s3'
+    healthcheck:
+      test: ["CMD", "echo", "--fail", "--get", "http://localhost:8333/healthz"]
+      interval: 5s
+    depends_on:
+      master:
+        condition: service_healthy
+      volume:
+        condition: service_healthy
+      filer:
+        condition: service_healthy
+    volumes:
+      - ./tls:/etc/seaweedfs/tls
 
 secrets:
-  db_password:
-    file: ${SECRETS_DIR-.secrets}/db_password
+  db_admin_user:
+    file: ${SECRETS_DIR-.secrets}/db_admin_user
+  db_admin_password:
+    file: ${SECRETS_DIR-.secrets}/db_admin_password
   db_user:
     file: ${SECRETS_DIR-.secrets}/db_user
+  db_password:
+    file: ${SECRETS_DIR-.secrets}/db_password
   db_name:
     file: ${SECRETS_DIR-.secrets}/db_name
   pepper:
     file: ${SECRETS_DIR-.secrets}/pepper
   authjwt_secret_key:
     file: ${SECRETS_DIR-.secrets}/authjwt_secret_key
-  file_encryption_key:
-    file: ${SECRETS_DIR-.secrets}/file_encryption_key
   organization_name:
     file: ${SECRETS_DIR-.secrets}/organization_name
+  file_jwt_secret_key:
+    file: ${SECRETS_DIR-.secrets}/file_jwt_secret_key
 
   # If using username-password authentication, you should have the following secrets present
   avatar_first_user_name:
     file: ${SECRETS_DIR-.secrets}/avatar_first_user_name
   avatar_first_user_password:
     file: ${SECRETS_DIR-.secrets}/avatar_first_user_password
+
 
   # If using email-password authentication, you should have the following secrets present
   # admin_emails:
@@ -245,6 +376,11 @@ secrets:
   # aws_mail_account_secret_access_key:
   #   file: ${SECRETS_DIR-.secrets}/aws_mail_account_secret_access_key
 
+  storage_admin_access_key_id:
+    file: ${SECRETS_DIR-.secrets}/storage_admin_access_key_id
+  storage_admin_secret_access_key:
+    file: ${SECRETS_DIR-.secrets}/storage_admin_secret_access_key
+
   # If using clevercloud
   clevercloud_sso_salt:
     file: ${SECRETS_DIR-.secrets}/clevercloud_sso_salt
@@ -252,17 +388,10 @@ secrets:
 networks:
   default:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.18.0.0/16
 
 volumes:
-  caddy-data:
-    name: avatar_caddy_data
-    external: true
-  caddy-config:
+  seaweedfs-data:
+    name: avatar_seaweedfs_data
   postgres_data:
     name: avatar_postgres_data
     external: true
-  notebook-hub-data:
-    name: avatar_notebook_hub_data
