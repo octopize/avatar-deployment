@@ -12,9 +12,11 @@ x-environment: &api-environment
     STORAGE_ENDPOINT_HOST: http://s3
     ACCESS_CONTROL_ENDPOINT_HOST: http://iam
     DASK_SCHEDULER: my-dask-scheduler:8786
+    SECRETS_DIR: /var/run/secrets
   env_file:
-    - path: api/.env.${ENV_NAME}
-      required: false
+    # - path: api/.env.${ENV_NAME}
+    - path: .env
+      required: true
 
 x-defaults:
   platform: linux/amd64
@@ -50,7 +52,7 @@ services:
       - avatar_first_user_password
 
       # If using email-password authentication
-      # - admin_emails
+      - admin_emails
       # - aws_mail_account_access_key_id
       # - aws_mail_account_secret_access_key
 
@@ -87,7 +89,7 @@ services:
       - avatar_first_user_password
 
       # If using email-password authentication
-      # - admin_emails
+      - admin_emails
       # - aws_mail_account_access_key_id
       # - aws_mail_account_secret_access_key
 
@@ -210,6 +212,7 @@ services:
     hostname: nginx
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - /app/avatar/tls:/etc/nginx/tls
     environment:
       AVATAR_API_URL: ${AVATAR_API_URL}
     ports:
@@ -369,8 +372,8 @@ secrets:
 
 
   # If using email-password authentication, you should have the following secrets present
-  # admin_emails:
-  #   file: ${SECRETS_DIR-.secrets}/admin_emails
+  admin_emails:
+    file: ${SECRETS_DIR-.secrets}/admin_emails
   # aws_mail_account_access_key_id:
   #   file: ${SECRETS_DIR-.secrets}/aws_mail_account_access_key_id
   # aws_mail_account_secret_access_key:
