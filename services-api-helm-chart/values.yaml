@@ -78,6 +78,7 @@ web:
     apiPublicPort: ""
     apiInternalHost: "http://avatar-api"
     apiInternalPort: 8000
+    envName: "prod"
 
 api:
   # TODO: Nest all of these in a config: subsection,
