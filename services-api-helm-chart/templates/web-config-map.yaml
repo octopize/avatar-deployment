@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: avatar-web-config
-  labels: { { - include "avatar.labels" . | nindent 4 } }
+  labels: {{- include "avatar.labels" . | nindent 4 }}
 
 data:
   AVATAR_STORAGE_ENDPOINT_PUBLIC_URL: "{{ .Values.web.config.storageEndpointPublicHost }}{{ if .Values.web.config.storageEndpointPublicPort }}:{{ .Values.web.config.storageEndpointPublicPort }}{{ end }}"
