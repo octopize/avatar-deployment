@@ -1,0 +1,75 @@
+{{- if .Values.pghero.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: avatar-pghero
+  labels:
+    {{- include "avatar.labels" . | nindent 4 }}
+    app.kubernetes.io/component: pghero
+
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: pghero
+  replicas: {{ .Values.pghero.replicas }}
+  template:
+    metadata:
+      labels:
+        {{- include "avatar.labels" . | nindent 8 }}
+        app.kubernetes.io/component: pghero
+    spec:
+      {{- if .Values.pghero.tolerations }}
+      tolerations:
+        {{- toYaml .Values.pghero.tolerations | nindent 8 }}
+      {{ end }}
+
+      {{ if .Values.pghero.preferredNodeType }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nodeType
+                operator: In
+                values:
+                - {{ .Values.pghero.preferredNodeType | quote}}   
+      {{ end }}
+      serviceAccountName: {{ .Values.gcp.ksaName | default "" | quote }}
+      containers:
+        {{- include "avatar.db_proxy_container" $ }}
+        - name: avatar-pghero
+          image: {{ .Values.pghero.image }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          resources:
+            requests:
+              memory: {{ .Values.pghero.resources.memoryRequest }}
+              cpu: {{ .Values.pghero.resources.cpuRequest }}
+            limits:
+              memory: {{ .Values.pghero.resources.memoryLimit }}
+              cpu: {{ .Values.pghero.resources.cpuLimit }}
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: api
+                  key: DATABASE_URL
+          ports:
+            - name: pghero
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: "/"
+              port: 8080
+            failureThreshold: 3
+            periodSeconds: 30
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: "/"
+              port: 8080
+            failureThreshold: 3
+            periodSeconds: 30
+            timeoutSeconds: 5
+      imagePullSecrets:
+        - name: docker-local-pull-secret
+{{- end }}
