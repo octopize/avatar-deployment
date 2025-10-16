@@ -317,6 +317,9 @@ services:
     networks:
       - default
     command: '-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} iam -filer="filer:8888" -master="master:9333"'
+    healthcheck:
+      test: ["CMD", "echo", "--fail", "--get", "http://localhost:8111"]
+      interval: 5s
     depends_on:
       master:
         condition: service_healthy
