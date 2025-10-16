@@ -14,7 +14,6 @@ x-environment: &api-environment
     DASK_SCHEDULER: my-dask-scheduler:8786
     SECRETS_DIR: /var/run/secrets
   env_file:
-    # - path: api/.env.${ENV_NAME}
     - path: .env
       required: true
 
@@ -48,8 +47,8 @@ services:
       - pepper
       - authjwt_secret_key
       # If using username-password authentication
-      - avatar_first_user_name
-      - avatar_first_user_password
+      # - avatar_first_user_name
+      # - avatar_first_user_password
 
       # If using email-password authentication
       - admin_emails
@@ -85,8 +84,8 @@ services:
       - authjwt_secret_key
 
       # If using username-password authentication
-      - avatar_first_user_name
-      - avatar_first_user_password
+      # - avatar_first_user_name
+      # - avatar_first_user_password
 
       # If using email-password authentication
       - admin_emails
@@ -148,9 +147,9 @@ services:
       - pepper
       - authjwt_secret_key
       # If using username-password authentication
-      - avatar_first_user_name
-      - avatar_first_user_password
-      # - admin_emails
+      # - avatar_first_user_name
+      # - avatar_first_user_password
+      - admin_emails
       # If using AWS
       # - aws_mail_account_access_key_id
       # - aws_mail_account_secret_access_key
@@ -178,9 +177,9 @@ services:
       - pepper
       - authjwt_secret_key
       # If using username-password authentication
-      - avatar_first_user_name
-      - avatar_first_user_password
-      # - admin_emails
+      # - avatar_first_user_name
+      # - avatar_first_user_password
+      - admin_emails
       # If using AWS
       # - aws_mail_account_access_key_id
       # - aws_mail_account_secret_access_key
@@ -371,10 +370,10 @@ secrets:
     file: ${SECRETS_DIR-.secrets}/file_jwt_secret_key
 
   # If using username-password authentication, you should have the following secrets present
-  avatar_first_user_name:
-    file: ${SECRETS_DIR-.secrets}/avatar_first_user_name
-  avatar_first_user_password:
-    file: ${SECRETS_DIR-.secrets}/avatar_first_user_password
+  # avatar_first_user_name:
+  #   file: ${SECRETS_DIR-.secrets}/avatar_first_user_name
+  # avatar_first_user_password:
+  #   file: ${SECRETS_DIR-.secrets}/avatar_first_user_password
 
   storage_admin_access_key_id:
     file: ${SECRETS_DIR-.secrets}/storage_admin_access_key_id
