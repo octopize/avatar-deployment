@@ -15,7 +15,7 @@ NOTEBOOK_PORT ?= 8888
 common-secrets: db-secrets storage-secrets $(SECRETS_DIR)/pepper $(SECRETS_DIR)/authjwt_secret_key $(SECRETS_DIR)/organization_name $(SECRETS_DIR)/clevercloud_sso_salt
 .PHONY: common-secrets
 
-db-secrets: $(SECRETS_DIR)/db_password $(SECRETS_DIR)/db_admin_password $(SECRETS_DIR)/db_user $(SECRETS_DIR)/db_name 
+db-secrets: $(SECRETS_DIR)/db_password $(SECRETS_DIR)/db_admin_password $(SECRETS_DIR)/db_user $(SECRETS_DIR)/db_admin_user $(SECRETS_DIR)/db_name 
 .PHONY: db-secrets
 
 storage-secrets: $(SECRETS_DIR)/file_jwt_secret_key $(SECRETS_DIR)/file_encryption_key $(SECRETS_DIR)/storage_admin_access_key_id $(SECRETS_DIR)/storage_admin_secret_access_key 
@@ -50,6 +50,11 @@ $(SECRETS_DIR)/db_admin_password:
 $(SECRETS_DIR)/db_user:
 	mkdir -p $(SECRETS_DIR)
 	touch $@
+
+$(SECRETS_DIR)/db_admin_user:
+	mkdir -p $(SECRETS_DIR)
+	touch $@
+
 
 $(SECRETS_DIR)/db_name:
 	mkdir -p $(SECRETS_DIR)

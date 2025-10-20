@@ -14,7 +14,6 @@ x-environment: &api-environment
     DASK_SCHEDULER: my-dask-scheduler:8786
     SECRETS_DIR: /var/run/secrets
   env_file:
-    # - path: api/.env.${ENV_NAME}
     - path: .env
       required: true
 
@@ -48,8 +47,8 @@ services:
       - pepper
       - authjwt_secret_key
       # If using username-password authentication
-      - avatar_first_user_name
-      - avatar_first_user_password
+      # - avatar_first_user_name
+      # - avatar_first_user_password
 
       # If using email-password authentication
       - admin_emails
@@ -85,8 +84,8 @@ services:
       - authjwt_secret_key
 
       # If using username-password authentication
-      - avatar_first_user_name
-      - avatar_first_user_password
+      # - avatar_first_user_name
+      # - avatar_first_user_password
 
       # If using email-password authentication
       - admin_emails
@@ -102,9 +101,13 @@ services:
     depends_on:
       db:
         condition: service_started
+      iam:
+        condition: service_healthy
+      s3:
+        condition: service_healthy
 
   init-storage:
-    image: chrislusf/seaweedfs
+    image: &seaweedfs-image ${AVATAR_SEAWEEDFS_REGISTRY-chrislusf}/seaweedfs:${AVATAR_SEAWEEDFS_VERSION-3.97}
     entrypoint: ["/bin/sh", "-c"]
     command:
       [
@@ -144,9 +147,9 @@ services:
       - pepper
       - authjwt_secret_key
       # If using username-password authentication
-      - avatar_first_user_name
-      - avatar_first_user_password
-      # - admin_emails
+      # - avatar_first_user_name
+      # - avatar_first_user_password
+      - admin_emails
       # If using AWS
       # - aws_mail_account_access_key_id
       # - aws_mail_account_secret_access_key
@@ -174,9 +177,9 @@ services:
       - pepper
       - authjwt_secret_key
       # If using username-password authentication
-      - avatar_first_user_name
-      - avatar_first_user_password
-      # - admin_emails
+      # - avatar_first_user_name
+      # - avatar_first_user_password
+      - admin_emails
       # If using AWS
       # - aws_mail_account_access_key_id
       # - aws_mail_account_secret_access_key
@@ -212,7 +215,7 @@ services:
     hostname: nginx
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - /app/avatar/tls:/etc/nginx/tls
+      - ./tls:/etc/nginx/tls:ro
     environment:
       AVATAR_API_URL: ${AVATAR_API_URL}
     ports:
@@ -247,13 +250,15 @@ services:
       api:
         condition: service_healthy
     environment:
+      ENV_NAME: ${ENV_NAME}
+      AVATAR_WEB_CLIENT_URL: ${AVATAR_WEB_CLIENT_URL}
       AVATAR_API_PUBLIC_URL: ${AVATAR_API_URL}
       AVATAR_API_INTERNAL_URL: "http://api:8000"
       AVATAR_STORAGE_ENDPOINT_PUBLIC_URL: ${AVATAR_STORAGE_ENDPOINT_PUBLIC_URL}
       AVATAR_STORAGE_ENDPOINT_INTERNAL_URL: ${AVATAR_STORAGE_ENDPOINT_INTERNAL_URL}
 
   master:
-    image: chrislusf/seaweedfs:${AVATAR_SEAWEEDFS_VERSION}
+    image: *seaweedfs-image
     logging: *default-logging
     restart: *default-restart
     networks:
@@ -271,7 +276,7 @@ services:
     volumes:
       - ./tls:/etc/seaweedfs/tls
   volume:
-    image: chrislusf/seaweedfs:${AVATAR_SEAWEEDFS_VERSION}
+    image: *seaweedfs-image
     logging: *default-logging
     restart: *default-restart
     networks:
@@ -286,7 +291,7 @@ services:
     volumes:
       - ./tls:/etc/seaweedfs/tls
   filer:
-    image: chrislusf/seaweedfs:${AVATAR_SEAWEEDFS_VERSION}
+    image: *seaweedfs-image
     logging: *default-logging
     restart: *default-restart
     networks:
@@ -306,12 +311,15 @@ services:
       - seaweedfs-data:/data
 
   iam:
-    image: chrislusf/seaweedfs:${AVATAR_SEAWEEDFS_VERSION}
+    image: *seaweedfs-image
     logging: *default-logging
     restart: *default-restart
     networks:
       - default
     command: '-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} iam -filer="filer:8888" -master="master:9333"'
+    healthcheck:
+      test: ["CMD", "echo", "--fail", "--get", "http://localhost:8111"]
+      interval: 5s
     depends_on:
       master:
         condition: service_healthy
@@ -323,7 +331,7 @@ services:
     volumes:
       - ./tls:/etc/seaweedfs/tls
   s3:
-    image: chrislusf/seaweedfs:${AVATAR_SEAWEEDFS_VERSION}
+    image: *seaweedfs-image
     logging: *default-logging
     restart: *default-restart
     networks:
@@ -365,11 +373,15 @@ secrets:
     file: ${SECRETS_DIR-.secrets}/file_jwt_secret_key
 
   # If using username-password authentication, you should have the following secrets present
-  avatar_first_user_name:
-    file: ${SECRETS_DIR-.secrets}/avatar_first_user_name
-  avatar_first_user_password:
-    file: ${SECRETS_DIR-.secrets}/avatar_first_user_password
+  # avatar_first_user_name:
+  #   file: ${SECRETS_DIR-.secrets}/avatar_first_user_name
+  # avatar_first_user_password:
+  #   file: ${SECRETS_DIR-.secrets}/avatar_first_user_password
 
+  storage_admin_access_key_id:
+    file: ${SECRETS_DIR-.secrets}/storage_admin_access_key_id
+  storage_admin_secret_access_key:
+    file: ${SECRETS_DIR-.secrets}/storage_admin_secret_access_key
 
   # If using email-password authentication, you should have the following secrets present
   admin_emails:
@@ -378,11 +390,6 @@ secrets:
   #   file: ${SECRETS_DIR-.secrets}/aws_mail_account_access_key_id
   # aws_mail_account_secret_access_key:
   #   file: ${SECRETS_DIR-.secrets}/aws_mail_account_secret_access_key
-
-  storage_admin_access_key_id:
-    file: ${SECRETS_DIR-.secrets}/storage_admin_access_key_id
-  storage_admin_secret_access_key:
-    file: ${SECRETS_DIR-.secrets}/storage_admin_secret_access_key
 
   # If using clevercloud
   clevercloud_sso_salt:
@@ -394,7 +401,7 @@ networks:
 
 volumes:
   seaweedfs-data:
-    name: avatar_seaweedfs_data
+    name: ${SEAWEEDFS_VOLUME}
   postgres_data:
-    name: avatar_postgres_data
+    name: ${DB_VOLUME}
     external: true
