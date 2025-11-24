@@ -25,7 +25,7 @@ name: octopize-avatar
 services:
   api:
     image: &api-image-version quay.io/octopize/avatar-service-api:${AVATAR_API_VERSION}
-    restart: &default-restart on-failure:10
+    restart: &default-restart until-stopped
     platform: &default-platform linux/amd64
     logging: *default-logging
     hostname: api
@@ -52,8 +52,8 @@ services:
 
       # If using email-password authentication
       - admin_emails
-      # - aws_mail_account_access_key_id
-      # - aws_mail_account_secret_access_key
+      - aws_mail_account_access_key_id
+      - aws_mail_account_secret_access_key
 
       - file_jwt_secret_key
       - storage_admin_access_key_id
@@ -69,7 +69,7 @@ services:
     image: *api-image-version
     platform: *default-platform
     command: ["sh", "-c", "cd /app/avatar && python bin/dbtool.py setup"]
-    restart: *default-restart
+    restart: on-failure:10
     logging: *default-logging
     hostname: init-db
     networks:
@@ -89,8 +89,8 @@ services:
 
       # If using email-password authentication
       - admin_emails
-      # - aws_mail_account_access_key_id
-      # - aws_mail_account_secret_access_key
+      - aws_mail_account_access_key_id
+      - aws_mail_account_secret_access_key
 
       - file_jwt_secret_key
       - storage_admin_access_key_id
@@ -113,7 +113,7 @@ services:
       [
         'echo "s3.configure -apply -user power_user -access_key $(cat /var/run/secrets/storage_admin_access_key_id) -secret_key  $(cat /var/run/secrets/storage_admin_secret_access_key)  -actions Admin" | weed shell -master=master:9333 -filer=filer:8888',
       ]
-    restart: *default-restart
+    restart: on-failure:10
     logging: *default-logging
     hostname: init-storage
     networks:
@@ -151,8 +151,8 @@ services:
       # - avatar_first_user_password
       - admin_emails
       # If using AWS
-      # - aws_mail_account_access_key_id
-      # - aws_mail_account_secret_access_key
+      - aws_mail_account_access_key_id
+      - aws_mail_account_secret_access_key
       - file_jwt_secret_key
       - storage_admin_access_key_id
       - storage_admin_secret_access_key
@@ -181,8 +181,8 @@ services:
       # - avatar_first_user_password
       - admin_emails
       # If using AWS
-      # - aws_mail_account_access_key_id
-      # - aws_mail_account_secret_access_key
+      - aws_mail_account_access_key_id
+      - aws_mail_account_secret_access_key
       - file_jwt_secret_key
       - storage_admin_access_key_id
       - storage_admin_secret_access_key
@@ -386,10 +386,10 @@ secrets:
   # If using email-password authentication, you should have the following secrets present
   admin_emails:
     file: ${SECRETS_DIR-.secrets}/admin_emails
-  # aws_mail_account_access_key_id:
-  #   file: ${SECRETS_DIR-.secrets}/aws_mail_account_access_key_id
-  # aws_mail_account_secret_access_key:
-  #   file: ${SECRETS_DIR-.secrets}/aws_mail_account_secret_access_key
+  aws_mail_account_access_key_id:
+    file: ${SECRETS_DIR-.secrets}/aws_mail_account_access_key_id
+  aws_mail_account_secret_access_key:
+    file: ${SECRETS_DIR-.secrets}/aws_mail_account_secret_access_key
 
   # If using clevercloud
   clevercloud_sso_salt:
