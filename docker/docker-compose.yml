@@ -160,7 +160,14 @@ services:
   dask-worker:
     image: *api-image-version
     platform: *default-platform
-    command: ["dask", "worker", "my-dask-scheduler:8786"]
+    command:
+      [
+        "dask",
+        "worker",
+        "my-dask-scheduler:8786",
+        "--preload",
+        "api.domain.dask_worker_setup",
+      ]
     restart: *default-restart
     logging: *default-logging
     hostname: my-dask-worker
