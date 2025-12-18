@@ -12,7 +12,7 @@ NOTEBOOK_PORT ?= 8888
 
 # File-based recipes
 
-common-secrets: db-secrets storage-secrets $(SECRETS_DIR)/pepper $(SECRETS_DIR)/authjwt_secret_key $(SECRETS_DIR)/organization_name $(SECRETS_DIR)/clevercloud_sso_salt
+common-secrets: db-secrets storage-secrets authentik-secrets $(SECRETS_DIR)/pepper $(SECRETS_DIR)/authjwt_secret_key $(SECRETS_DIR)/organization_name $(SECRETS_DIR)/clevercloud_sso_salt
 .PHONY: common-secrets
 
 db-secrets: $(SECRETS_DIR)/db_password $(SECRETS_DIR)/db_admin_password $(SECRETS_DIR)/db_user $(SECRETS_DIR)/db_admin_user $(SECRETS_DIR)/db_name 

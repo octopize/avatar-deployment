@@ -35,7 +35,7 @@ name: octopize-avatar
 services:
   api:
     image: &api-image-version quay.io/octopize/avatar-service-api:${AVATAR_API_VERSION}
-    restart: &default-restart until-stopped
+    restart: &default-restart unless-stopped
     platform: &default-platform linux/amd64
     logging: *default-logging
     hostname: api
@@ -219,6 +219,15 @@ services:
       # Source: https://hub.docker.com/_/postgres/
       POSTGRES_USER_FILE: /run/secrets/db_admin_user
       POSTGRES_PASSWORD_FILE: /run/secrets/db_admin_password
+    healthcheck:
+      interval: 30s
+      retries: 5
+      start_period: 20s
+      test:
+        - CMD-SHELL
+        - pg_isready -d avatar -U $(cat /run/secrets/db_admin_user)
+      timeout: 5s
+
     secrets:
       - db_admin_user
       - db_admin_password
@@ -247,7 +256,6 @@ services:
     ports:
       - "443:443"
       - "8080:8080"
-      - "8081:8081"
     depends_on:
       api:
         condition: service_healthy
@@ -376,7 +384,6 @@ services:
     volumes:
       - ./tls:/etc/seaweedfs/tls
 
-
   authentik_db:
     image: docker.io/library/postgres:16-alpine
     logging: *default-logging
@@ -400,6 +407,7 @@ services:
     volumes:
       - authentik_postgres_data:/var/lib/postgresql/data
     secrets:
+      - authentik_database_name
       - authentik_database_user
       - authentik_database_password
 
@@ -419,6 +427,7 @@ services:
       - ./authentik/custom-templates:/templates
 
     secrets:
+      - authentik_database_name
       - authentik_database_user
       - authentik_database_password
       - authentik_secret_key
@@ -446,6 +455,7 @@ services:
       - ./authentik/custom-templates:/templates
 
     secrets:
+      - authentik_database_name
       - authentik_database_user
       - authentik_database_password
       - authentik_secret_key
@@ -453,7 +463,6 @@ services:
     depends_on:
       authentik_db:
         condition: service_healthy
-
 
 secrets:
   db_admin_user:
@@ -498,6 +507,8 @@ secrets:
   clevercloud_sso_salt:
     file: ${SECRETS_DIR-.secrets}/clevercloud_sso_salt
 
+  authentik_database_name:
+    file: ${SECRETS_DIR-.secrets}/authentik_database_name
   authentik_database_user:
     file: ${SECRETS_DIR-.secrets}/authentik_database_user
   authentik_database_password:
