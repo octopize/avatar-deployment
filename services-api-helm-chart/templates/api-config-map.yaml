@@ -26,3 +26,6 @@ data:
   ACCESS_CONTROL_ENDPOINT_HOST: {{ .Values.api.accessControlEndpointHost | quote }}
   ACCESS_CONTROL_ENDPOINT_PORT: {{ .Values.api.accessControlEndpointPort | quote }}
   DASK_SCHEDULER: {{ .Values.api.daskSchedulerUrl | quote }}
+  S3_BUCKET_NAME: {{ .Values.api.s3SyncBucketName | quote }}
+  S3_ENDPOINT_URL: {{ .Values.api.s3SyncEndpointUrl | quote }}
+  S3_REGION: {{ .Values.api.s3SyncRegion | quote }}

@@ -137,3 +137,10 @@ api:
 
   # Clevercloud constant
   clevercloudSsoSalt: ""
+
+  # Values for telemetry
+  s3SyncEndpointUrl: ""
+  s3SyncRegion: ""
+  s3SyncBucketName: ""
+  s3SyncAccessKeyId: ""
+  s3SyncSecretAccessKey: ""
