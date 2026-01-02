@@ -150,7 +150,13 @@ authentik:
       - name: AUTHENTIK_SECRET_KEY
         value: "avatar_secret_key_test_value"
 
+  # Configure authentik to use the external PostgreSQL database
+  # The database and user are created automatically by the authentik-db-init Job hook
   postgresql:
+    host: ""  # Set to same value as dbHost at deploy time
+    port: 5432
+    name: authentik
+    user: authentik
     password: ""
 
   log_level: info
@@ -182,13 +188,4 @@ authentik:
       #   cpu: 200m
       #   memory: 256Mi
     replicas: 1  # Set to 2+ for HA
-
-
-# This is the database used by authentik
-postgresql:
-  enabled: true
-  auth:
-    username: authentik
-    password: ""  # python -c "import secrets; print(secrets.token_hex(32), end='')"
-    database: authentik
 
