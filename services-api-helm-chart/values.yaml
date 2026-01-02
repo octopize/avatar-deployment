@@ -151,9 +151,9 @@ authentik:
 
   web:
     path: "/sso/"
+
   # Email configuration for password resets and notifications
   # Leave empty to disable email functionality
-
   email:
     host: ""  # SMTP server hostname (e.g., smtp.gmail.com)
     port: 587  # SMTP port (587 for TLS, 465 for SSL, 25 for unencrypted)
@@ -175,10 +175,12 @@ authentik:
       #   memory: 256Mi
     replicas: 1  # Set to 2+ for HA
 
-  # Bundle Postgres with the subchart to mirror docker-compose defaults.
-  postgresql:
-    enabled: true
-    auth:
-      username: authentik
-      password: ""  # python -c "import secrets; print(secrets.token_hex(32), end='')"
-      database: authentik
+
+# This is the database used by authentik
+postgresql:
+  enabled: true
+  auth:
+    username: authentik
+    password: ""  # python -c "import secrets; print(secrets.token_hex(32), end='')"
+    database: authentik
+
