@@ -12,7 +12,7 @@ NOTEBOOK_PORT ?= 8888
 
 # File-based recipes
 
-common-secrets: db-secrets storage-secrets $(SECRETS_DIR)/pepper $(SECRETS_DIR)/authjwt_secret_key $(SECRETS_DIR)/organization_name $(SECRETS_DIR)/clevercloud_sso_salt
+common-secrets: db-secrets storage-secrets telemetry-secrets $(SECRETS_DIR)/pepper $(SECRETS_DIR)/authjwt_secret_key $(SECRETS_DIR)/organization_name $(SECRETS_DIR)/clevercloud_sso_salt
 .PHONY: common-secrets
 
 db-secrets: $(SECRETS_DIR)/db_password $(SECRETS_DIR)/db_admin_password $(SECRETS_DIR)/db_user $(SECRETS_DIR)/db_admin_user $(SECRETS_DIR)/db_name 
@@ -20,6 +20,9 @@ db-secrets: $(SECRETS_DIR)/db_password $(SECRETS_DIR)/db_admin_password $(SECRET
 
 storage-secrets: $(SECRETS_DIR)/file_jwt_secret_key $(SECRETS_DIR)/file_encryption_key $(SECRETS_DIR)/storage_admin_access_key_id $(SECRETS_DIR)/storage_admin_secret_access_key 
 .PHONY: storage-secrets
+
+telemetry-secrets: $(SECRETS_DIR)/telemetry_s3_access_key_id $(SECRETS_DIR)/telemetry_s3_secret_access_key
+.PHONY: telemetry-secrets
 
 secrets-with-username-auth: common-secrets $(SECRETS_DIR)/avatar_first_user_password $(SECRETS_DIR)/avatar_first_user_name ## Initialize secrets for username authentication
 .PHONY: secrets-with-username-auth
