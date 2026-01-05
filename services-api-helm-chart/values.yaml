@@ -142,5 +142,5 @@ api:
   s3SyncEndpointUrl: ""
   s3SyncRegion: ""
   s3SyncBucketName: ""
-  s3SyncAccessKeyId: ""
-  s3SyncSecretAccessKey: ""
+  s3TelemetryAccessKeyId: ""
+  s3TelemetrySecretAccessKey: ""
