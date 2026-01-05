@@ -139,8 +139,8 @@ api:
   clevercloudSsoSalt: ""
 
   # Values for telemetry
-  s3SyncEndpointUrl: ""
-  s3SyncRegion: ""
-  s3SyncBucketName: ""
+  s3TelemetryEndpointUrl: ""
+  s3TelemetryRegion: ""
+  s3TelemetryBucketName: ""
   s3TelemetryAccessKeyId: ""
   s3TelemetrySecretAccessKey: ""
