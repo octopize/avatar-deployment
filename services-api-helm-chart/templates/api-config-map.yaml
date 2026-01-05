@@ -26,6 +26,6 @@ data:
   ACCESS_CONTROL_ENDPOINT_HOST: {{ .Values.api.accessControlEndpointHost | quote }}
   ACCESS_CONTROL_ENDPOINT_PORT: {{ .Values.api.accessControlEndpointPort | quote }}
   DASK_SCHEDULER: {{ .Values.api.daskSchedulerUrl | quote }}
-  SYNC_S3_BUCKET_NAME: {{ .Values.api.s3TelemetryBucketName | quote }}
-  SYNC_S3_ENDPOINT_URL: {{ .Values.api.s3TelemetryEndpointUrl | quote }}
-  SYNC_S3_REGION: {{ .Values.api.s3TelemetryRegion | quote }}
+  TELEMETRY_S3_BUCKET_NAME: {{ .Values.api.s3TelemetryBucketName | quote }}
+  TELEMETRY_S3_ENDPOINT_URL: {{ .Values.api.s3TelemetryEndpointUrl | quote }}
+  TELEMETRY_S3_REGION: {{ .Values.api.s3TelemetryRegion | quote }}
