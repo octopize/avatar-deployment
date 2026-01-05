@@ -141,51 +141,46 @@ api:
 authentik:
   enabled: true
 
-  # Global environment passed to all authentik components.
-  global:
-    env:
-      - name: AUTHENTIK_WEB__PATH
-        value: "/sso/"
+  authentik:
+    secret_key: "avatar_secret_key_test_value"
 
-      - name: AUTHENTIK_SECRET_KEY
-        value: "avatar_secret_key_test_value"
+    # Configure authentik to use the external PostgreSQL database
+    # The database and user are created automatically by the authentik-db-init Job hook
+    postgresql:
+      host: 127.0.0.1
+      port: 5432
+      name: authentik
+      user: authentik
+      password: ""
 
-  # Configure authentik to use the external PostgreSQL database
-  # The database and user are created automatically by the authentik-db-init Job hook
-  postgresql:
-    host: ""  # Set to same value as dbHost at deploy time
-    port: 5432
-    name: authentik
-    user: authentik
-    password: ""
+    log_level: info
 
-  log_level: info
-  error_reporting:
-    enabled: false
+    error_reporting:
+      enabled: false
 
-  web:
-    path: "/sso/"
+    web:
+      path: "/sso/"
 
-  # Email configuration for password resets and notifications
-  # Leave empty to disable email functionality
-  email:
-    host: ""  # SMTP server hostname (e.g., smtp.gmail.com)
-    port: 587  # SMTP port (587 for TLS, 465 for SSL, 25 for unencrypted)
-    username: ""  # SMTP username
-    password: ""  # SMTP password
-    from: "noreply@octopize.io"  # Email address emails are sent from
-    use_tls: true  # Use STARTTLS for connection security
-    use_ssl: false  # Use SSL/TLS for connection security (can't be enabled at same time as use_tls)
-    timeout: 30  # Connection timeout in seconds
+    # Email configuration for password resets and notifications
+    # Leave empty to disable email functionality
+    email:
+      host: ""  # SMTP server hostname (e.g., smtp.gmail.com)
+      port: 587  # SMTP port (587 for TLS, 465 for SSL, 25 for unencrypted)
+      username: ""  # SMTP username
+      password: ""  # SMTP password
+      from: "noreply@octopize.io"  # Email address emails are sent from
+      use_tls: true  # Use STARTTLS for connection security
+      use_ssl: false  # Use SSL/TLS for connection security (can't be enabled at same time as use_tls)
+      timeout: 30  # Connection timeout in seconds
 
-  # Worker configuration
-  worker:
-    resources: {}
-      # limits:
-      #   cpu: 500m
-      #   memory: 512Mi
-      # requests:
-      #   cpu: 200m
-      #   memory: 256Mi
-    replicas: 1  # Set to 2+ for HA
+    # Worker configuration
+    worker:
+      resources: {}
+        # limits:
+        #   cpu: 500m
+        #   memory: 512Mi
+        # requests:
+        #   cpu: 200m
+        #   memory: 256Mi
+      replicas: 1  # Set to 2+ for HA
 
