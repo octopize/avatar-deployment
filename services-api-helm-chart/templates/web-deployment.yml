@@ -47,6 +47,11 @@ spec:
                 configMapKeyRef:
                   name: avatar-web-config
                   key: ENV_NAME
+            - name: AVATAR_SSO_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: avatar-web-config
+                  key: AVATAR_SSO_URL
           resources:
             requests:
               memory: {{ .Values.web.resources.memoryRequest }}
