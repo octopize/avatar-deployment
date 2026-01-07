@@ -165,5 +165,10 @@ Define the default app env variables
                 configMapKeyRef:
                   name: avatar-api-config
                   key: SSO_PROVIDER_APP_NAME
+            - name: SSO_PROVIDER_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: avatar-api-config
+                  key: SSO_PROVIDER_URL
 {{- end }}
 

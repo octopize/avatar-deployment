@@ -142,6 +142,7 @@ api:
   ssoClientId: ""
   ssoClientSecret: ""
   ssoProviderAppName: ""
+  ssoProviderUrl: ""
 
 authentik:
   enabled: true
