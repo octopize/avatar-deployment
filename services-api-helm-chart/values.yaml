@@ -139,6 +139,10 @@ api:
   # Clevercloud constant
   clevercloudSsoSalt: ""
 
+  ssoClientId: ""
+  ssoClientSecret: ""
+  ssoProviderAppName: ""
+
 authentik:
   enabled: true
 
@@ -165,7 +169,7 @@ authentik:
     # Email configuration for password resets and notifications
     # Leave empty to disable email functionality
     email:
-      host: ""  # SMTP server hostname (e.g., smtp.gmail.com)
+      host: "email-smtp.eu-west-3.amazonaws.com"  # SMTP server hostname (e.g., smtp.gmail.com)
       port: 587  # SMTP port (587 for TLS, 465 for SSL, 25 for unencrypted)
       username: ""  # SMTP username
       password: ""  # SMTP password

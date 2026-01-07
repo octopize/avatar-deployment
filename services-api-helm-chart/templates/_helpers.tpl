@@ -150,5 +150,20 @@ Define the default app env variables
                 configMapKeyRef:
                   name: avatar-api-config
                   key: DASK_SCHEDULER
+            - name: SSO_CLIENT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: avatar-api-config
+                  key: SSO_CLIENT_ID
+            - name: SSO_CLIENT_SECRET
+              valueFrom:
+                configMapKeyRef:
+                  name: avatar-api-config
+                  key: SSO_CLIENT_SECRET
+            - name: SSO_PROVIDER_APP_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: avatar-api-config
+                  key: SSO_PROVIDER_APP_NAME
 {{- end }}
 

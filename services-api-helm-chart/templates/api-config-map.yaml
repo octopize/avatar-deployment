@@ -26,3 +26,7 @@ data:
   ACCESS_CONTROL_ENDPOINT_HOST: {{ .Values.api.accessControlEndpointHost | quote }}
   ACCESS_CONTROL_ENDPOINT_PORT: {{ .Values.api.accessControlEndpointPort | quote }}
   DASK_SCHEDULER: {{ .Values.api.daskSchedulerUrl | quote }}
+  ## SSO Configuration ##
+  SSO_CLIENT_ID: {{ .Values.api.ssoClientId | quote }}
+  SSO_CLIENT_SECRET: {{ .Values.api.ssoClientSecret | quote }}
+  SSO_PROVIDER_APP_NAME: {{ .Values.api.ssoProviderAppName | quote }}
