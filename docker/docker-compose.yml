@@ -25,6 +25,16 @@ x-authentik-environment: &authentik-environment
     AUTHENTIK_POSTGRESQL__PASSWORD: file:///run/secrets/authentik_database_password
     AUTHENTIK_POSTGRESQL__USER: file:///run/secrets/authentik_database_user
     AUTHENTIK_SECRET_KEY: file:///run/secrets/authentik_secret_key
+    AUTHENTIK_EMAIL__HOST: ${SMTP_HOST}
+    AUTHENTIK_EMAIL__PORT: ${SMTP_PORT}
+    AUTHENTIK_EMAIL__USERNAME: ${SMTP_USERNAME}
+    AUTHENTIK_EMAIL__PASSWORD: ${SMTP_PASSWORD}
+    # Use StartTLS
+    AUTHENTIK_EMAIL__USE_TLS: ${SMTP_START_TLS}
+    # Use SSL
+    AUTHENTIK_EMAIL__USE_SSL: ${SMTP_USE_TLS}
+    AUTHENTIK_EMAIL__TIMEOUT: 30
+    AUTHENTIK_EMAIL__FROM: ${SMTP_SENDER_EMAIL}
 
 
 x-defaults:
