@@ -149,7 +149,7 @@ authentik:
   enabled: true
 
   authentik:
-    secret_key: "avatar_secret_key_test_value"
+    secret_key: ""
 
     # Configure authentik to use the external PostgreSQL database
     # The database and user are created automatically by the authentik-db-init Job hook
