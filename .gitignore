@@ -1,0 +1,3 @@
+# Helm chart dependencies
+services-api-helm-chart/charts/*.tgz
+services-api-helm-chart/charts/*/
