@@ -60,7 +60,9 @@ lint:
     # Verify consistency of yaml files
     rendered_output=$(just render)
     split_filenames=$(echo "$rendered_output" | just split-yaml)
-    yamllint $split_filenames 
+    # Filter out files from subcharts (charts/ directory) and only lint our own templates
+    own_files=$(echo "$split_filenames" | tr ' ' '\n' | grep -v '/charts/' | tr '\n' ' ')
+    yamllint -c {{PATH_TO_CHART}}/.yamllint $own_files 
 
 install:
     @helm install  \

@@ -12,11 +12,14 @@ NOTEBOOK_PORT ?= 8888
 
 # File-based recipes
 
-common-secrets: db-secrets storage-secrets telemetry-secrets $(SECRETS_DIR)/pepper $(SECRETS_DIR)/authjwt_secret_key $(SECRETS_DIR)/organization_name $(SECRETS_DIR)/clevercloud_sso_salt
+common-secrets: db-secrets storage-secrets telemetry-secrets authentik-secrets $(SECRETS_DIR)/pepper $(SECRETS_DIR)/authjwt_secret_key $(SECRETS_DIR)/organization_name $(SECRETS_DIR)/clevercloud_sso_salt
 .PHONY: common-secrets
 
 db-secrets: $(SECRETS_DIR)/db_password $(SECRETS_DIR)/db_admin_password $(SECRETS_DIR)/db_user $(SECRETS_DIR)/db_admin_user $(SECRETS_DIR)/db_name 
 .PHONY: db-secrets
+
+authentik-secrets: $(SECRETS_DIR)/authentik_database_name $(SECRETS_DIR)/authentik_database_user $(SECRETS_DIR)/authentik_database_password $(SECRETS_DIR)/authentik_secret_key
+.PHONY: authentik-secrets
 
 storage-secrets: $(SECRETS_DIR)/file_jwt_secret_key $(SECRETS_DIR)/file_encryption_key $(SECRETS_DIR)/storage_admin_access_key_id $(SECRETS_DIR)/storage_admin_secret_access_key 
 .PHONY: storage-secrets
@@ -120,6 +123,22 @@ $(SECRETS_DIR)/telemetry_s3_secret_access_key:
 	echo "" > $@
 
 $(SECRETS_DIR)/clevercloud_sso_salt:
+	mkdir -p $(SECRETS_DIR)
+	python3 -c "import secrets; print(secrets.token_hex())" > $@
+
+$(SECRETS_DIR)/authentik_database_name:
+	mkdir -p $(SECRETS_DIR)
+	touch $@
+
+$(SECRETS_DIR)/authentik_database_user:
+	mkdir -p $(SECRETS_DIR)
+	touch $@
+
+$(SECRETS_DIR)/authentik_database_password:
+	mkdir -p $(SECRETS_DIR)
+	python3 -c "import secrets; print(secrets.token_hex())" > $@
+
+$(SECRETS_DIR)/authentik_secret_key:
 	mkdir -p $(SECRETS_DIR)
 	python3 -c "import secrets; print(secrets.token_hex())" > $@
 

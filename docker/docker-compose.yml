@@ -17,6 +17,26 @@ x-environment: &api-environment
     - path: .env
       required: true
 
+x-authentik-environment: &authentik-environment
+  environment:
+    AUTHENTIK_WEB__PATH: /sso/
+    AUTHENTIK_POSTGRESQL__HOST: authentik_db
+    AUTHENTIK_POSTGRESQL__NAME: file:///run/secrets/authentik_database_name
+    AUTHENTIK_POSTGRESQL__PASSWORD: file:///run/secrets/authentik_database_password
+    AUTHENTIK_POSTGRESQL__USER: file:///run/secrets/authentik_database_user
+    AUTHENTIK_SECRET_KEY: file:///run/secrets/authentik_secret_key
+    AUTHENTIK_EMAIL__HOST: ${SMTP_HOST}
+    AUTHENTIK_EMAIL__PORT: ${SMTP_PORT}
+    AUTHENTIK_EMAIL__USERNAME: ${SMTP_USERNAME}
+    AUTHENTIK_EMAIL__PASSWORD: ${SMTP_PASSWORD}
+    # Use StartTLS
+    AUTHENTIK_EMAIL__USE_TLS: ${SMTP_START_TLS}
+    # Use SSL
+    AUTHENTIK_EMAIL__USE_SSL: ${SMTP_USE_TLS}
+    AUTHENTIK_EMAIL__TIMEOUT: 30
+    AUTHENTIK_EMAIL__FROM: ${SMTP_SENDER_EMAIL}
+
+
 x-defaults:
   platform: linux/amd64
 
@@ -25,7 +45,7 @@ name: octopize-avatar
 services:
   api:
     image: &api-image-version quay.io/octopize/avatar-service-api:${AVATAR_API_VERSION}
-    restart: &default-restart until-stopped
+    restart: &default-restart unless-stopped
     platform: &default-platform linux/amd64
     logging: *default-logging
     hostname: api
@@ -143,6 +163,7 @@ services:
     volumes:
       - ${HOST_SHARED_STORAGE_PATH}:/home/${CONTAINER_USER_NAME-avatar}/shared # only used for local or on-premise
     <<: *api-environment
+
     secrets:
       - db_name
       - db_user
@@ -212,6 +233,15 @@ services:
       # Source: https://hub.docker.com/_/postgres/
       POSTGRES_USER_FILE: /run/secrets/db_admin_user
       POSTGRES_PASSWORD_FILE: /run/secrets/db_admin_password
+    healthcheck:
+      interval: 30s
+      retries: 5
+      start_period: 20s
+      test:
+        - CMD-SHELL
+        - pg_isready -d avatar -U $(cat /run/secrets/db_admin_user)
+      timeout: 5s
+
     secrets:
       - db_admin_user
       - db_admin_password
@@ -223,6 +253,14 @@ services:
     logging: *default-logging
     platform: *default-platform
     restart: *default-restart
+    networks:
+      default:
+        aliases:
+          # Fixes Internal DNS Override.
+          # Short-circuits the public domain to this container's internal IP.
+          # Allows other containers to talk to Authentik via Port 443 on this proxy,
+          # satisfying Authentik's strict Host Header validation.
+          - ${AVATAR_DOMAIN}
     hostname: nginx
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
@@ -232,7 +270,6 @@ services:
     ports:
       - "443:443"
       - "8080:8080"
-      - "8081:8081"
     depends_on:
       api:
         condition: service_healthy
@@ -267,6 +304,8 @@ services:
       AVATAR_API_INTERNAL_URL: "http://api:8000"
       AVATAR_STORAGE_ENDPOINT_PUBLIC_URL: ${AVATAR_STORAGE_ENDPOINT_PUBLIC_URL}
       AVATAR_STORAGE_ENDPOINT_INTERNAL_URL: ${AVATAR_STORAGE_ENDPOINT_INTERNAL_URL}
+      AVATAR_SSO_URL: ${AVATAR_API_URL}/login/sso
+      AVATAR_SSO_ENABLED: false
 
   master:
     image: *seaweedfs-image
@@ -278,10 +317,9 @@ services:
     healthcheck:
       test:
         ["CMD", "echo", "--fail", "-I", "http://localhost:9333/cluster/healthz"]
-      interval:
-        5s
-        # Wait for 5s seconds to wait for the master to be up, before starting healthchecks.
-        # This is a workaround for the fact that the master and filer are not fully ready when they are declared healthy
+      interval: 5s
+      # Wait for 5s seconds to wait for the master to be up, before starting healthchecks.
+      # This is a workaround for the fact that the master and filer are not fully ready when they are declared healthy
       start_interval: 5s
       start_period: 5s
     volumes:
@@ -347,8 +385,6 @@ services:
     restart: *default-restart
     networks:
       - default
-    ports:
-      - 8333:8333
     command: '-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} s3 -filer="filer:8888" -ip.bind=s3'
     healthcheck:
       test: ["CMD", "echo", "--fail", "--get", "http://localhost:8333/healthz"]
@@ -362,6 +398,86 @@ services:
         condition: service_healthy
     volumes:
       - ./tls:/etc/seaweedfs/tls
+
+  authentik_db:
+    image: docker.io/library/postgres:16-alpine
+    logging: *default-logging
+    platform: *default-platform
+    restart: *default-restart
+    networks:
+      - default
+    hostname: authentik_db
+    environment:
+      POSTGRES_DB_FILE: /run/secrets/authentik_database_name
+      POSTGRES_USER_FILE: /run/secrets/authentik_database_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/authentik_database_password
+    healthcheck:
+      interval: 30s
+      retries: 5
+      start_period: 20s
+      test:
+        - CMD-SHELL
+        - pg_isready -d $(cat /run/secrets/authentik_database_name) -U $(cat /run/secrets/authentik_database_user)
+      timeout: 5s
+    volumes:
+      - authentik_postgres_data:/var/lib/postgresql/data
+    secrets:
+      - authentik_database_name
+      - authentik_database_user
+      - authentik_database_password
+
+  authentik_server:
+    image: &authentik_image ${AVATAR_AUTHENTIK_REPOSITORY}/server:${AVATAR_AUTHENTIK_VERSION}
+    logging: *default-logging
+    platform: *default-platform
+    restart: *default-restart
+    networks:
+      - default
+    hostname: authentik_server
+    command: server
+    <<: *authentik-environment
+
+    volumes:
+      - ./authentik/media:/media
+      - ./authentik/custom-templates:/templates
+
+    secrets:
+      - authentik_database_name
+      - authentik_database_user
+      - authentik_database_password
+      - authentik_secret_key
+
+    depends_on:
+      authentik_db:
+        condition: service_healthy
+
+  authentik_worker:
+    image: *authentik_image
+    logging: *default-logging
+    platform: *default-platform
+    restart: *default-restart
+    hostname: authentik_worker
+    networks:
+      - default
+    command: worker
+    user: root
+    <<: *authentik-environment
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./authentik/media:/media
+      - ./authentik/certs:/certs
+      - ./authentik/custom-templates:/templates
+
+    secrets:
+      - authentik_database_name
+      - authentik_database_user
+      - authentik_database_password
+      - authentik_secret_key
+
+    depends_on:
+      authentik_db:
+        condition: service_healthy
 
 secrets:
   db_admin_user:
@@ -406,6 +522,15 @@ secrets:
   clevercloud_sso_salt:
     file: ${SECRETS_DIR-.secrets}/clevercloud_sso_salt
 
+  authentik_database_name:
+    file: ${SECRETS_DIR-.secrets}/authentik_database_name
+  authentik_database_user:
+    file: ${SECRETS_DIR-.secrets}/authentik_database_user
+  authentik_database_password:
+    file: ${SECRETS_DIR-.secrets}/authentik_database_password
+  authentik_secret_key:
+    file: ${SECRETS_DIR-.secrets}/authentik_secret_key
+
 networks:
   default:
     driver: bridge
@@ -416,3 +541,5 @@ volumes:
   postgres_data:
     name: ${DB_VOLUME}
     external: true
+  authentik_postgres_data:
+    name: avatar_authentik_postgres_data

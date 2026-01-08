@@ -78,6 +78,8 @@ web:
     apiPublicPort: ""
     apiInternalHost: "http://avatar-api"
     apiInternalPort: 8000
+    ssoEnabled: "false"
+    ssoUrl: "https://avatar.yourcompany.com/sso/"
     envName: "prod"
 
 api:
@@ -144,3 +146,54 @@ api:
   s3TelemetryBucketName: ""
   s3TelemetryAccessKeyId: ""
   s3TelemetrySecretAccessKey: ""
+
+  ssoClientId: ""
+  ssoClientSecret: ""
+  ssoProviderAppName: ""
+  ssoProviderUrl: ""
+
+authentik:
+  enabled: true
+
+  authentik:
+    secret_key: ""
+
+    # Configure authentik to use the external PostgreSQL database
+    # The database and user are created automatically by the authentik-db-init Job hook
+    postgresql:
+      host: 127.0.0.1
+      port: 5432
+      name: authentik
+      user: authentik
+      password: ""
+
+    log_level: info
+
+    error_reporting:
+      enabled: false
+
+    web:
+      path: "/sso/"
+
+    # Email configuration for password resets and notifications
+    # Leave empty to disable email functionality
+    email:
+      host: "email-smtp.eu-west-3.amazonaws.com"  # SMTP server hostname (e.g., smtp.gmail.com)
+      port: 587  # SMTP port (587 for TLS, 465 for SSL, 25 for unencrypted)
+      username: ""  # SMTP username
+      password: ""  # SMTP password
+      from: "noreply@octopize.io"  # Email address emails are sent from
+      use_tls: true  # Use STARTTLS for connection security
+      use_ssl: false  # Use SSL/TLS for connection security (can't be enabled at same time as use_tls)
+      timeout: 30  # Connection timeout in seconds
+
+    # Worker configuration
+    worker:
+      resources: {}
+        # limits:
+        #   cpu: 500m
+        #   memory: 512Mi
+        # requests:
+        #   cpu: 200m
+        #   memory: 256Mi
+      replicas: 1  # Set to 2+ for HA
