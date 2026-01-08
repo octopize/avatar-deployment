@@ -31,3 +31,6 @@ data:
   SSO_CLIENT_SECRET: {{ .Values.api.ssoClientSecret | quote }}
   SSO_PROVIDER_APP_NAME: {{ .Values.api.ssoProviderAppName | quote }}
   SSO_PROVIDER_URL: {{ .Values.api.ssoProviderUrl | quote }}
+  TELEMETRY_S3_BUCKET_NAME: {{ .Values.api.s3TelemetryBucketName | quote }}
+  TELEMETRY_S3_ENDPOINT_URL: {{ .Values.api.s3TelemetryEndpointUrl | quote }}
+  TELEMETRY_S3_REGION: {{ .Values.api.s3TelemetryRegion | quote }}

@@ -79,6 +79,10 @@ services:
       - storage_admin_access_key_id
       - storage_admin_secret_access_key
 
+      # For telemetry usage
+      - telemetry_s3_access_key_id
+      - telemetry_s3_secret_access_key
+
       # If using clevercloud
       - clevercloud_sso_salt
     depends_on:

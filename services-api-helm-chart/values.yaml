@@ -140,6 +140,13 @@ api:
   # Clevercloud constant
   clevercloudSsoSalt: ""
 
+  # Values for telemetry
+  s3TelemetryEndpointUrl: ""
+  s3TelemetryRegion: ""
+  s3TelemetryBucketName: ""
+  s3TelemetryAccessKeyId: ""
+  s3TelemetrySecretAccessKey: ""
+
   ssoClientId: ""
   ssoClientSecret: ""
   ssoProviderAppName: ""
@@ -190,4 +197,3 @@ authentik:
         #   cpu: 200m
         #   memory: 256Mi
       replicas: 1  # Set to 2+ for HA
-
