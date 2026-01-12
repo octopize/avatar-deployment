@@ -75,8 +75,11 @@ install:
 package:
     @helm package {{PATH_TO_CHART}} -d {{HELM_PACKAGE_DIR}}
 
+update-dependencies:
+    helm dependency update {{PATH_TO_CHART}}
+
 # Push Helm Chart to quay.io
-push-helm-chart:
+push-helm-chart: update-dependencies
     #!/usr/bin/env bash
     {{SHOPTS}}
 
