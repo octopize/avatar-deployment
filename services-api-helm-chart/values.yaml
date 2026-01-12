@@ -172,9 +172,6 @@ authentik:
     error_reporting:
       enabled: false
 
-    web:
-      path: "/sso/"
-
     # Email configuration for password resets and notifications
     # Leave empty to disable email functionality
     email:
@@ -196,4 +193,5 @@ authentik:
         # requests:
         #   cpu: 200m
         #   memory: 256Mi
+
       replicas: 1  # Set to 2+ for HA
