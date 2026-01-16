@@ -184,41 +184,44 @@ authentik:
       use_ssl: false  # Use SSL/TLS for connection security (can't be enabled at same time as use_tls)
       timeout: 30  # Connection timeout in seconds
 
-    # Worker configuration
     worker:
-      resources: {}
-        # limits:
-        #   cpu: 500m
-        #   memory: 512Mi
-        # requests:
-        #   cpu: 200m
-        #   memory: 256Mi
+      replicas: 3
 
-      replicas: 1  # Set to 2+ for HA
-      
-      volumes:
-        - name: custom-email-templates
-          configMap:
-            name: authentik-custom-templates
-      
-      volumeMounts:
-        # Mount custom templates directory so authentik can discover them in the UI
-        # Templates will appear in the email stage dropdown
-        - name: custom-email-templates
-          mountPath: /templates
-          readOnly: true
+  # Worker configuration
+  worker:
+    resources: {}
+      # limits:
+      #   cpu: 500m
+      #   memory: 512Mi
+      # requests:
+      #   cpu: 200m
+      #   memory: 256Mi
 
-    # Server configuration to mount custom templates
-    # Mirror the same configuration as worker for consistency
-    server:
-      volumes:
-        - name: custom-email-templates
-          configMap:
-            name: authentik-custom-templates
-      
-      volumeMounts:
-        # Mount custom templates directory so authentik can discover them in the UI
-        # Templates will appear in the email stage dropdown
-        - name: custom-email-templates
-          mountPath: /templates
-          readOnly: true
+    replicas: 2  # Set to 2+ for HA
+    
+    volumes:
+      - name: custom-email-templates
+        configMap:
+          name: authentik-custom-templates
+    
+    volumeMounts:
+      # Mount custom templates directory so authentik can discover them in the UI
+      # Templates will appear in the email stage dropdown
+      - name: custom-email-templates
+        mountPath: /templates
+        readOnly: true
+
+  # Server configuration to mount custom templates
+  # Mirror the same configuration as worker for consistency
+  server:
+    volumes:
+      - name: custom-email-templates
+        configMap:
+          name: authentik-custom-templates
+    
+    volumeMounts:
+      # Mount custom templates directory so authentik can discover them in the UI
+      # Templates will appear in the email stage dropdown
+      - name: custom-email-templates
+        mountPath: /templates
+        readOnly: true
