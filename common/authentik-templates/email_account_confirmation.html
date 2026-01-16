@@ -1,0 +1,92 @@
+{# This template is used for account confirmation emails #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome - Confirm Your Account</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7fa;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #3BD6B0 0%, #2db89a 100%);
+            padding: 30px;
+            text-align: center;
+            color: #ffffff;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .content {
+            padding: 40px 30px;
+            color: #333333;
+            line-height: 1.6;
+        }
+        .content p {
+            margin: 0 0 20px 0;
+            font-size: 16px;
+        }
+        .button {
+            display: inline-block;
+            padding: 14px 32px;
+            margin: 20px 0;
+            background-color: #3BD6B0;
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        .button:hover {
+            background-color: #2db89a;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px 30px;
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>Welcome - Confirm Your Account</h1>
+        </div>
+        <div class="content">
+            <p>Hello {{ user.name }},</p>
+            <p>Thank you for creating an account!</p>
+            <p>To activate your account, please confirm your email address by clicking the button below:</p>
+            <center>
+                <a href="{{ url }}" class="button">Confirm Email</a>
+            </center>
+            <p>Or copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; color: #3BD6B0; font-size: 14px;">{{ url }}</p>
+            
+            <p>Once your account is activated, you can access all features.</p>
+            
+            <p>See you soon,<br>The Team</p>
+        </div>
+        <div class="footer">
+            <p>This email was sent automatically, please do not reply.</p>
+            <p>&copy; 2026 Octopize. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

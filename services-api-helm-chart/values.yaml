@@ -195,3 +195,46 @@ authentik:
         #   memory: 256Mi
 
       replicas: 1  # Set to 2+ for HA
+      
+      volumes:
+        - name: custom-email-templates
+          configMap:
+            name: authentik-custom-templates
+      
+      volumeMounts:
+        # Mount each template file individually using subPath
+        # This preserves default authentik templates while adding custom ones
+        - name: custom-email-templates
+          mountPath: /templates/email/email_password_reset.html
+          subPath: email_password_reset.html
+          readOnly: true
+        - name: custom-email-templates
+          mountPath: /templates/email/email_account_confirmation.html
+          subPath: email_account_confirmation.html
+          readOnly: true
+        - name: custom-email-templates
+          mountPath: /templates/email/email_account_exists.html
+          subPath: email_account_exists.html
+          readOnly: true
+
+    # Server configuration to mount custom templates
+    # Mirror the same configuration as worker for consistency
+    server:
+      volumes:
+        - name: custom-email-templates
+          configMap:
+            name: authentik-custom-templates
+      
+      volumeMounts:
+        - name: custom-email-templates
+          mountPath: /templates/email/email_password_reset.html
+          subPath: email_password_reset.html
+          readOnly: true
+        - name: custom-email-templates
+          mountPath: /templates/email/email_account_confirmation.html
+          subPath: email_account_confirmation.html
+          readOnly: true
+        - name: custom-email-templates
+          mountPath: /templates/email/email_account_exists.html
+          subPath: email_account_exists.html
+          readOnly: true
