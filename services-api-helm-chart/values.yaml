@@ -1,20 +1,20 @@
 # Your env's name
-envName: &envName test.helm
+envName: test.helm
 
 image:
   pullPolicy: IfNotPresent
-  repository: &avatarServiceApiRepository quay.io/octopize/avatar-service-api
+  repository: quay.io/octopize/avatar-service-api
 
 # The image tag version. It's a good idea to pin it to something specific.
 # Avoid using "latest".
-avatarServiceApiVersion: &avatarServiceApiVersion 0.0.1
+avatarServiceApiVersion: 0.0.1
 pdfgeneratorVersion: 0.1.4
 
 # Octopize will provide you with this, it should be base64 encoded.
 dockerPullSecret: "TODO"
 
 # This secret is created by the chart (see templates/docker-pull-secret.yaml)
-dockerPullSecretName: &dockerPullSecretName docker-local-pull-secret
+dockerPullSecretName: docker-local-pull-secret
 
 # Db connection
 dbHost: 127.0.0.1
@@ -156,30 +156,24 @@ api:
   ssoProviderUrl: ""
 
 dask:
-  # Set to true to enable Dask distributed computing
-  # This relies on the avatar Helm chart creating the docker-local-pull-secret first
-  # 
-  # IMPORTANT: Keep these values synchronized with the parent chart:
-  # - dask.worker.image.tag should match avatarServiceApiVersion
-  # - dask.scheduler.image.tag should match avatarServiceApiVersion  
-  # - dask.worker.env[0].value (ENV_NAME) should match envName
-  # - dask.scheduler.env[0].value (ENV_NAME) should match envName
-  enabled: false
+  # Dask is enabled by default.
+  # This relies on the avatar Helm chart creating the docker-local-pull-secret first.
+  enabled: true
   
   # Dask uses the same avatar-service-api image for both scheduler and workers
   worker:
     replicas: 2  # Number of dask worker replicas
     image:
       # Uses the same image and tag as the avatar API
-      repository: *avatarServiceApiRepository
-      tag: *avatarServiceApiVersion
+      repository: quay.io/octopize/avatar-service-api
+      tag: 0.0.1
       pullSecrets:
-        - name: *dockerPullSecretName
+        - name: docker-local-pull-secret
     
     # Environment variables for dask workers
     env:
       - name: ENV_NAME
-        value: *envName
+        value: test.helm
       - name: IS_SENTRY_ENABLED
         value: "True"
       - name: AVATAR_PDFGENERATOR_URL
@@ -199,15 +193,15 @@ dask:
     name: scheduler
     image:
       # Uses the same image and tag as the avatar API
-      repository: *avatarServiceApiRepository
-      tag: *avatarServiceApiVersion
+      repository: quay.io/octopize/avatar-service-api
+      tag: 0.0.1
       pullSecrets:
-        - name: *dockerPullSecretName
+        - name: docker-local-pull-secret
     
     # Environment variables for dask scheduler (same as workers)
     env:
       - name: ENV_NAME
-        value: *envName
+        value: test.helm
       - name: IS_SENTRY_ENABLED
         value: "True"
       - name: AVATAR_PDFGENERATOR_URL
