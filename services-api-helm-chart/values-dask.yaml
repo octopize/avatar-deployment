@@ -1,0 +1,8 @@
+# Overlay file to enable the bundled Dask subchart.
+# Usage:
+#   helm install services-api services-api-helm-chart -n services-api \
+#     -f services-api-helm-chart/values.yaml \
+#     -f services-api-helm-chart/values-dask.yaml
+
+dask:
+  enabled: true

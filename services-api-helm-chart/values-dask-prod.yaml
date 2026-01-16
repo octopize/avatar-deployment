@@ -1,0 +1,10 @@
+# Example production-ish overlay for running Dask as a subchart.
+# Usage:
+#   helm upgrade --install services-api services-api-helm-chart -n services-api \
+#     -f services-api-helm-chart/values.yaml \
+#     -f services-api-helm-chart/values-dask.yaml \
+#     -f services-api-helm-chart/values-dask-prod.yaml
+
+dask:
+  worker:
+    replicas: 4

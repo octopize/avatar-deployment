@@ -1,17 +1,20 @@
 # Your env's name
-envName: test.helm
+envName: &envName test.helm
 
 image:
   pullPolicy: IfNotPresent
-  repository: quay.io/octopize/avatar-service-api
+  repository: &avatarServiceApiRepository quay.io/octopize/avatar-service-api
 
 # The image tag version. It's a good idea to pin it to something specific.
 # Avoid using "latest".
-avatarServiceApiVersion: 0.0.1
+avatarServiceApiVersion: &avatarServiceApiVersion 0.0.1
 pdfgeneratorVersion: 0.1.4
 
 # Octopize will provide you with this, it should be base64 encoded.
 dockerPullSecret: "TODO"
+
+# This secret is created by the chart (see templates/docker-pull-secret.yaml)
+dockerPullSecretName: &dockerPullSecretName docker-local-pull-secret
 
 # Db connection
 dbHost: 127.0.0.1
@@ -168,15 +171,15 @@ dask:
     replicas: 2  # Number of dask worker replicas
     image:
       # Uses the same image and tag as the avatar API
-      repository: quay.io/octopize/avatar-service-api
-      tag: "0.0.1"  # Should match avatarServiceApiVersion
+      repository: *avatarServiceApiRepository
+      tag: *avatarServiceApiVersion
       pullSecrets:
-        - name: docker-local-pull-secret
+        - name: *dockerPullSecretName
     
     # Environment variables for dask workers
     env:
       - name: ENV_NAME
-        value: "test.helm"  # Should match envName
+        value: *envName
       - name: IS_SENTRY_ENABLED
         value: "True"
       - name: AVATAR_PDFGENERATOR_URL
@@ -196,15 +199,15 @@ dask:
     name: scheduler
     image:
       # Uses the same image and tag as the avatar API
-      repository: quay.io/octopize/avatar-service-api
-      tag: "0.0.1"  # Should match avatarServiceApiVersion
+      repository: *avatarServiceApiRepository
+      tag: *avatarServiceApiVersion
       pullSecrets:
-        - name: docker-local-pull-secret
+        - name: *dockerPullSecretName
     
     # Environment variables for dask scheduler (same as workers)
     env:
       - name: ENV_NAME
-        value: "test.helm"  # Should match envName
+        value: *envName
       - name: IS_SENTRY_ENABLED
         value: "True"
       - name: AVATAR_PDFGENERATOR_URL
