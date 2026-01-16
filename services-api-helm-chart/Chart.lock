@@ -2,5 +2,8 @@ dependencies:
 - name: authentik
   repository: https://charts.goauthentik.io
   version: 2025.10.3
-digest: sha256:ddaf0b5557f5e27fc12f99db012ba863e25299d2ee941199055140f44953c138
-generated: "2026-01-02T11:12:40.74391798+01:00"
+- name: dask
+  repository: https://helm.dask.org/
+  version: 2024.1.1
+digest: sha256:2877f0c957ba905d64f94aa932c31c85ec48ba253558ad21a9ed1d2874714544
+generated: "2026-01-16T14:10:06.914118151+01:00"
