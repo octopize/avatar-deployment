@@ -1,0 +1,127 @@
+{# This template is sent when someone tries to register with an email that already exists #}
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% trans 'Account Already Exists' %}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7fa;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #3BD6B0 0%, #2db89a 100%);
+            padding: 30px;
+            text-align: center;
+            color: #ffffff;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .content {
+            padding: 40px 30px;
+            color: #333333;
+            line-height: 1.6;
+        }
+        .content p {
+            margin: 0 0 20px 0;
+            font-size: 16px;
+        }
+        .button {
+            display: inline-block;
+            padding: 14px 32px;
+            margin: 20px 0;
+            background-color: #f5576c;
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        .button:hover {
+            background-color: #e84855;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px 30px;
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .info-box {
+            background-color: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .info-box p {
+            margin: 0;
+            color: #0d47a1;
+        }
+        .security-note {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .security-note p {
+            margin: 0;
+            color: #856404;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>{% trans 'Registration Attempt Detected' %}</h1>
+        </div>
+        <div class="content">
+            <p>{% trans 'Hello,' %}</p>
+            <p>{% trans 'We received a registration attempt using this email address, but an account already exists.' %}</p>
+            
+            <div class="info-box">
+                <p><strong>{% trans 'Account exists:' %}</strong> {% trans 'You already have an account with this email address. You cannot create a new account with the same email.' %}</p>
+            </div>
+            
+            <p><strong>{% trans 'If this was you:' %}</strong></p>
+            <p>{% trans "It looks like you already have an account. If you've forgotten your password, you can reset it by clicking the button below:" %}</p>
+            <center>
+                <a href="{{ url }}" class="button">{% trans 'Reset My Password' %}</a>
+            </center>
+            <p>{% trans 'Or copy and paste this link into your browser:' %}</p>
+            <p style="word-break: break-all; color: #f5576c; font-size: 14px;">{{ url }}</p>
+            
+            <div class="security-note">
+                <p><strong>{% trans "If this wasn't you:" %}</strong></p>
+                <p>{% trans 'Someone may have used your email address by mistake. Your existing account remains secure and no action is required on your part.' %}</p>
+                <p style="margin-top: 10px;">{% trans 'For your security, we recommend ensuring your password is strong and unique. If you suspect any suspicious activity, please contact our support team immediately.' %}</p>
+            </div>
+            
+            <p>{% trans 'Best regards,' %}<br>{% trans 'The Team' %}</p>
+        </div>
+        <div class="footer">
+            <p>{% trans 'This email was sent automatically, please do not reply.' %}</p>
+            <p>{% trans 'If you have any questions, please contact our support.' %}</p>
+            <p>&copy; 2026 Octopize. {% trans 'All rights reserved.' %}</p>
+        </div>
+    </div>
+</body>
+</html>

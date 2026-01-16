@@ -17,14 +17,16 @@ Create professional, branded email templates for Authentik authentication flows.
 
 ## Template Structure
 
-All Authentik email templates follow this pattern:
+All Authentik email templates follow this pattern per official documentation:
 
 ```html
 {# Django comment describing template purpose #}
+{% load i18n %}
+{# Optional: {% load humanize %} for time formatting #}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Meta tags and title -->
+    <!-- Meta tags and title with {% trans %} tags -->
     <style>
         /* Inline CSS for email client compatibility */
     </style>
@@ -32,10 +34,13 @@ All Authentik email templates follow this pattern:
 <body>
     <div class="email-container">
         <div class="header">
-            <!-- Colored header with title (no emojis) -->
+            <h1>{% trans 'Header Title' %}</h1>
         </div>
         <div class="content">
-            <!-- Main email body with {{ user.name }} and {{ url }} -->
+            {% blocktrans with username=user.username %}
+            <p>Hello {{ username }},</p>
+            {% endblocktrans %}
+            <!-- Main email body with {{ url }} -->
         </div>
         <div class="footer">
             <!-- Standard Octopize footer -->
@@ -44,6 +49,17 @@ All Authentik email templates follow this pattern:
 </body>
 </html>
 ```
+
+## Critical Requirements
+
+Per authentik documentation (https://docs.goauthentik.io/add-secure-apps/flows-stages/stages/email/):
+
+1. **Load i18n module**: Start with `{% load i18n %}`
+2. **Use user.username**: Not `user.name` - username is the correct variable
+3. **Use blocktrans for variables**: Wrap personalized text in `{% blocktrans with username=user.username %}`
+4. **Format expires properly**: Use `{% blocktrans with expires=expires|naturaltime %}` not raw `{{ expires }}`
+5. **Translate all static text**: Wrap in `{% trans 'Text' %}` tags
+6. **No emojis**: Keep all text emoji-free for professional communication
 
 ## Available Templates
 
@@ -64,34 +80,55 @@ Use these as starting points:
 ### Password Reset
 - **Header**: "Password Reset"
 - **Color**: Darker Teal gradient (Octopize brand)
-- **Variables**: `{{ url }}`, `{{ expires }}`, `{{ user.name }}`
+- **Variables**: `{{ url }}`, `{{ expires|naturaltime }}`, `{{ user.username }}`
 - **Include**: Warning box about expiration
+- **Load modules**: `{% load i18n %}` and `{% load humanize %}`
 
 ### Account Confirmation
-- **Header**: "Welcome" or "Confirm Your Account"
+- **Header**: "Welcome - Confirm Your Account"
 - **Color**: Primary Teal gradient (Octopize brand)
-- **Variables**: `{{ url }}`, `{{ user.name }}`
+- **Variables**: `{{ url }}`, `{{ user.username }}`
 - **Include**: Welcoming message
+- **Load modules**: `{% load i18n %}`
 
 ### Account Already Exists
-- **Header**: "Account Notification"
+- **Header**: "Registration Attempt Detected"
 - **Color**: Primary Teal gradient
-- **Variables**: `{{ user.email }}`
+- **Variables**: `{{ url }}`
 - **Include**: Info box with password reset link
+- **Load modules**: `{% load i18n %}`
 
 ### Invitation
 - **Header**: "You're Invited" or "Account Invitation"
 - **Color**: Primary Teal gradient
-- **Variables**: `{{ url }}`, `{{ expires }}`, `{{ invitation }}`
+- **Variables**: `{{ url }}`, `{{ expires|naturaltime }}`, `{{ invitation }}`
+- **Load modules**: `{% load i1 per https://docs.goauthentik.io/add-secure-apps/flows-stages/stages/email/
 
-## Django Template Syntax
-
-Authentik uses Django templates. Key patterns:
+### Essential Patterns
 
 ```django
 {# Comments #}
-{{ variable }}
-{{ user.name|default:"there" }}
+{% load i18n %}  {# Required for all templates #}
+{% load humanize %}  {# Required when using expires|naturaltime #}
+
+{# Translate static text #}
+{% trans 'Static Text' %}
+
+{# Translate text with variables #}
+{% blocktrans with username=user.username %}
+Hello {{ username }},
+{% endblocktrans %}
+
+{# Format expiration time #}
+{% blocktrans with expires=expires|naturaltime %}
+This link expires {{ expires }}.
+{% endblocktrans %}
+```
+
+### Available Variables
+- `{{ url }}` - Full URL for user action
+- `{{ user.username }}` - User's username (primary identifier)  
+- `{{ expires }}` - Token expiration timestamp (use with `|naturaltime`)user.name|default:"there" }}
 
 {% if condition %}...{% endif %}
 {% for item in list %}...{% endfor %}

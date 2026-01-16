@@ -1,0 +1,19 @@
+{{- if .Values.authentik.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authentik-custom-templates
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "avatar.labels" . | nindent 4 }}
+data:
+  {{- /*
+    Automatically load all .html files from the templates-files/ directory.
+    This uses .Files.Glob to find all HTML templates and .AsConfig to 
+    convert them into ConfigMap data entries.
+    
+    The templates contain Django/authentik syntax (e.g., {{ url }}) which 
+    will NOT be evaluated by Helm since .Files.Get returns raw file content.
+  */ -}}
+  {{- (.Files.Glob "templates-files/*.html").AsConfig | nindent 2 }}
+{{- end }}

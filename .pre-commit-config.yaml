@@ -1,0 +1,51 @@
+# Pre-commit hooks configuration
+# Install: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+# Update hooks: pre-commit autoupdate
+
+repos:
+  # Synchronize authentik templates before commit
+  - repo: local
+    hooks:
+      - id: sync-authentik-templates
+        name: Sync authentik email templates
+        entry: ./sync-templates.sh
+        language: script
+        pass_filenames: false
+        files: ^common/authentik-templates/.*\.html$
+        description: "Synchronizes email templates from common/ to Helm chart templates-files/"
+        verbose: true
+
+  # Standard pre-commit hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^.*\.(md|html)$
+      - id: end-of-file-fixer
+        exclude: ^.*\.html$
+      - id: check-yaml
+        args: ['--unsafe']  # Allow custom YAML tags in Helm templates
+        exclude: ^services-api-helm-chart/templates/
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+
+  # YAML linting (optional - uncomment if desired)
+  # - repo: https://github.com/adrienverge/yamllint
+  #   rev: v1.33.0
+  #   hooks:
+  #     - id: yamllint
+  #       args: [--format, parsable, --strict]
+  #       exclude: ^services-api-helm-chart/templates/
+
+  # Shellcheck for bash scripts
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.9.0.6
+    hooks:
+      - id: shellcheck
+        args: ['--severity=warning']
+        files: \.(sh|bash)$
