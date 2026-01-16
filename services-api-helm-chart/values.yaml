@@ -152,6 +152,72 @@ api:
   ssoProviderAppName: ""
   ssoProviderUrl: ""
 
+dask:
+  # Set to true to enable Dask distributed computing
+  # This relies on the avatar Helm chart creating the docker-local-pull-secret first
+  # 
+  # IMPORTANT: Keep these values synchronized with the parent chart:
+  # - dask.worker.image.tag should match avatarServiceApiVersion
+  # - dask.scheduler.image.tag should match avatarServiceApiVersion  
+  # - dask.worker.env[0].value (ENV_NAME) should match envName
+  # - dask.scheduler.env[0].value (ENV_NAME) should match envName
+  enabled: false
+  
+  # Dask uses the same avatar-service-api image for both scheduler and workers
+  worker:
+    replicas: 2  # Number of dask worker replicas
+    image:
+      # Uses the same image and tag as the avatar API
+      repository: quay.io/octopize/avatar-service-api
+      tag: "0.0.1"  # Should match avatarServiceApiVersion
+      pullSecrets:
+        - name: docker-local-pull-secret
+    
+    # Environment variables for dask workers
+    env:
+      - name: ENV_NAME
+        value: "test.helm"  # Should match envName
+      - name: IS_SENTRY_ENABLED
+        value: "True"
+      - name: AVATAR_PDFGENERATOR_URL
+        value: "http://avatar-pdf:8001"
+      # These are just to make the configuration work, not used by dask worker
+      - name: AVATAR_API_URL
+        value: "http://avatar-api:8000"
+      - name: DASK_DISTRIBUTED__SCHEDULER__ALLOWED_FAILURES
+        value: "1"
+    
+    # Preload dask worker setup
+    extraArgs:
+      - "--preload"
+      - "api.domain.dask_worker_setup"
+  
+  scheduler:
+    name: scheduler
+    image:
+      # Uses the same image and tag as the avatar API
+      repository: quay.io/octopize/avatar-service-api
+      tag: "0.0.1"  # Should match avatarServiceApiVersion
+      pullSecrets:
+        - name: docker-local-pull-secret
+    
+    # Environment variables for dask scheduler (same as workers)
+    env:
+      - name: ENV_NAME
+        value: "test.helm"  # Should match envName
+      - name: IS_SENTRY_ENABLED
+        value: "True"
+      - name: AVATAR_PDFGENERATOR_URL
+        value: "http://avatar-pdf:8001"
+      - name: AVATAR_API_URL
+        value: "http://avatar-api:8000"
+      - name: DASK_DISTRIBUTED__SCHEDULER__ALLOWED_FAILURES
+        value: "1"
+  
+  # Disable jupyter notebook
+  jupyter:
+    enabled: false
+
 authentik:
   enabled: true
 
