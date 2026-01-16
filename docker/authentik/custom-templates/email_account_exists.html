@@ -1,10 +1,11 @@
 {# This template is sent when someone tries to register with an email that already exists #}
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Account Already Exists</title>
+    <title>{% trans 'Account Already Exists' %}</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -90,36 +91,36 @@
 <body>
     <div class="email-container">
         <div class="header">
-            <h1>🔐 Registration Attempt Detected</h1>
+            <h1>{% trans 'Registration Attempt Detected' %}</h1>
         </div>
         <div class="content">
-            <p>Hello,</p>
-            <p>We received a registration attempt using this email address, but an account already exists.</p>
+            <p>{% trans 'Hello,' %}</p>
+            <p>{% trans 'We received a registration attempt using this email address, but an account already exists.' %}</p>
             
             <div class="info-box">
-                <p><strong>ℹ️ Account exists:</strong> You already have an account with this email address. You cannot create a new account with the same email.</p>
+                <p><strong>{% trans 'Account exists:' %}</strong> {% trans 'You already have an account with this email address. You cannot create a new account with the same email.' %}</p>
             </div>
             
-            <p><strong>If this was you:</strong></p>
-            <p>It looks like you already have an account. If you've forgotten your password, you can reset it by clicking the button below:</p>
+            <p><strong>{% trans 'If this was you:' %}</strong></p>
+            <p>{% trans "It looks like you already have an account. If you've forgotten your password, you can reset it by clicking the button below:" %}</p>
             <center>
-                <a href="{{ url }}" class="button">Reset My Password</a>
+                <a href="{{ url }}" class="button">{% trans 'Reset My Password' %}</a>
             </center>
-            <p>Or copy and paste this link into your browser:</p>
+            <p>{% trans 'Or copy and paste this link into your browser:' %}</p>
             <p style="word-break: break-all; color: #f5576c; font-size: 14px;">{{ url }}</p>
             
             <div class="security-note">
-                <p><strong>⚠️ If this wasn't you:</strong></p>
-                <p>Someone may have used your email address by mistake. Your existing account remains secure and no action is required on your part.</p>
-                <p style="margin-top: 10px;">For your security, we recommend ensuring your password is strong and unique. If you suspect any suspicious activity, please contact our support team immediately.</p>
+                <p><strong>{% trans "If this wasn't you:" %}</strong></p>
+                <p>{% trans 'Someone may have used your email address by mistake. Your existing account remains secure and no action is required on your part.' %}</p>
+                <p style="margin-top: 10px;">{% trans 'For your security, we recommend ensuring your password is strong and unique. If you suspect any suspicious activity, please contact our support team immediately.' %}</p>
             </div>
             
-            <p>Best regards,<br>The Team</p>
+            <p>{% trans 'Best regards,' %}<br>{% trans 'The Team' %}</p>
         </div>
         <div class="footer">
-            <p>This email was sent automatically, please do not reply.</p>
-            <p>If you have any questions, please contact our support.</p>
-            <p>&copy; 2026 Octopize. All rights reserved.</p>
+            <p>{% trans 'This email was sent automatically, please do not reply.' %}</p>
+            <p>{% trans 'If you have any questions, please contact our support.' %}</p>
+            <p>&copy; 2026 Octopize. {% trans 'All rights reserved.' %}</p>
         </div>
     </div>
 </body>

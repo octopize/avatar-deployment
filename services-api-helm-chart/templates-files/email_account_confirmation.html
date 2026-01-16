@@ -1,10 +1,11 @@
 {# This template is used for account confirmation emails #}
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome - Confirm Your Account</title>
+    <title>{% trans 'Welcome - Confirm Your Account' %}</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -67,23 +68,25 @@
 <body>
     <div class="email-container">
         <div class="header">
-            <h1>Welcome - Confirm Your Account</h1>
+            <h1>{% trans 'Welcome - Confirm Your Account' %}</h1>
         </div>
         <div class="content">
-            <p>Hello {{ user.name }},</p>
-            <p>Thank you for creating an account!</p>
-            <p>To activate your account, please confirm your email address by clicking the button below:</p>
+            {% blocktrans with username=user.username %}
+            <p>Hello {{ username }},</p>
+            {% endblocktrans %}
+            <p>{% trans 'Thank you for creating an account!' %}</p>
+            <p>{% trans 'To activate your account, please confirm your email address by clicking the button below:' %}</p>
             <center>
-                <a href="{{ url }}" class="button">Confirm Email</a>
+                <a href="{{ url }}" class="button">{% trans 'Confirm Email' %}</a>
             </center>
-            <p>Or copy and paste this link into your browser:</p>
-            <p style="word-break: break-all; color: #3BD6B0; font-size: 14px;">{{ url }}</p>
+            <p>{% trans 'Or copy and paste this link into your browser:' %}</p>
+            <p {% trans 'Once your account is activated, you can access all features.' %}</p>
             
-            <p>Once your account is activated, you can access all features.</p>
-            
-            <p>See you soon,<br>The Team</p>
+            <p>{% trans 'See you soon,' %}<br>{% trans 'The Team' %}</p>
         </div>
         <div class="footer">
+            <p>{% trans 'This email was sent automatically, please do not reply.' %}</p>
+            <p>&copy; 2026 Octopize. {% trans 'All rights reserved.' %}
             <p>This email was sent automatically, please do not reply.</p>
             <p>&copy; 2026 Octopize. All rights reserved.</p>
         </div>
