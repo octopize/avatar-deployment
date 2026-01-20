@@ -169,6 +169,9 @@ authentik:
 
     log_level: info
 
+    disable_startup_analytics: true
+    disable_update_check: true
+
     error_reporting:
       enabled: false
 

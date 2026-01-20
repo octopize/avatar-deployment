@@ -25,6 +25,9 @@ x-authentik-environment: &authentik-environment
     AUTHENTIK_POSTGRESQL__PASSWORD: file:///run/secrets/authentik_database_password
     AUTHENTIK_POSTGRESQL__USER: file:///run/secrets/authentik_database_user
     AUTHENTIK_SECRET_KEY: file:///run/secrets/authentik_secret_key
+    AUTHENTIK_DISABLE_STARTUP_ANALYTICS: true
+    AUTHENTIK_DISABLE_UPDATE_CHECK: true
+    AUTHENTIK_ERROR_REPORTING__ENABLED: false
     AUTHENTIK_EMAIL__HOST: ${SMTP_HOST}
     AUTHENTIK_EMAIL__PORT: ${SMTP_PORT}
     AUTHENTIK_EMAIL__USERNAME: ${SMTP_USERNAME}
