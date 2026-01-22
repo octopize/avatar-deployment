@@ -1,0 +1,22 @@
+{{- if .Values.authentik.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authentik-branding
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "avatar.labels" . | nindent 4 }}
+binaryData:
+  {{- /*
+    Load branding assets from common/authentik-branding/ directory.
+    These files are base64-encoded and stored in the ConfigMap.
+    
+    Note: We use .Files.Get to load the raw binary content, then pipe it
+    through b64enc to properly encode it for Kubernetes binaryData field.
+    
+    The ConfigMap will be mounted to authentik pods using subPath to ensure
+    we only overwrite the specific branding files, not the entire /media/public/ directory.
+  */ -}}
+  favicon.ico: {{ .Files.Get "branding/favicon.ico" | b64enc | quote }}
+  logo.png: {{ .Files.Get "branding/logo.png" | b64enc | quote }}
+{{- end }}

@@ -202,12 +202,24 @@ authentik:
       - name: custom-email-templates
         configMap:
           name: authentik-custom-templates
+      - name: branding-assets
+        configMap:
+          name: authentik-branding
     
     volumeMounts:
       # Mount custom templates directory so authentik can discover them in the UI
       # Templates will appear in the email stage dropdown
       - name: custom-email-templates
         mountPath: /templates/custom
+        readOnly: true
+      # Mount branding assets using subPath to only overwrite specific files
+      - name: branding-assets
+        mountPath: /media/public/favicon.ico
+        subPath: favicon.ico
+        readOnly: true
+      - name: branding-assets
+        mountPath: /media/public/brand_logo.png
+        subPath: logo.png
         readOnly: true
 
   # Server configuration to mount custom templates
@@ -217,10 +229,22 @@ authentik:
       - name: custom-email-templates
         configMap:
           name: authentik-custom-templates
+      - name: branding-assets
+        configMap:
+          name: authentik-branding
     
     volumeMounts:
       # Mount custom templates directory so authentik can discover them in the UI
       # Templates will appear in the email stage dropdown
       - name: custom-email-templates
         mountPath: /templates/custom
+        readOnly: true
+      # Mount branding assets using subPath to only overwrite specific files
+      - name: branding-assets
+        mountPath: /media/public/favicon.ico
+        subPath: favicon.ico
+        readOnly: true
+      - name: branding-assets
+        mountPath: /media/public/brand_logo.png
+        subPath: logo.png
         readOnly: true
