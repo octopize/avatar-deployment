@@ -72,6 +72,7 @@ def sync_with_rsync(
     target: Path,
     dry_run: bool = False,
     verbose: bool = False,
+    file_pattern: str = "*.html",
 ) -> bool:
     """Sync files using rsync if available."""
     if not shutil.which("rsync"):
@@ -81,9 +82,17 @@ def sync_with_rsync(
         "rsync",
         "-av",
         "--delete",
-        "--include=*.html",
-        "--exclude=*",
     ]
+    
+    # Add file pattern filters
+    if file_pattern == "*.html":
+        rsync_opts.extend(["--include=*.html", "--exclude=*"])
+    elif file_pattern == "branding":
+        rsync_opts.extend([
+            "--include=*.ico",
+            "--include=*.png",
+            "--exclude=*",
+        ])
     
     if dry_run:
         rsync_opts.append("--dry-run")
@@ -134,7 +143,14 @@ def sync_to_target(
         print(f"→ Syncing to {target_name}...")
     
     # Try rsync first, fall back to manual copy
+<<<<<<< HEAD
     if not sync_with_rsync(source, target, dry_run, verbose):
+||||||| parent of 7df49a5 (feat: add authentik custom branding support for Docker & Helm)
+    if not sync_with_rsync(source, target, dry_run, verbose):
+        sync_manual(source, target, dry_run)
+=======
+    if not sync_with_rsync(source, target, dry_run, verbose, file_pattern):
+>>>>>>> 7df49a5 (feat: add authentik custom branding support for Docker & Helm)
         sync_manual(source, target, dry_run, file_pattern)
 
 
@@ -143,7 +159,14 @@ def main() -> int:
     args = parse_args()
     
     # Resolve paths relative to script location
+<<<<<<< HEAD
     
+||||||| parent of 7df49a5 (feat: add authentik custom branding support for Docker & Helm)
+    script_dir = Path(__file__).parent.resolve()
+=======
+    script_dir = Path(__file__).parent.resolve()
+
+>>>>>>> 7df49a5 (feat: add authentik custom branding support for Docker & Helm)
     # Email templates paths
     source_path = script_dir / SOURCE_DIR
     helm_target_path = script_dir / HELM_TARGET_DIR
