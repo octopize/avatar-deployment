@@ -221,6 +221,10 @@ authentik:
         mountPath: /media/public/brand_logo.png
         subPath: logo.png
         readOnly: true
+      - name: branding-assets
+        mountPath: /media/public/background.png
+        subPath: background.png
+        readOnly: true
 
   # Server configuration to mount custom templates
   # Mirror the same configuration as worker for consistency
@@ -247,4 +251,8 @@ authentik:
       - name: branding-assets
         mountPath: /media/public/brand_logo.png
         subPath: logo.png
+        readOnly: true
+      - name: branding-assets
+        mountPath: /media/public/background.png
+        subPath: background.png
         readOnly: true
