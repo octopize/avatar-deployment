@@ -9,6 +9,7 @@ data:
   AVATAR_STORAGE_ENDPOINT_INTERNAL_URL: "{{ .Values.web.config.storageEndpointInternalHost }}:{{ .Values.web.config.storageEndpointInternalPort }}"
   AVATAR_API_PUBLIC_URL: "{{ .Values.web.config.apiPublicHost }}{{ if .Values.web.config.apiPublicPort }}:{{ .Values.web.config.apiPublicPort }}{{ end }}"
   AVATAR_API_INTERNAL_URL: "{{ .Values.web.config.apiInternalHost }}:{{ .Values.web.config.apiInternalPort }}"
+  AVATAR_WEB_CLIENT_URL: "{{ .Values.web.config.webClientUrl }}"
   AVATAR_SSO_URL: "{{ .Values.web.config.ssoUrl }}"
   AVATAR_SSO_ENABLED: "{{ .Values.web.config.ssoEnabled }}"
   ENV_NAME: "{{ .Values.web.config.envName }}"

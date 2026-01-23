@@ -78,6 +78,7 @@ web:
     apiPublicPort: ""
     apiInternalHost: "http://avatar-api"
     apiInternalPort: 8000
+    webClientUrl: "https://avatar.yourcompany.com"
     ssoEnabled: "false"
     ssoUrl: "https://avatar.yourcompany.com/sso/"
     envName: "prod"
