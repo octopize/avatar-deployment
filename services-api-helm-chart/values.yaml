@@ -155,6 +155,10 @@ api:
 authentik:
   enabled: true
 
+  global:
+    image:
+      tag: 2025.12.1
+
   authentik:
     secret_key: ""
 
