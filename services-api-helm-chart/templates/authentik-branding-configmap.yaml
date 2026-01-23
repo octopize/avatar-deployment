@@ -7,7 +7,6 @@ metadata:
   labels:
     {{- include "avatar.labels" . | nindent 4 }}
 binaryData:
-  {{- /* Branding assets from branding/ dir, base64-encoded, mounted to authentik with subPath */ }}
   favicon.ico: {{ .Files.Get "branding/favicon.ico" | b64enc | quote }}
   logo.png: {{ .Files.Get "branding/logo.png" | b64enc | quote }}
   background.png: {{ .Files.Get "branding/background.png" | b64enc | quote }}
