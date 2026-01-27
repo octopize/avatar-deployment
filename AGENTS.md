@@ -124,13 +124,13 @@ See [docker/deploying-on-single-instance.md](docker/deploying-on-single-instance
 ## Specialized Agent: Authentik Email Templates
 
 **Trigger**: Working with authentication emails in `common/authentik-templates/`  
-**Skill Reference**: [skills/authentik-email-templates/SKILL.md](skills/authentik-email-templates/SKILL.md)
+**Skill Reference**: [.claude/skills/authentik-email-templates/SKILL.md](.claude/skills/authentik-email-templates/SKILL.md)
 
 ### Key Constraints
 
-- **Django template syntax**: Use `{{ user.name }}`, `{{ url }}` (see [skills/authentik-email-templates/references/authentik-variables.md](skills/authentik-email-templates/references/authentik-variables.md))
+- **Django template syntax**: Use `{{ user.name }}`, `{{ url }}` (see [.claude/skills/authentik-email-templates/references/authentik-variables.md](.claude/skills/authentik-email-templates/references/authentik-variables.md))
 - **Inline CSS only** - Email client compatibility requirement
-- **Octopize brand colors**: Teal gradients (#38f9d7, #43e97b) per [skills/authentik-email-templates/references/color-schemes.md](skills/authentik-email-templates/references/color-schemes.md)
+- **Octopize brand colors**: Teal gradients (#38f9d7, #43e97b) per [.claude/skills/authentik-email-templates/references/color-schemes.md](.claude/skills/authentik-email-templates/references/color-schemes.md)
 - **Business casual tone, no emojis**
 - **Always provide plain text URL** alongside buttons
 
@@ -149,17 +149,6 @@ See [docker/deploying-on-single-instance.md](docker/deploying-on-single-instance
 3. **Using `latest` image tags** - Pin specific versions in values.yaml (see avatarServiceApiVersion)
 4. **Helm template variable confusion** - Authentik templates use `{{ }}` for Django, Helm uses `{{ .Values }}` - they don't interfere because `.Files.Glob` loads raw content
 
----
-
-## Adding New Capabilities
-
-To add new specialized agent skills:
-
-1. Create skill directory: `skills/[skill-name]/`
-2. Define skill per [skill-creator.md](skill-creator.md)
-3. Add assets in `skills/[skill-name]/assets/`
-4. Add references in `skills/[skill-name]/references/`
-5. Document agent capabilities in this file
 
 ---
 
