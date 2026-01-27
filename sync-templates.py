@@ -143,14 +143,7 @@ def sync_to_target(
         print(f"→ Syncing to {target_name}...")
     
     # Try rsync first, fall back to manual copy
-<<<<<<< HEAD
-    if not sync_with_rsync(source, target, dry_run, verbose):
-||||||| parent of 7df49a5 (feat: add authentik custom branding support for Docker & Helm)
-    if not sync_with_rsync(source, target, dry_run, verbose):
-        sync_manual(source, target, dry_run)
-=======
     if not sync_with_rsync(source, target, dry_run, verbose, file_pattern):
->>>>>>> 7df49a5 (feat: add authentik custom branding support for Docker & Helm)
         sync_manual(source, target, dry_run, file_pattern)
 
 
@@ -159,14 +152,8 @@ def main() -> int:
     args = parse_args()
     
     # Resolve paths relative to script location
-<<<<<<< HEAD
-    
-||||||| parent of 7df49a5 (feat: add authentik custom branding support for Docker & Helm)
-    script_dir = Path(__file__).parent.resolve()
-=======
     script_dir = Path(__file__).parent.resolve()
 
->>>>>>> 7df49a5 (feat: add authentik custom branding support for Docker & Helm)
     # Email templates paths
     source_path = script_dir / SOURCE_DIR
     helm_target_path = script_dir / HELM_TARGET_DIR
