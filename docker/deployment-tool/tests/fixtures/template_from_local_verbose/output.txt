@@ -14,6 +14,8 @@ Executing configuration steps...
 
 --- Configure telemetry and monitoring (Sentry, usage analytics) ---
 
+--- Configure application logging settings ---
+
 --- Configure PostgreSQL database credentials ---
 
 ============================================================

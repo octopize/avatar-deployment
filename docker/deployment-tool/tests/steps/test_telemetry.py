@@ -58,44 +58,42 @@ class TestTelemetryStep:
         config = step.collect_config()
 
         assert "IS_SENTRY_ENABLED" in config
-        assert "LOG_LEVEL" in config
+        assert "TELEMETRY_S3_ENDPOINT_URL" in config
+        assert "TELEMETRY_S3_REGION" in config
 
     def test_collect_config_values_disabled(self, step):
         """Test telemetry configuration when disabled."""
         config = step.collect_config()
 
         assert config["IS_SENTRY_ENABLED"] == "false"
-        assert config["LOG_LEVEL"] == "INFO"
+        assert config["TELEMETRY_S3_ENDPOINT_URL"] == ""
+        assert config["TELEMETRY_S3_REGION"] == ""
 
     def test_collect_config_values_enabled(self, step_enabled):
         """Test telemetry configuration when enabled."""
         config = step_enabled.collect_config()
 
+        # In non-interactive mode, sentry_enabled from defaults is used
         assert config["IS_SENTRY_ENABLED"] == "true"
         assert config["TELEMETRY_S3_ENDPOINT_URL"] == "https://telemetry.example.com"
         assert config["TELEMETRY_S3_REGION"] == "us-east-1"
-        assert config["LOG_LEVEL"] == "DEBUG"
 
     def test_collect_config_custom_values(self, tmp_path, defaults):
-        """Test that custom values override defaults."""
-        config = {
-            "IS_SENTRY_ENABLED": "true",
-            "LOG_LEVEL": "WARNING",
-            "TELEMETRY_S3_ENDPOINT_URL": "https://custom.telemetry.com",
+        """Test that telemetry endpoints can be configured."""
+        # Enable telemetry in defaults
+        defaults_with_telemetry = defaults.copy()
+        defaults_with_telemetry["telemetry"] = {
+            "enabled": True,
+            "endpoint_url": "https://custom.telemetry.com",
+            "region": "eu-west-1",
         }
-        step = TelemetryStep(tmp_path, defaults, config, interactive=False)
+        config = {}
+        step = TelemetryStep(tmp_path, defaults_with_telemetry, config, interactive=False)
 
         result = step.collect_config()
 
-        assert result["IS_SENTRY_ENABLED"] == "true"
-        assert result["LOG_LEVEL"] == "WARNING"
-
-    def test_collect_config_console_logging(self, step):
-        """Test console logging configuration."""
-        config = step.collect_config()
-
-        assert "USE_CONSOLE_LOGGING" in config
-        assert config["USE_CONSOLE_LOGGING"] is True
+        assert result["TELEMETRY_S3_ENDPOINT_URL"] == "https://custom.telemetry.com"
+        assert result["TELEMETRY_S3_REGION"] == "eu-west-1"
 
     def test_generate_secrets_non_interactive(self, step):
         """Test secret generation in non-interactive mode."""

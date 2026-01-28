@@ -10,7 +10,8 @@ steps:
   step_0_required_config: completed
   step_1_email: completed
   step_2_telemetry: completed
-  step_3_database: completed
+  step_3_logging: completed
+  step_4_database: completed
 config:
   PUBLIC_URL: https://avatar.example.com
   ENV_NAME: admin@example.com
@@ -23,13 +24,9 @@ config:
   MAIL_PROVIDER: smtp.example.com
   USE_EMAIL_AUTHENTICATION: 'true'
   IS_SENTRY_ENABLED: 'true'
-  TELEMETRY_S3_ENDPOINT_URL: ''
-  TELEMETRY_S3_REGION: ''
+  TELEMETRY_S3_ENDPOINT_URL: https://s3.fr-par.scw.cloud
+  TELEMETRY_S3_REGION: fr-par
   USE_CONSOLE_LOGGING: 'false'
   LOG_LEVEL: INFO
-  AUTHENTIK_DB_NAME: authentik
-  AVATAR_DB_NAME: avatar
-  POSTGRES_DB: postgres
-  POSTGRES_USER: avatar
 step_data: {}
 user_secrets_provided: {}

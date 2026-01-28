@@ -16,70 +16,37 @@ class TelemetryStep(DeploymentStep):
         """Collect telemetry configuration."""
         config = {}
 
-        if self.interactive:
-            print("\n--- Telemetry & Monitoring ---")
-
-        # Check if preset already configured this
-        if "IS_SENTRY_ENABLED" in self.config:
-            sentry_enabled = self.config["IS_SENTRY_ENABLED"]
-        else:
-            sentry_enabled = (
-                self.prompt_yes_no(
-                    "Enable Sentry error monitoring?",
-                    default=self.defaults["application"]["sentry_enabled"] == "true",
-                )
-                if self.interactive
-                else self.defaults["application"]["sentry_enabled"] == "true"
+        sentry_enabled = (
+            self.prompt_yes_no(
+                "Enable Sentry error monitoring?",
+                default=self.defaults["application"]["sentry_enabled"] == "true",
             )
+            if self.interactive
+            else self.defaults["application"]["sentry_enabled"] == "true"
+        )
 
         config["IS_SENTRY_ENABLED"] = "true" if sentry_enabled else "false"
 
-        # Telemetry
-        if "TELEMETRY_S3_ENDPOINT_URL" in self.config:
-            # Already configured by preset
-            pass
-        else:
-            enable_telemetry = (
-                self.prompt_yes_no(
-                    "Enable usage telemetry?",
-                    default=self.defaults["telemetry"]["enabled"],
-                )
-                if self.interactive
-                else self.defaults["telemetry"]["enabled"]
+        enable_telemetry = (
+            self.prompt_yes_no(
+                "Enable usage telemetry?",
+                default=self.defaults["telemetry"]["enabled"],
             )
-
-            if enable_telemetry:
-                config["TELEMETRY_S3_ENDPOINT_URL"] = self.defaults["telemetry"][
-                    "endpoint_url"
-                ]
-                config["TELEMETRY_S3_REGION"] = self.defaults["telemetry"]["region"]
-            else:
-                config["TELEMETRY_S3_ENDPOINT_URL"] = ""
-                config["TELEMETRY_S3_REGION"] = ""
-
-        # Console logging
-        if "USE_CONSOLE_LOGGING" not in self.config:
-            config["USE_CONSOLE_LOGGING"] = self.defaults["application"][
-                "use_console_logging"
-            ]
-
-        # Log level
-        config["LOG_LEVEL"] = self.config.get(
-            "LOG_LEVEL", self.defaults["application"]["log_level"]
+            if self.interactive
+            else self.defaults["telemetry"]["enabled"]
         )
+
+        if enable_telemetry:
+            config["TELEMETRY_S3_ENDPOINT_URL"] = self.defaults["telemetry"][
+                "endpoint_url"
+            ]
+            config["TELEMETRY_S3_REGION"] = self.defaults["telemetry"]["region"]
+        else:
+            config["TELEMETRY_S3_ENDPOINT_URL"] = ""
+            config["TELEMETRY_S3_REGION"] = ""
 
         return config
 
     def generate_secrets(self) -> dict[str, str]:
         """Generate monitoring-related secrets."""
-        secrets_dict = {}
-
-        # Sentry DSN (optional)
-        if self.config.get("IS_SENTRY_ENABLED") == "true" and self.interactive:
-            sentry_dsn = self.input_gatherer.prompt(
-                "Sentry DSN (press Enter to skip)", default=""
-            )
-            if sentry_dsn:
-                secrets_dict["sentry_dsn"] = sentry_dsn
-
-        return secrets_dict
+        return {}

@@ -16,8 +16,7 @@ class EmailStep(DeploymentStep):
         """Collect email configuration."""
         config = {}
 
-        if self.interactive:
-            print("\n--- Email Configuration ---")
+        print("\n--- Email Configuration ---")
 
         # Email provider
         default_provider = self.defaults["email"]["provider"]

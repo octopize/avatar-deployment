@@ -45,6 +45,7 @@ from octopize_avatar_deploy.steps import (
     DatabaseStep,
     DeploymentStep,
     EmailStep,
+    LoggingStep,
     RequiredConfigStep,
     TelemetryStep,
 )
@@ -66,6 +67,7 @@ class DeploymentConfigurator:
         RequiredConfigStep,
         EmailStep,
         TelemetryStep,
+        LoggingStep,
         DatabaseStep,
     ]
 

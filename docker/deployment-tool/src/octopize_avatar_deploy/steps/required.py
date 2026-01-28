@@ -16,11 +16,6 @@ class RequiredConfigStep(DeploymentStep):
         """Collect required configuration."""
         config = {}
 
-        if self.interactive:
-            print("\n" + "=" * 60)
-            print("Required Configuration")
-            print("=" * 60)
-
         # Public URL - Required
         if "PUBLIC_URL" in self.config:
             config["PUBLIC_URL"] = self.config["PUBLIC_URL"]
