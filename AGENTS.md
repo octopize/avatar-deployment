@@ -3,6 +3,8 @@
 **Project**: Avatar Deployment Infrastructure  
 **Purpose**: Multi-environment deployment configs for Octopize Avatar platform (Kubernetes Helm + Docker Compose)
 
+**Important**: Do NOT create summary documents or extensive documentation after completing tasks unless explicitly requested by the user. Keep responses concise and focused on the task at hand.
+
 ## Architecture Overview
 
 This repository manages deployments for the Avatar platform using two distinct deployment strategies:
@@ -152,6 +154,30 @@ See [docker/deploying-on-single-instance.md](docker/deploying-on-single-instance
 
 ---
 
+## Docker Deployment Tool Testing
+
+**Trigger**: Working with tests in `docker/deployment-tool/tests/`  
+**Quick Reference**: [docker/deployment-tool/tests/QUICK_REFERENCE.md](docker/deployment-tool/tests/QUICK_REFERENCE.md)
+
+### Testing Workflow
+
+When adding or modifying tests for the deployment tool, **always consult QUICK_REFERENCE.md** first for:
+
+- Running tests (`just test-deploy-tool` or `uv run pytest`)
+- Creating new test cases with fixtures
+- Updating expected output fixtures
+- Using CLITestHarness for integration tests
+- Available pytest fixtures and utilities
+
+**Key Points**:
+
+- Use `--template-from <path>` argument (not `--skip-download` or `--templates-dir`)
+- Templates are always stored at `output-dir/.avatar-templates`
+- Update fixtures with `AVATAR_DEPLOY_UPDATE_FIXTURES=1 uv run pytest`
+- Test patterns documented in QUICK_REFERENCE.md with working examples
+
+---
+
 ## Project File Map
 
 ```
@@ -165,7 +191,10 @@ See [docker/deploying-on-single-instance.md](docker/deploying-on-single-instance
 ├── docker/                            ← Single-instance deployment
 │   ├── Makefile                       ← Secret generation targets
 │   ├── docker-compose.yml             ← Service definitions
-│   └── authentik/custom-templates/    ← Synced from common/ (DO NOT EDIT)
+│   ├── authentik/custom-templates/    ← Synced from common/ (DO NOT EDIT)
+│   └── deployment-tool/               ← Deployment configuration tool
+│       └── tests/                     ← Test suite with fixtures
+│           └── QUICK_REFERENCE.md     ← Testing guide (READ THIS FIRST)
 ├── justfile & helm.just               ← Primary build tool (Helm operations)
 ├── sync-templates.py                  ← Template sync script (rsync or copy)
 └── skills/                            ← Agent skill definitions

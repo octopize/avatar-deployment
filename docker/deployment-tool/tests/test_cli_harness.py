@@ -60,16 +60,16 @@ class TestCLITestHarness:
         # Test with mixed types
         original = ["text1", True, False, "text2", "normal text"]
 
-        serialized = CLITestHarness._serialize_responses(original)
-        deserialized = CLITestHarness._deserialize_responses(serialized)
+        serialized = CLITestHarness.serialize_responses(original)
+        deserialized = CLITestHarness.deserialize_responses(serialized)
 
         assert deserialized == original
 
     def test_serialize_empty_responses(self):
         """Test serialization of empty response list."""
         original = []
-        serialized = CLITestHarness._serialize_responses(original)
-        deserialized = CLITestHarness._deserialize_responses(serialized)
+        serialized = CLITestHarness.serialize_responses(original)
+        deserialized = CLITestHarness.deserialize_responses(serialized)
 
         assert deserialized == []
         assert serialized == ""

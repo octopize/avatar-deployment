@@ -1,0 +1,18 @@
+# No telemetry deployment scenario
+responses:
+  - "https://avatar.internal.com"  # Base URL
+  - "admin@internal.com"          # Admin email
+  - "smtp.internal.com"           # SMTP host
+  - "587"                         # SMTP port
+  - "noreply@internal.com"        # From address
+  - "user"                        # SMTP username
+  - "pass"                        # SMTP password
+  - false                          # Disable telemetry
+  - "postgres.internal.local"     # DB host
+  - "avatar"                      # DB name
+  - "avatar_user"                 # DB user
+  - "seaweedfs"                   # Storage backend
+  - "s3.internal.local:8333"      # Storage endpoint
+  - "avatar-dev-bucket"           # Bucket name
+  - "7d"                          # Dataset expiration
+  - "development"                 # Environment name

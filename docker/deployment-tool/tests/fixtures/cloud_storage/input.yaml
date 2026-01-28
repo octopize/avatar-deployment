@@ -1,0 +1,18 @@
+# Cloud storage deployment scenario
+responses:
+  - "https://avatar.cloud.example.com"  # Base URL
+  - "admin@cloud.example.com"          # Admin email
+  - "smtp.cloud.com"                   # SMTP host
+  - "587"                              # SMTP port
+  - "noreply@cloud.example.com"        # From address
+  - "user"                             # SMTP username
+  - "pass"                             # SMTP password
+  - "postgres.cloud.local"             # DB host
+  - "avatar"                           # DB name
+  - "avatar_user"                      # DB user
+  - "scaleway"                         # Storage backend
+  - "s3.nl-ams.scw.cloud"              # Storage endpoint
+  - "avatar-prod-bucket"               # Bucket name
+  - "90d"                              # Dataset expiration
+  - true                                # Enable telemetry
+  - "production"                       # Environment name

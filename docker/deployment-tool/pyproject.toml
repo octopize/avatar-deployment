@@ -65,10 +65,47 @@ include = [
 ]
 
 [tool.pytest.ini_options]
+# Test discovery
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+
+# Output options
+addopts = [
+    "-v",                          # Verbose output
+    "--strict-markers",            # Error on unknown markers
+    "--tb=short",                  # Short traceback format
+    "--color=yes",                 # Colored output
+    "-ra",                         # Show summary of all test results
+]
+
+# Markers
+markers = [
+    "integration: Integration tests using CLITestHarness (slow)",
+    "fixtures: Tests that require fixture files",
+    "parametrized: Parametrized tests with multiple scenarios",
+    "slow: Tests that take significant time to run",
+]
+
+[tool.coverage.run]
+source = ["src/octopize_avatar_deploy"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/.venv/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstract",
+]
 
 [tool.ruff]
 target-version = "py312"

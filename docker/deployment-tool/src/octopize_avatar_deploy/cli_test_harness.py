@@ -10,6 +10,7 @@ import os
 import sys
 from pathlib import Path
 
+from octopize_avatar_deploy.configure import main
 from octopize_avatar_deploy.input_gatherer import MockInputGatherer
 from octopize_avatar_deploy.printer import FilePrinter, SilentPrinter
 
@@ -67,7 +68,7 @@ class CLITestHarness:
             self._original_env[var] = os.environ.get(var)
 
         os.environ["AVATAR_DEPLOY_TEST_MODE"] = "1"
-        os.environ["AVATAR_DEPLOY_TEST_RESPONSES"] = self._serialize_responses(
+        os.environ["AVATAR_DEPLOY_TEST_RESPONSES"] = self.serialize_responses(
             self.responses
         )
 
@@ -97,7 +98,6 @@ class CLITestHarness:
         Returns:
             Exit code (0 for success, non-zero for failure)
         """
-        from octopize_avatar_deploy.configure import main
 
         try:
             with self:
@@ -117,7 +117,7 @@ class CLITestHarness:
             return 1
 
     @staticmethod
-    def _serialize_responses(responses: list[str | bool]) -> str:
+    def serialize_responses(responses: list[str | bool]) -> str:
         """Serialize responses to string format."""
         serialized = []
         for r in responses:
@@ -129,7 +129,7 @@ class CLITestHarness:
         return "|||".join(serialized)
 
     @staticmethod
-    def _deserialize_responses(serialized: str) -> list[str | bool]:
+    def deserialize_responses(serialized: str) -> list[str | bool]:
         """Deserialize responses from string format."""
         if not serialized:
             return []
@@ -159,7 +159,7 @@ def get_test_input_gatherer():
         return None
 
     serialized = os.environ.get("AVATAR_DEPLOY_TEST_RESPONSES", "")
-    responses = CLITestHarness._deserialize_responses(serialized)
+    responses = CLITestHarness.deserialize_responses(serialized)
 
     if not responses:
         return None

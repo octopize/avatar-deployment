@@ -1,0 +1,40 @@
+
+============================================================
+Avatar Deployment Configuration
+============================================================
+
+Executing configuration steps...
+
+
+--- Collect required deployment settings (PUBLIC_URL, ENV_NAME, etc.) ---
+
+--- Configure email provider (AWS SES or SMTP) and credentials ---
+
+--- Configure telemetry and monitoring (Sentry, usage analytics) ---
+
+--- Configure PostgreSQL database credentials ---
+
+--- Configure storage backend and generate application secrets ---
+
+============================================================
+Generating Configuration Files
+============================================================
+✓ Generated: {{OUTPUT_DIR}}/.env
+✓ Generated: {{OUTPUT_DIR}}/nginx/nginx.conf
+
+✓ Configuration files generated successfully!
+
+Writing 6 secrets to .secrets/ directory...
+✓ Secrets written successfully
+
+============================================================
+Configuration Complete!
+============================================================
+
+Configuration files generated in: {{OUTPUT_DIR}}
+
+Next steps:
+1. Review and edit the generated .env file
+2. Fill in any remaining secrets in .secrets/ directory
+3. Configure TLS certificates in the tls/ directory
+4. Run: docker compose up -d

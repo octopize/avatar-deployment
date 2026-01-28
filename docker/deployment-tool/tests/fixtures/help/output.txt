@@ -1,0 +1,20 @@
+usage: octopize-avatar-deploy [-h] [--output-dir OUTPUT_DIR]
+                              [--template-from TEMPLATE_FROM]
+                              [--config CONFIG] [--non-interactive]
+                              [--save-config] [--verbose]
+
+Avatar Deployment Configuration Tool
+
+options:
+  -h, --help            show this help message and exit
+  --output-dir OUTPUT_DIR
+                        Output directory for generated files (default: current
+                        directory)
+  --template-from TEMPLATE_FROM
+                        Template source: 'github' to download from repo, or
+                        path to local templates directory (default: github)
+  --config CONFIG       YAML configuration file to load
+  --non-interactive     Run in non-interactive mode (use defaults or config
+                        file)
+  --save-config         Save configuration to deployment-config.yaml
+  --verbose             Verbose output

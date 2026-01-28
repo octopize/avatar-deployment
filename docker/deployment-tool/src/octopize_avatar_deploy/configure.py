@@ -29,6 +29,8 @@ import yaml
 from jinja2 import Environment, FileSystemLoader
 
 from octopize_avatar_deploy.download_templates import (
+    GitHubTemplateProvider,
+    LocalTemplateProvider,
     download_templates,
 )
 from octopize_avatar_deploy.input_gatherer import (
@@ -362,9 +364,7 @@ class DeploymentRunner:
     def __init__(
         self,
         output_dir: Path | str,
-        templates_dir: Path | str | None = None,
-        download_branch: str = "main",
-        skip_download: bool = False,
+        template_from: str | Path = "github",
         verbose: bool = False,
         printer: Printer | None = None,
         input_gatherer: InputGatherer | None = None,
@@ -374,16 +374,14 @@ class DeploymentRunner:
 
         Args:
             output_dir: Directory where configuration files will be generated
-            templates_dir: Optional custom templates directory.
-                         If None, uses output_dir/.avatar-templates
-            download_branch: Git branch to download templates from
-            skip_download: Skip template download (use existing cached templates)
+            template_from: Either 'github' to download from the repo, or a path
+                         to local templates directory
             verbose: Enable verbose output
             printer: Optional printer for output (defaults to ConsolePrinter)
+            input_gatherer: Optional input gatherer for prompts
         """
         self.output_dir = Path(output_dir)
-        self.download_branch = download_branch
-        self.skip_download = skip_download
+        self.template_from = template_from
         self.verbose = verbose
 
         # Use Rich implementations if in interactive terminal, otherwise Console
@@ -411,40 +409,56 @@ class DeploymentRunner:
         else:
             self.input_gatherer = input_gatherer
 
-        # Determine templates directory
-        if templates_dir:
-            self.templates_dir = Path(templates_dir)
-        else:
-            self.templates_dir = self.output_dir / ".avatar-templates"
+        # Templates are always stored in output_dir/.avatar-templates
+        self.templates_dir = self.output_dir / ".avatar-templates"
 
     def ensure_templates(self) -> bool:
         """
-        Ensure templates are available by downloading or verifying cache.
+        Ensure templates are available by downloading from GitHub or copying from local path.
 
         Returns:
             True if templates are available, False otherwise
         """
-        if self.skip_download:
+        # Handle 'github' - download from repository
+        if self.template_from == "github":
             if self.verbose:
-                self.printer.print(
-                    f"Skipping download, using cached templates from "
-                    f"{self.templates_dir}"
-                )
+                self.printer.print("Downloading deployment templates from GitHub...")
+
+            success = download_templates(
+                output_dir=self.templates_dir,
+                force=False,  # Use cached if available
+                branch="main",
+                verbose=self.verbose,
+            )
+
+            if not success:
+                self.printer.print_error("Failed to download templates from GitHub")
+                return False
+
             return self._verify_templates()
 
-        # Download templates from GitHub
-        if self.verbose:
-            self.printer.print("Downloading deployment templates from GitHub...")
+        # Handle local path - copy templates from specified directory
+        template_source = Path(self.template_from)
+        if not template_source.exists():
+            self.printer.print_error(
+                f"Template source directory not found: {template_source}"
+            )
+            return False
 
-        success = download_templates(
-            output_dir=self.templates_dir,
-            force=False,  # Use cached if available
-            branch=self.download_branch,
-            verbose=self.verbose,
+        if self.verbose:
+            self.printer.print(
+                f"Copying templates from {template_source}"
+            )
+
+        provider = LocalTemplateProvider(
+            source_dir=str(template_source),
+            verbose=self.verbose
         )
 
+        success = provider.provide_all(self.templates_dir)
         if not success:
-            self.printer.print_warning("Failed to download some templates")
+            self.printer.print_warning("Failed to copy some templates")
+            return False
 
         return self._verify_templates()
 
@@ -497,8 +511,8 @@ class DeploymentRunner:
         # Ensure templates are available
         if not self.ensure_templates():
             raise RuntimeError(
-                f"Templates not available. Try running without --skip-download "
-                f"to download from GitHub (branch: {self.download_branch})"
+                "Templates not available. Use --template-from github to download "
+                "from the repository, or provide a valid local path."
             )
 
         # Create and run configurator
@@ -531,9 +545,10 @@ def main():
     )
 
     parser.add_argument(
-        "--templates-dir",
-        type=Path,
-        help="Templates directory (default: output-dir/.avatar-templates)",
+        "--template-from",
+        type=str,
+        default="github",
+        help="Template source: 'github' to download from repo, or path to local templates directory (default: github)",
     )
 
     parser.add_argument(
@@ -552,19 +567,6 @@ def main():
         "--save-config",
         action="store_true",
         help="Save configuration to deployment-config.yaml",
-    )
-
-    parser.add_argument(
-        "--download-branch",
-        type=str,
-        default="main",
-        help="Git branch to download templates from (default: main)",
-    )
-
-    parser.add_argument(
-        "--skip-download",
-        action="store_true",
-        help="Skip downloading templates (use cached versions)",
     )
 
     parser.add_argument(
@@ -590,9 +592,7 @@ def main():
     # Create deployment runner
     runner = DeploymentRunner(
         output_dir=args.output_dir,
-        templates_dir=args.templates_dir,
-        download_branch=args.download_branch,
-        skip_download=args.skip_download,
+        template_from=args.template_from,
         verbose=args.verbose,
         printer=test_printer,
         input_gatherer=test_input_gatherer,

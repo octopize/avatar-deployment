@@ -1,0 +1,18 @@
+# Basic deployment scenario
+responses:
+  - "https://avatar.example.com"  # Base URL
+  - "admin@example.com"          # Admin email
+  - "smtp.example.com"          # SMTP host
+  - "587"                       # SMTP port
+  - "noreply@example.com"       # From address
+  - "user"                      # SMTP username
+  - "pass"                      # SMTP password
+  - "postgres.local"            # DB host
+  - "avatar"                    # DB name
+  - "avatar_user"               # DB user
+  - "seaweedfs"                 # Storage backend
+  - "s3.local:8333"             # Storage endpoint
+  - "avatar-bucket"             # Bucket name
+  - "30d"                       # Dataset expiration
+  - true                        # Enable telemetry
+  - "production"                # Environment name
