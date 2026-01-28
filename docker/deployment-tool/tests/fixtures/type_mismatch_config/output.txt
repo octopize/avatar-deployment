@@ -1,3 +1,4 @@
+Loading configuration from {{OUTPUT_DIR}}/type_mismatch.yaml...
 
 ============================================================
 Avatar Deployment Configuration

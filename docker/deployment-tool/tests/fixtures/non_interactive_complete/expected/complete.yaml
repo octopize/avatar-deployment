@@ -1,0 +1,17 @@
+admin_email: admin@complete.com
+base_url: https://avatar.complete.com
+dataset_expiration: 30d
+db_host: db.complete.com
+db_name: avatar_complete
+db_user: avatar_user
+django_secret_key: complete-secret-key-123
+enable_telemetry: true
+environment_name: production
+smtp_from_address: noreply@complete.com
+smtp_host: smtp.complete.com
+smtp_password: smtp-pass
+smtp_port: 587
+smtp_username: smtp-user
+storage_backend: seaweedfs
+storage_bucket: avatar-data
+storage_endpoint: s3.complete.com:8333

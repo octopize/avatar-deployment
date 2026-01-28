@@ -21,6 +21,7 @@ Usage:
 
 import argparse
 import os
+import shutil
 import sys
 from pathlib import Path
 from typing import Any
@@ -165,6 +166,7 @@ class DeploymentConfigurator:
 
     def generate_configs(self) -> None:
         """Generate all configuration files from templates."""
+
         self.printer.print_header("Generating Configuration Files")
 
         # Generate .env file
@@ -174,6 +176,13 @@ class DeploymentConfigurator:
         nginx_dir = self.output_dir / "nginx"
         nginx_dir.mkdir(parents=True, exist_ok=True)
         self.render_template("nginx.conf.template", "nginx/nginx.conf")
+
+        # Copy docker-compose.yml from templates (it may be templated in the future)
+        docker_compose_src = self.templates_dir / "docker-compose.yml"
+        docker_compose_dst = self.output_dir / "docker-compose.yml"
+        if docker_compose_src.exists():
+            shutil.copy2(docker_compose_src, docker_compose_dst)
+            self.printer.print_success(f"Generated: {docker_compose_dst}")
 
         self.printer.print()
         self.printer.print_success("Configuration files generated successfully!")
@@ -235,9 +244,14 @@ class DeploymentConfigurator:
         # Load configuration from file if provided
         if config_file and config_file.exists():
             self.printer.print(f"Loading configuration from {config_file}...")
-            with open(config_file) as f:
-                loaded_config = yaml.safe_load(f) or {}
-            self.config.update(loaded_config)
+            try:
+                with open(config_file) as f:
+                    loaded_config = yaml.safe_load(f) or {}
+                self.config.update(loaded_config)
+            except yaml.YAMLError as e:
+                raise RuntimeError(f"Failed to parse YAML config file: {e}")
+            except Exception as e:
+                raise RuntimeError(f"Failed to load config file: {e}")
 
         # Define deployment steps
         steps = [
@@ -446,13 +460,10 @@ class DeploymentRunner:
             return False
 
         if self.verbose:
-            self.printer.print(
-                f"Copying templates from {template_source}"
-            )
+            self.printer.print(f"Copying templates from {template_source}")
 
         provider = LocalTemplateProvider(
-            source_dir=str(template_source),
-            verbose=self.verbose
+            source_dir=str(template_source), verbose=self.verbose
         )
 
         success = provider.provide_all(self.templates_dir)
@@ -469,6 +480,8 @@ class DeploymentRunner:
         Returns:
             True if templates are available, False otherwise
         """
+        from octopize_avatar_deploy.download_templates import REQUIRED_FILES
+
         if not self.templates_dir.exists():
             if self.verbose:
                 self.printer.print_error(
@@ -476,16 +489,23 @@ class DeploymentRunner:
                 )
             return False
 
-        template_files = list(self.templates_dir.glob("*.template"))
-        if not template_files:
+        # Check for required files
+        missing_files = []
+        for filename in REQUIRED_FILES:
+            if not (self.templates_dir / filename).exists():
+                missing_files.append(filename)
+
+        if missing_files:
             if self.verbose:
                 self.printer.print_error(
-                    f"No template files found in {self.templates_dir}"
+                    f"Missing required template files: {', '.join(missing_files)}"
                 )
             return False
 
         if self.verbose:
-            self.printer.print_success(f"Found {len(template_files)} template files")
+            self.printer.print_success(
+                f"Found all {len(REQUIRED_FILES)} required template files"
+            )
 
         return True
 
@@ -505,9 +525,42 @@ class DeploymentRunner:
 
         Raises:
             RuntimeError: If templates are not available
+            FileNotFoundError: If config file is specified but doesn't exist
+            yaml.YAMLError: If config file has invalid YAML syntax
+            ValueError: If config file has invalid values
             KeyboardInterrupt: If user cancels the process
             Exception: For other errors during configuration
         """
+        # Validate config file if provided
+        if config_file is not None:
+            if not config_file.exists():
+                self.printer.print_error(f"Config file not found: {config_file}")
+                raise FileNotFoundError(f"Config file not found: {config_file}")
+
+            # Try to load and validate the YAML
+            try:
+                with open(config_file) as f:
+                    config_data = yaml.safe_load(f)
+
+                if config_data is None:
+                    self.printer.print_error(f"Config file is empty: {config_file}")
+                    raise ValueError(f"Config file is empty: {config_file}")
+
+                if not isinstance(config_data, dict):
+                    self.printer.print_error(
+                        f"Config file must contain a YAML dictionary, got {type(config_data).__name__}"
+                    )
+                    raise ValueError(
+                        f"Config file must contain a YAML dictionary, got {type(config_data).__name__}"
+                    )
+
+            except yaml.YAMLError as e:
+                self.printer.print_error(
+                    f"Invalid YAML syntax in config file: {config_file}"
+                )
+                self.printer.print_error(str(e))
+                raise
+
         # Ensure templates are available
         if not self.ensure_templates():
             raise RuntimeError(

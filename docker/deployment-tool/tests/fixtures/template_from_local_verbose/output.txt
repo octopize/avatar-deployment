@@ -1,3 +1,5 @@
+Copying templates from /home/tom/Documents/dev/octopize/avatar-deployment/docker
+✓ Found all 3 required template files
 
 ============================================================
 Avatar Deployment Configuration

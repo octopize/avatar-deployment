@@ -22,6 +22,7 @@ Generating Configuration Files
 ============================================================
 ✓ Generated: {{OUTPUT_DIR}}/.env
 ✓ Generated: {{OUTPUT_DIR}}/nginx/nginx.conf
+✓ Generated: {{OUTPUT_DIR}}/docker-compose.yml
 
 ✓ Configuration files generated successfully!
 

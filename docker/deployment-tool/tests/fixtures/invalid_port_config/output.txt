@@ -1,3 +1,4 @@
+Loading configuration from {{OUTPUT_DIR}}/invalid_port.yaml...
 
 ============================================================
 Avatar Deployment Configuration

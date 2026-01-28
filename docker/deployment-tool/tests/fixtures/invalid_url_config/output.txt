@@ -1,3 +1,4 @@
+Loading configuration from {{OUTPUT_DIR}}/invalid_url.yaml...
 
 ============================================================
 Avatar Deployment Configuration

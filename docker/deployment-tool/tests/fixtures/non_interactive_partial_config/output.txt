@@ -1,3 +1,4 @@
+Loading configuration from {{OUTPUT_DIR}}/partial.yaml...
 
 ============================================================
 Avatar Deployment Configuration
