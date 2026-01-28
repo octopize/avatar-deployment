@@ -1,0 +1,264 @@
+"""
+Version compatibility checking for Avatar deployment tool.
+
+Ensures that the script version is compatible with template and config versions.
+Prevents old scripts from modifying new templates (forward compatibility).
+"""
+
+import re
+from pathlib import Path
+from typing import Optional
+
+# Script version (semantic versioning: MAJOR.MINOR.PATCH)
+SCRIPT_VERSION = "1.0.0"
+
+
+class VersionError(Exception):
+    """Raised when version compatibility check fails."""
+
+    pass
+
+
+def parse_version(version_str: str) -> tuple[int, int, int]:
+    """
+    Parse semantic version string into tuple.
+
+    Args:
+        version_str: Version string like "1.2.3"
+
+    Returns:
+        Tuple of (major, minor, patch)
+
+    Raises:
+        ValueError: If version string is invalid
+    """
+    match = re.match(r"^(\d+)\.(\d+)\.(\d+)$", version_str.strip())
+    if not match:
+        raise ValueError(f"Invalid version string: {version_str}")
+    return (int(match.group(1)), int(match.group(2)), int(match.group(3)))
+
+
+def parse_version_constraint(constraint: str) -> tuple[str, tuple[int, int, int]]:
+    """
+    Parse version constraint like ">=1.0.0" or "<2.0.0".
+
+    Args:
+        constraint: Version constraint string
+
+    Returns:
+        Tuple of (operator, version_tuple)
+    """
+    match = re.match(r"^([><=]+)([\d.]+)$", constraint.strip())
+    if not match:
+        raise ValueError(f"Invalid constraint: {constraint}")
+
+    operator, version_str = match.groups()
+    version = parse_version(version_str)
+    return operator, version
+
+
+def check_constraint(
+    version: tuple[int, int, int],
+    operator: str,
+    constraint_version: tuple[int, int, int],
+) -> bool:
+    """
+    Check if version satisfies constraint.
+
+    Args:
+        version: Version tuple to check
+        operator: Comparison operator (>=, <, >, <=, ==)
+        constraint_version: Version tuple to compare against
+
+    Returns:
+        True if constraint is satisfied
+    """
+    if operator == ">=":
+        return version >= constraint_version
+    elif operator == ">":
+        return version > constraint_version
+    elif operator == "<=":
+        return version <= constraint_version
+    elif operator == "<":
+        return version < constraint_version
+    elif operator == "==":
+        return version == constraint_version
+    else:
+        raise ValueError(f"Unknown operator: {operator}")
+
+
+def check_version_compatibility(script_version: str, required_version: str) -> bool:
+    """
+    Check if script version satisfies requirement.
+
+    Args:
+        script_version: Current script version (e.g., "1.0.0")
+        required_version: Required version spec (e.g., ">=1.0.0,<2.0.0")
+
+    Returns:
+        True if compatible
+
+    Raises:
+        VersionError: If versions are incompatible
+    """
+    script_ver = parse_version(script_version)
+
+    # Parse requirement (can be comma-separated constraints)
+    constraints = [c.strip() for c in required_version.split(",")]
+
+    for constraint in constraints:
+        operator, required_ver = parse_version_constraint(constraint)
+        if not check_constraint(script_ver, operator, required_ver):
+            return False
+
+    return True
+
+
+def extract_template_version(template_path: Path) -> str | None:
+    """
+    Extract version from template file header.
+
+    Expected format:
+    # Template Version: 1.0.0
+    # Compatible with octopize-avatar-deploy: >=1.0.0,<2.0.0
+
+    Args:
+        template_path: Path to template file
+
+    Returns:
+        Version string or None if not found
+    """
+    try:
+        content = template_path.read_text()
+
+        # Look for version in first 20 lines
+        lines = content.split("\n")[:20]
+
+        for line in lines:
+            # Match: # Template Version: 1.0.0
+            if "template version:" in line.lower():
+                match = re.search(r"(\d+\.\d+\.\d+)", line)
+                if match:
+                    return match.group(1)
+
+        return None
+    except Exception:
+        return None
+
+
+def extract_compatibility_spec(template_path: Path) -> str | None:
+    """
+    Extract compatibility spec from template file header.
+
+    Args:
+        template_path: Path to template file
+
+    Returns:
+        Compatibility spec string or None if not found
+    """
+    try:
+        content = template_path.read_text()
+        lines = content.split("\n")[:20]
+
+        for line in lines:
+            # Match: # Compatible with octopize-avatar-deploy: >=1.0.0,<2.0.0
+            if "compatible with" in line.lower():
+                match = re.search(r":\s*([\d\s.,<>=]+)$", line)
+                if match:
+                    return match.group(1).strip()
+
+        return None
+    except Exception:
+        return None
+
+
+def validate_template_compatibility(
+    template_path: Path, script_version: str = SCRIPT_VERSION, verbose: bool = False
+) -> bool:
+    """
+    Validate that script version is compatible with template.
+
+    Args:
+        template_path: Path to template file
+        script_version: Script version to check
+        verbose: Print validation details
+
+    Returns:
+        True if compatible or no version info found
+
+    Raises:
+        VersionError: If versions are incompatible
+    """
+    template_version = extract_template_version(template_path)
+    compatibility_spec = extract_compatibility_spec(template_path)
+
+    if verbose:
+        print(f"Validating {template_path.name}:")
+        print(f"  Template version: {template_version or 'not specified'}")
+        print(f"  Compatibility: {compatibility_spec or 'not specified'}")
+        print(f"  Script version: {script_version}")
+
+    # If no version info in template, assume compatible (legacy template)
+    if not compatibility_spec:
+        if verbose:
+            print("  ✓ No version constraints (assuming compatible)")
+        return True
+
+    # Check compatibility
+    try:
+        compatible = check_version_compatibility(script_version, compatibility_spec)
+
+        if compatible:
+            if verbose:
+                print("  ✓ Compatible")
+            return True
+        else:
+            raise VersionError(
+                f"Script version {script_version} is not compatible with "
+                f"{template_path.name} (requires {compatibility_spec}). "
+                f"Please upgrade octopize-avatar-deploy: "
+                f"pip install --upgrade octopize-avatar-deploy"
+            )
+
+    except ValueError as e:
+        if verbose:
+            print(f"  ⚠ Warning: Invalid version spec: {e}")
+        # If version spec is invalid, assume compatible to avoid breaking
+        return True
+
+
+def validate_all_templates(
+    templates_dir: Path, script_version: str = SCRIPT_VERSION, verbose: bool = False
+) -> bool:
+    """
+    Validate all templates in directory.
+
+    Args:
+        templates_dir: Directory containing templates
+        script_version: Script version to check
+        verbose: Print validation details
+
+    Returns:
+        True if all templates are compatible
+
+    Raises:
+        VersionError: If any template is incompatible
+    """
+    if verbose:
+        print("\nValidating template compatibility...")
+        print("=" * 60)
+
+    templates = list(templates_dir.glob("*.template"))
+
+    if not templates:
+        if verbose:
+            print("No templates found")
+        return True
+
+    for template in templates:
+        validate_template_compatibility(template, script_version, verbose)
+
+    if verbose:
+        print(f"\n✓ All {len(templates)} templates are compatible")
+
+    return True

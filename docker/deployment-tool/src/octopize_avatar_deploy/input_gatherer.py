@@ -1,0 +1,263 @@
+"""
+Input gathering abstraction for deployment tool.
+
+Provides pluggable input gathering through Protocol pattern, enabling:
+- Standard console input for production
+- Mock input for testing
+- Rich library input with enhanced features
+"""
+
+from typing import Protocol, runtime_checkable
+
+try:
+    from rich.console import Console
+    from rich.prompt import Confirm, IntPrompt, Prompt
+
+    RICH_AVAILABLE = True
+except ImportError:
+    RICH_AVAILABLE = False
+
+
+@runtime_checkable
+class InputGatherer(Protocol):
+    """
+    Protocol defining input gathering interface.
+
+    This allows different implementations (console, mock, rich) while
+    maintaining type safety through Protocol pattern.
+    """
+
+    def prompt(self, message: str, default: str = "") -> str:
+        """
+        Prompt user for input with optional default value.
+
+        Args:
+            message: The prompt message
+            default: Default value to use if user presses Enter
+
+        Returns:
+            User's input or default value
+        """
+        ...
+
+    def prompt_yes_no(self, message: str, default: bool = True) -> bool:
+        """
+        Prompt user for yes/no input.
+
+        Args:
+            message: The prompt message
+            default: Default value if user presses Enter
+
+        Returns:
+            True for yes, False for no
+        """
+        ...
+
+    def prompt_choice(
+        self, message: str, choices: list[str], default: str | None = None
+    ) -> str:
+        """
+        Prompt user to choose from list of options.
+
+        Args:
+            message: The prompt message
+            choices: List of valid choices
+            default: Default choice if user presses Enter
+
+        Returns:
+            Selected choice
+        """
+        ...
+
+
+class ConsoleInputGatherer:
+    """
+    Standard console-based input gatherer using built-in input().
+
+    This is the default implementation for production use.
+    """
+
+    def prompt(self, message: str, default: str = "") -> str:
+        """Prompt user for input with optional default value."""
+        if default:
+            response = input(f"{message} [{default}]: ").strip()
+            return response if response else default
+        else:
+            response = ""
+            while not response:
+                response = input(f"{message}: ").strip()
+                if not response:
+                    print("  ⚠ This value is required")
+            return response
+
+    def prompt_yes_no(self, message: str, default: bool = True) -> bool:
+        """Prompt user for yes/no input."""
+        default_str = "Y/n" if default else "y/N"
+        response = input(f"{message} [{default_str}]: ").strip().lower()
+
+        if not response:
+            return default
+
+        return response in ["y", "yes", "true", "1"]
+
+    def prompt_choice(
+        self, message: str, choices: list[str], default: str | None = None
+    ) -> str:
+        """Prompt user to choose from list of options."""
+        print(f"\n{message}")
+        for i, choice in enumerate(choices, 1):
+            marker = " (default)" if choice == default else ""
+            print(f"  {i}. {choice}{marker}")
+
+        while True:
+            response = input(f"\nSelect [1-{len(choices)}]: ").strip()
+
+            if not response and default:
+                return default
+
+            try:
+                choice_num = int(response)
+                if 1 <= choice_num <= len(choices):
+                    return choices[choice_num - 1]
+                else:
+                    print(f"  ⚠ Please enter a number between 1 and {len(choices)}")
+            except ValueError:
+                print("  ⚠ Please enter a valid number")
+
+
+class MockInputGatherer:
+    """
+    Mock input gatherer for testing.
+
+    Returns pre-configured responses in sequence. Useful for testing
+    interactive flows without manual input.
+    """
+
+    def __init__(self, responses: list[str | bool]):
+        """
+        Initialize mock input gatherer.
+
+        Args:
+            responses: List of pre-configured responses to return in sequence
+        """
+        self.responses = responses
+        self.current_index = 0
+
+    def _get_next_response(self) -> str | bool:
+        """Get next response from the queue."""
+        if self.current_index >= len(self.responses):
+            raise ValueError(
+                f"MockInputGatherer ran out of responses "
+                f"(asked {self.current_index + 1} times)"
+            )
+        response = self.responses[self.current_index]
+        self.current_index += 1
+        return response
+
+    def prompt(self, message: str, default: str = "") -> str:
+        """Return next mocked string response."""
+        response = self._get_next_response()
+        if isinstance(response, bool):
+            raise TypeError(f"Expected string response, got bool: {response}")
+        return response if response else default
+
+    def prompt_yes_no(self, message: str, default: bool = True) -> bool:
+        """Return next mocked boolean response."""
+        response = self._get_next_response()
+        if isinstance(response, str):
+            # Convert string to boolean if needed
+            return response.lower() in ["y", "yes", "true", "1"]
+        return response
+
+    def prompt_choice(
+        self, message: str, choices: list[str], default: str | None = None
+    ) -> str:
+        """Return next mocked choice response."""
+        response = self._get_next_response()
+        if isinstance(response, bool):
+            raise TypeError(f"Expected string response, got bool: {response}")
+
+        # If response is empty and default is provided, return default
+        if not response and default:
+            return default
+
+        # If response is a number, treat it as choice index (1-based)
+        try:
+            choice_num = int(response)
+            if 1 <= choice_num <= len(choices):
+                return choices[choice_num - 1]
+        except (ValueError, TypeError):
+            pass
+
+        # Otherwise, return the response as-is (assuming it's a valid choice)
+        return response
+
+
+class RichInputGatherer:
+    """
+    Rich-based input gatherer with enhanced prompts.
+
+    Uses the 'rich' library to provide beautiful interactive prompts with:
+    - Styled prompts with colors
+    - Better formatting
+    - Input validation
+    """
+
+    def __init__(self):
+        """Initialize RichInputGatherer with a Console instance."""
+        if not RICH_AVAILABLE:
+            raise ImportError(
+                "Rich library not available. Install with: pip install rich"
+            )
+        self.console = Console()
+
+    def prompt(self, message: str, default: str = "") -> str:
+        """Prompt user for input with optional default value."""
+        if default:
+            result = Prompt.ask(f"[cyan]{message}[/cyan]", default=default)
+            return result
+        else:
+            # Rich Prompt requires at least empty string, so we loop
+            result = ""
+            while not result:
+                result = Prompt.ask(f"[cyan]{message}[/cyan]").strip()
+                if not result:
+                    self.console.print("[yellow]⚠ This value is required[/yellow]")
+            return result
+
+    def prompt_yes_no(self, message: str, default: bool = True) -> bool:
+        """Prompt user for yes/no input."""
+        return Confirm.ask(f"[cyan]{message}[/cyan]", default=default)
+
+    def prompt_choice(
+        self, message: str, choices: list[str], default: str | None = None
+    ) -> str:
+        """Prompt user to choose from list of options."""
+        self.console.print(f"\n[cyan]{message}[/cyan]")
+        for i, choice in enumerate(choices, 1):
+            marker = " [dim](default)[/dim]" if choice == default else ""
+            self.console.print(f"  [bold]{i}[/bold]. {choice}{marker}")
+
+        # Determine default index
+        default_index = None
+        if default and default in choices:
+            default_index = choices.index(default) + 1
+
+        while True:
+            if default_index:
+                choice_num = IntPrompt.ask(
+                    f"\n[cyan]Select[/cyan] [dim]\\[1-{len(choices)}][/dim]",
+                    default=default_index,
+                )
+            else:
+                choice_num = IntPrompt.ask(
+                    f"\n[cyan]Select[/cyan] [dim]\\[1-{len(choices)}][/dim]"
+                )
+
+            if 1 <= choice_num <= len(choices):
+                return choices[choice_num - 1]
+            else:
+                self.console.print(
+                    f"[yellow]⚠ Please enter a number between 1 and "
+                    f"{len(choices)}[/yellow]"
+                )

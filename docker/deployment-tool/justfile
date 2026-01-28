@@ -1,0 +1,114 @@
+# Justfile for Avatar Deployment Tool
+# Run `just` or `just --list` to see available commands
+
+# Show available commands
+default:
+    @just --list
+
+# Install dependencies
+install:
+    uv sync --all-extras
+
+# Run all tests
+test:
+    uv run pytest
+
+# Lint code with ruff
+lint: format
+    uv run ruff check src/ tests/
+
+# Format code with black
+format:
+    uv run ruff format src/ tests/
+
+# Format and lint
+check: format lint
+
+# Build the package
+build:
+    uv build
+
+# Run the tool interactively in a test directory
+run-interactive:
+    #!/usr/bin/env bash
+    TEST_DIR=$(mktemp -d)
+    echo "Running in temporary directory: $TEST_DIR"
+    uv run octopize-avatar-deploy --output-dir "$TEST_DIR" --verbose
+    echo "\nGenerated files in: $TEST_DIR"
+    ls -la "$TEST_DIR"
+
+# Run with a test config file (non-interactive)
+run-test-config:
+    #!/usr/bin/env bash
+    TEST_DIR=$(mktemp -d)
+    CONFIG_FILE=$(mktemp --suffix=.yaml)
+
+    cat > "$CONFIG_FILE" << EOF
+    PUBLIC_URL: test.example.com
+    ENV_NAME: test-deployment
+    MAIL_PROVIDER: smtp
+    SMTP_HOST: smtp.example.com
+    SMTP_PORT: 587
+    AVATAR_API_VERSION: latest
+    EOF
+
+    echo "Running with test config in: $TEST_DIR"
+    uv run octopize-avatar-deploy \
+        --config "$CONFIG_FILE" \
+        --output-dir "$TEST_DIR" \
+        --non-interactive \
+        --save-config \
+        --skip-download \
+        --verbose
+
+    echo "\n=== Generated Files ==="
+    tree "$TEST_DIR" || ls -laR "$TEST_DIR"
+
+    echo "\n=== Config files are in: $TEST_DIR ==="
+    echo "Cleanup: rm -rf $TEST_DIR $CONFIG_FILE"
+
+# Quick dry run to test the tool works
+dry-run:
+    #!/usr/bin/env bash
+    echo "Running dry-run test..."
+    uv run python -c 'from octopize_avatar_deploy.steps import RequiredConfigStep; from pathlib import Path; import tempfile; d={"application":{"home_directory":"/opt/avatar"},"images":{"api":"1.0.0","web":"1.0.0","pdfgenerator":"1.0.0","seaweedfs":"1.0.0","authentik":"1.0.0"}}; c={"PUBLIC_URL":"test.example.com","ENV_NAME":"dry-run"}; s=RequiredConfigStep(Path(tempfile.mkdtemp()),d,c,False); r=s.collect_config(); print("✓ Step executed successfully"); print(f"  Config items: {len(r)}")'
+    echo "✓ Dry run completed"
+
+# Clean test artifacts and cache
+clean:
+    rm -rf .pytest_cache
+    rm -rf __pycache__
+    rm -rf src/octopize_avatar_deploy/__pycache__
+    rm -rf src/octopize_avatar_deploy/steps/__pycache__
+    rm -rf tests/__pycache__
+    rm -rf .ruff_cache
+    rm -rf dist/
+    rm -rf build/
+    rm -rf *.egg-info
+    find . -name "*.pyc" -delete
+    find . -name ".deployment-state.yaml" -delete
+
+# Clean everything including virtual env
+clean-all: clean
+    rm -rf .venv
+
+# Show package info
+info:
+    @echo "=== Package Info ==="
+    @uv run python -c "import octopize_avatar_deploy; print('Package: octopize_avatar_deploy')"
+    @echo "\n=== Dependencies ==="
+    @uv pip list
+    @echo "\n=== Test Count ==="
+    @uv run pytest --collect-only -q 2>&1 | tail -1
+
+# Check types with mypy (if installed)
+typecheck:
+    uv run mypy src/ || echo "Install mypy with: uv pip install mypy"
+
+# Run the help command
+help:
+    uv run octopize-avatar-deploy --help
+
+# Show defaults.yaml content
+show-defaults:
+    @cat src/octopize_avatar_deploy/defaults.yaml

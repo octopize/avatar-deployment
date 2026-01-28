@@ -16,6 +16,18 @@ repos:
         description: "Synchronizes files from common/ to Helm chart and docker"
         verbose: true
 
+      - id: update-image-versions
+        name: Update image versions from registries
+        entry: ./scripts/update-image-versions.py
+        language: python
+        pass_filenames: false
+        files: ^docker/deployment-tool/defaults\.yaml$
+        description: "Checks quay.io and ghcr.io for latest image versions and updates defaults.yaml"
+        verbose: true
+        additional_dependencies:
+          - pyyaml>=6.0
+          - requests>=2.31.0
+
   # Standard pre-commit hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
