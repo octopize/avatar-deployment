@@ -7,14 +7,19 @@ focusing on successful execution rather than output comparison.
 
 # Import fixture utilities
 import io
+import os
 import sys
+import tempfile
 from pathlib import Path
 
 import pytest
 import yaml
 
 from octopize_avatar_deploy.cli_test_harness import CLITestHarness
-from tests.conftest import compare_generated_files, compare_output
+from tests.conftest import (
+    compare_generated_files,
+    compare_output,
+)
 from tests.fixtures import FixtureManager
 
 FIXTURES_DIR = Path(__file__).parent.parent / "fixtures"
@@ -42,7 +47,9 @@ class TestCLIBasicCommands:
         # Compare output
         actual_output = captured_output.getvalue()
         expected_output = fixture_manager.load_expected_output("help")
-        assert fixture_manager.compare_output(actual_output, expected_output, fixture_name="help")
+        assert fixture_manager.compare_output(
+            actual_output, expected_output, fixture_name="help"
+        )
 
 
 class TestCLIDeploymentScenarios:
@@ -56,7 +63,9 @@ class TestCLIDeploymentScenarios:
             "no_telemetry",
         ],
     )
-    def test_deployment_scenarios(self, scenario, temp_deployment_dir, log_file, docker_templates_dir):
+    def test_deployment_scenarios(
+        self, scenario, temp_deployment_dir, log_file, docker_templates_dir
+    ):
         """Test various deployment scenarios with different configurations."""
         responses = fixture_manager.load_input_fixture(scenario)
 
@@ -87,27 +96,31 @@ class TestCLIErrorHandling:
         non_existent = temp_deployment_dir / "non-existent-templates"
         harness = CLITestHarness(
             responses=[],
-            args=["--output-dir", str(temp_deployment_dir), "--template-from", str(non_existent)],
+            args=[
+                "--output-dir",
+                str(temp_deployment_dir),
+                "--template-from",
+                str(non_existent),
+            ],
             log_file=str(log_file),
         )
         exit_code = harness.run()
         assert exit_code != 0
-        assert compare_output(log_file, temp_deployment_dir, "missing_templates", fixture_manager)
+        assert compare_output(
+            log_file, temp_deployment_dir, "missing_templates", fixture_manager
+        )
 
 
 class TestCLINonInteractiveMode:
     """Test non-interactive mode."""
 
-    def test_non_interactive_with_config(self, temp_deployment_dir, log_file, docker_templates_dir):
+    def test_non_interactive_with_config(
+        self, temp_deployment_dir, log_file, docker_templates_dir
+    ):
         """Test non-interactive mode with config file."""
-        config_data = {
-            "base_url": "https://test.local",
-            "django_secret_key": "test-key",
-            "admin_email": "admin@test.local",
-        }
-        config_file = temp_deployment_dir / "config.yaml"
-        with open(config_file, "w") as f:
-            yaml.dump(config_data, f)
+        config_file = fixture_manager.get_config_fixture_path(
+            "non_interactive_incomplete_config"
+        )
 
         harness = CLITestHarness(
             responses=[],
@@ -126,60 +139,17 @@ class TestCLINonInteractiveMode:
 
         # With incomplete config, should either succeed with defaults or fail
         # The exact behavior depends on implementation
-        assert exit_code in (0, 1)
-        assert compare_output(log_file, temp_deployment_dir, "non_interactive_incomplete_config", fixture_manager)
-
-
-class TestCLIDifferentStorageBackends:
-    """Test all supported storage backends."""
-
-    @pytest.mark.parametrize(
-        "storage_backend,extra_responses",
-        [
-            ("seaweedfs", ["s3.local:8333", "avatar-bucket"]),
-        ],
-    )
-    def test_storage_backend_configurations(
-        self, temp_deployment_dir, log_file, docker_templates_dir, storage_backend, extra_responses
-    ):
-        """Test different storage backend configurations."""
-        base_responses = [
-            "https://avatar.test.com",
-            "admin@test.com",
-            "smtp.test.com",
-            "587",
-            "noreply@test.com",
-            "user",
-            "pass",
-            "postgres.local",
-            "avatar",
-            "avatar_user",
-        ]
-        responses = base_responses + [storage_backend] + extra_responses + ["30d", True, "test"]
-
-        harness = CLITestHarness(
-            responses=responses,
-            args=[
-                "--output-dir",
-                str(temp_deployment_dir),
-                "--template-from",
-                str(docker_templates_dir),
-            ],
-            log_file=str(log_file),
-        )
-        exit_code = harness.run()
-
         assert exit_code == 0
-        assert compare_output(log_file, temp_deployment_dir, f"storage_{storage_backend}", fixture_manager)
+        assert compare_output(
+            log_file,
+            temp_deployment_dir,
+            "non_interactive_incomplete_config",
+            fixture_manager,
+        )
 
-        # Verify generated configuration files
-        assert compare_generated_files(temp_deployment_dir, f"storage_{storage_backend}", FIXTURES_DIR)
-
-
-class TestConfigFileErrorHandling:
-    """Test config file error handling - HIGH PRIORITY."""
-
-    def test_config_file_not_found(self, temp_deployment_dir, log_file, docker_templates_dir):
+    def test_config_file_not_found(
+        self, temp_deployment_dir, log_file, docker_templates_dir
+    ):
         """Test error when config file doesn't exist."""
         non_existent_config = temp_deployment_dir / "missing-config.yaml"
 
@@ -198,12 +168,19 @@ class TestConfigFileErrorHandling:
         exit_code = harness.run()
 
         assert exit_code != 0
-        assert compare_output(log_file, temp_deployment_dir, "config_not_found", fixture_manager)
+        assert compare_output(
+            log_file, temp_deployment_dir, "config_not_found", fixture_manager
+        )
 
-    def test_malformed_yaml_config(self, temp_deployment_dir, log_file, docker_templates_dir):
+    def test_malformed_yaml_config(
+        self, temp_deployment_dir, log_file, docker_templates_dir
+    ):
         """Test error when config file has invalid YAML syntax."""
+        # Can't use load_config_from_fixture since it would fail parsing
         malformed_config = temp_deployment_dir / "malformed.yaml"
-        malformed_config.write_text("base_url: invalid\n\ttabs_not_allowed: true\n  - broken list")
+        malformed_config.write_text(
+            "base_url: invalid\n\ttabs_not_allowed: true\n  - broken list"
+        )
 
         harness = CLITestHarness(
             responses=[],
@@ -220,27 +197,38 @@ class TestConfigFileErrorHandling:
         exit_code = harness.run()
 
         assert exit_code != 0
-        assert compare_output(log_file, temp_deployment_dir, "malformed_yaml", fixture_manager)
+        assert compare_output(
+            log_file, temp_deployment_dir, "malformed_yaml", fixture_manager
+        )
 
-    def test_invalid_url_in_config(self, temp_deployment_dir, log_file, docker_templates_dir):
-        """Test behavior when config contains invalid URL format.
-        
-        Note: Currently the tool does not validate URL format, so invalid URLs
-        will be accepted. This test documents the current behavior.
+    @pytest.mark.parametrize(
+        "config_fixture",
+        [
+            "invalid_url_config",
+            "invalid_port_config",
+            "type_mismatch_config",
+        ],
+    )
+    def test_invalid_config_handling(
+        self, config_fixture, temp_deployment_dir, log_file, docker_templates_dir
+    ):
+        """Test behavior when config contains invalid values.
+
+        This tests various config validation scenarios:
+        - invalid_url_config: Invalid URL format (currently accepted)
+        - invalid_port_config: Port as string instead of int (currently accepted)
+        - type_mismatch_config: Type mismatches in config values (currently accepted)
+
+        Note: The tool currently does not validate these inputs, so they succeed.
+        These tests document current behavior - validation may be added in the future.
         """
-        invalid_config = temp_deployment_dir / "invalid_url.yaml"
-        config_data = {
-            "base_url": "not-a-valid-url",
-            "admin_email": "admin@test.com",
-        }
-        with open(invalid_config, "w") as f:
-            yaml.dump(config_data, f)
+        config_file = fixture_manager.get_config_fixture_path(config_fixture)
 
         harness = CLITestHarness(
             responses=[],
             args=[
                 "--config",
-                str(invalid_config),
+                str(config_file),
                 "--non-interactive",
                 "--output-dir",
                 str(temp_deployment_dir),
@@ -251,173 +239,78 @@ class TestConfigFileErrorHandling:
         )
         exit_code = harness.run()
 
-        # Currently accepts invalid URLs - may change in future
+        # Currently these all succeed - no validation implemented yet
+        assert exit_code == 0
+
         # Document actual behavior in fixture
-        assert compare_output(log_file, temp_deployment_dir, "invalid_url_config", fixture_manager)
-
-    def test_invalid_port_in_config(self, temp_deployment_dir, log_file, docker_templates_dir):
-        """Test behavior when config contains invalid port number.
-        
-        Note: YAML will parse "not-a-number" as a string, not an int.
-        This test documents how the tool handles type mismatches.
-        """
-        invalid_config = temp_deployment_dir / "invalid_port.yaml"
-        config_data = {
-            "base_url": "https://avatar.test.com",
-            "smtp_host": "smtp.test.com",
-            "smtp_port": "not-a-number",
-        }
-        with open(invalid_config, "w") as f:
-            yaml.dump(config_data, f)
-
-        harness = CLITestHarness(
-            responses=[],
-            args=[
-                "--config",
-                str(invalid_config),
-                "--non-interactive",
-                "--output-dir",
-                str(temp_deployment_dir),
-                "--template-from",
-                str(docker_templates_dir),
-            ],
-            log_file=str(log_file),
+        assert compare_output(
+            log_file, temp_deployment_dir, config_fixture, fixture_manager
         )
-        exit_code = harness.run()
-
-        # Document actual behavior in fixture
-        assert compare_output(log_file, temp_deployment_dir, "invalid_port_config", fixture_manager)
-
-    def test_type_mismatch_in_config(self, temp_deployment_dir, log_file, docker_templates_dir):
-        """Test error when config contains type mismatches."""
-        invalid_config = temp_deployment_dir / "type_mismatch.yaml"
-        config_data = {
-            "base_url": "https://avatar.test.com",
-            "enable_telemetry": "yes",  # Should be boolean
-        }
-        with open(invalid_config, "w") as f:
-            yaml.dump(config_data, f)
-
-        harness = CLITestHarness(
-            responses=[],
-            args=[
-                "--config",
-                str(invalid_config),
-                "--non-interactive",
-                "--output-dir",
-                str(temp_deployment_dir),
-                "--template-from",
-                str(docker_templates_dir),
-            ],
-            log_file=str(log_file),
-        )
-        exit_code = harness.run()
-
-        # Behavior depends on implementation - may succeed or fail
-        # Document actual behavior in fixture
-        assert compare_output(log_file, temp_deployment_dir, "type_mismatch_config", fixture_manager)
 
 
 class TestNonInteractiveModeCompleteness:
     """Test non-interactive mode behavior - HIGH PRIORITY."""
 
-    def test_non_interactive_with_complete_config(self, temp_deployment_dir, log_file, docker_templates_dir):
-        """Test non-interactive mode with complete config - should succeed without prompts."""
-        complete_config = temp_deployment_dir / "complete.yaml"
-        config_data = {
-            "base_url": "https://avatar.complete.com",
-            "django_secret_key": "complete-secret-key-123",
-            "admin_email": "admin@complete.com",
-            "smtp_host": "smtp.complete.com",
-            "smtp_port": 587,
-            "smtp_from_address": "noreply@complete.com",
-            "smtp_username": "smtp-user",
-            "smtp_password": "smtp-pass",
-            "db_host": "db.complete.com",
-            "db_name": "avatar_complete",
-            "db_user": "avatar_user",
-            "storage_backend": "seaweedfs",
-            "storage_endpoint": "s3.complete.com:8333",
-            "storage_bucket": "avatar-data",
-            "dataset_expiration": "30d",
-            "enable_telemetry": True,
-            "environment_name": "production",
-        }
-        with open(complete_config, "w") as f:
-            yaml.dump(config_data, f)
+    @pytest.mark.parametrize(
+        "scenario,config_fixture,expected_exit_code,check_files",
+        [
+            ("non_interactive_complete", "non_interactive_complete", 0, True),
+            ("non_interactive_no_config", None, None, False),
+            (
+                "non_interactive_partial_config",
+                "non_interactive_partial_config",
+                None,
+                False,
+            ),
+        ],
+    )
+    def test_non_interactive_modes(
+        self,
+        scenario,
+        config_fixture,
+        expected_exit_code,
+        check_files,
+        temp_deployment_dir,
+        log_file,
+        docker_templates_dir,
+    ):
+        """Test non-interactive mode with different config completeness levels.
+
+        Scenarios:
+        - non_interactive_complete: Complete config, should succeed without prompts
+        - non_interactive_no_config: No config file, should use defaults or fail
+        - non_interactive_partial_config: Partial config, should use defaults for missing values or fail
+        """
+        args = [
+            "--non-interactive",
+            "--output-dir",
+            str(temp_deployment_dir),
+            "--template-from",
+            str(docker_templates_dir),
+        ]
+
+        if config_fixture:
+            config_file = fixture_manager.get_config_fixture_path(config_fixture)
+            args.extend(["--config", str(config_file)])
 
         harness = CLITestHarness(
             responses=[],
-            args=[
-                "--config",
-                str(complete_config),
-                "--non-interactive",
-                "--output-dir",
-                str(temp_deployment_dir),
-                "--template-from",
-                str(docker_templates_dir),
-            ],
+            args=args,
             log_file=str(log_file),
         )
         exit_code = harness.run()
 
-        assert exit_code == 0
-        assert compare_output(log_file, temp_deployment_dir, "non_interactive_complete", fixture_manager)
-        assert compare_generated_files(temp_deployment_dir, "non_interactive_complete", FIXTURES_DIR)
+        if expected_exit_code is not None:
+            assert exit_code == expected_exit_code
 
-    def test_non_interactive_without_config(self, temp_deployment_dir, log_file, docker_templates_dir):
-        """Test non-interactive mode without config file - should use all defaults or fail."""
-        harness = CLITestHarness(
-            responses=[],
-            args=[
-                "--non-interactive",
-                "--output-dir",
-                str(temp_deployment_dir),
-                "--template-from",
-                str(docker_templates_dir),
-            ],
-            log_file=str(log_file),
-        )
-        exit_code = harness.run()
+        assert compare_output(log_file, temp_deployment_dir, scenario, fixture_manager)
 
-        # Should either succeed with defaults or fail with clear message
-        # Document actual behavior in fixture
-        assert compare_output(log_file, temp_deployment_dir, "non_interactive_no_config", fixture_manager)
+        if check_files:
+            assert compare_generated_files(temp_deployment_dir, scenario, FIXTURES_DIR)
 
-    def test_non_interactive_with_partial_config(self, temp_deployment_dir, log_file, docker_templates_dir):
-        """Test non-interactive mode with partial config - should use defaults for missing values or fail."""
-        partial_config = temp_deployment_dir / "partial.yaml"
-        config_data = {
-            "base_url": "https://avatar.partial.com",
-            "admin_email": "admin@partial.com",
-            # Missing: SMTP, DB, storage, etc.
-        }
-        with open(partial_config, "w") as f:
-            yaml.dump(config_data, f)
-
-        harness = CLITestHarness(
-            responses=[],
-            args=[
-                "--config",
-                str(partial_config),
-                "--non-interactive",
-                "--output-dir",
-                str(temp_deployment_dir),
-                "--template-from",
-                str(docker_templates_dir),
-            ],
-            log_file=str(log_file),
-        )
-        exit_code = harness.run()
-
-        # Document actual behavior - may succeed with defaults or fail
-        assert compare_output(log_file, temp_deployment_dir, "non_interactive_partial_config", fixture_manager)
-
-
-class TestSaveConfigRoundTrip:
-    """Test save config and round-trip functionality - HIGH PRIORITY."""
-
-    def test_save_config_in_interactive_mode(self, temp_deployment_dir, log_file, docker_templates_dir):
+    def test_save_config_in_interactive_mode(
+        self, temp_deployment_dir, log_file, docker_templates_dir
+    ):
         """Test --save-config saves configuration correctly after interactive responses."""
         responses = fixture_manager.load_input_fixture("basic_deployment")
 
@@ -447,37 +340,18 @@ class TestSaveConfigRoundTrip:
             # Config is saved in .env format (PUBLIC_URL, etc)
             assert len(config_data) > 0, "Config should not be empty"
 
-        assert compare_output(log_file, temp_deployment_dir, "save_config_interactive", fixture_manager)
+        assert compare_output(
+            log_file, temp_deployment_dir, "save_config_interactive", fixture_manager
+        )
 
-    def test_save_config_with_existing_config(self, temp_deployment_dir, log_file, docker_templates_dir):
+    def test_save_config_with_existing_config(
+        self, temp_deployment_dir, log_file, docker_templates_dir
+    ):
         """Test --save-config with --config loads existing, allows modification, then saves."""
-        existing_config = temp_deployment_dir / "existing.yaml"
-        config_data = {
-            "base_url": "https://existing.com",
-            "admin_email": "admin@existing.com",
-        }
-        with open(existing_config, "w") as f:
-            yaml.dump(config_data, f)
-
-        # Responses to override some values
-        responses = [
-            "https://modified.com",  # New base URL
-            "admin@modified.com",  # New admin email
-            "smtp.test.com",
-            "587",
-            "noreply@test.com",
-            "user",
-            "pass",
-            "postgres.local",
-            "avatar",
-            "avatar_user",
-            "seaweedfs",
-            "s3.local:8333",
-            "avatar-bucket",
-            "30d",
-            True,
-            "production",
-        ]
+        existing_config = fixture_manager.get_config_fixture_path(
+            "save_config_with_existing"
+        )
+        responses = fixture_manager.load_input_fixture("save_config_with_existing")
 
         harness = CLITestHarness(
             responses=responses,
@@ -500,9 +374,13 @@ class TestSaveConfigRoundTrip:
         saved_config = temp_deployment_dir / "deployment-config.yaml"
         assert saved_config.exists()
 
-        assert compare_output(log_file, temp_deployment_dir, "save_config_with_existing", fixture_manager)
+        assert compare_output(
+            log_file, temp_deployment_dir, "save_config_with_existing", fixture_manager
+        )
 
-    def test_config_round_trip_validation(self, temp_deployment_dir, log_file, docker_templates_dir):
+    def test_config_round_trip_validation(
+        self, temp_deployment_dir, log_file, docker_templates_dir
+    ):
         """Test save config, then reload it - should produce identical output."""
         # First run: interactive mode with --save-config
         responses = fixture_manager.load_input_fixture("basic_deployment")
@@ -551,17 +429,15 @@ class TestSaveConfigRoundTrip:
 
         # Compare generated files (excluding secrets which are random)
         # This verifies the config round-trip produces consistent output
-        assert compare_generated_files(first_dir, "config_round_trip_first", FIXTURES_DIR)
-        assert compare_generated_files(second_dir, "config_round_trip_second", FIXTURES_DIR)
-
-
-class TestOutputDirectoryEdgeCases:
-    """Test output directory edge cases - HIGH PRIORITY."""
+        assert compare_generated_files(
+            first_dir, "config_round_trip_first", FIXTURES_DIR
+        )
+        assert compare_generated_files(
+            second_dir, "config_round_trip_second", FIXTURES_DIR
+        )
 
     def test_output_dir_is_current_directory(self, docker_templates_dir):
         """Test --output-dir . (current directory)."""
-        import os
-        import tempfile
 
         # Create a temp dir and change to it
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -586,14 +462,26 @@ class TestOutputDirectoryEdgeCases:
 
                 assert exit_code == 0
                 # Verify at least the .env file was created in current directory
-                assert (tmppath / ".env").exists(), "Should create .env in current directory"
+                assert (tmppath / ".env").exists(), (
+                    "Should create .env in current directory"
+                )
 
             finally:
                 os.chdir(original_cwd)
 
-    def test_output_dir_deeply_nested_nonexistent(self, temp_deployment_dir, log_file, docker_templates_dir):
+    def test_output_dir_deeply_nested_nonexistent(
+        self, temp_deployment_dir, log_file, docker_templates_dir
+    ):
         """Test creating deeply nested output directory that doesn't exist."""
-        nested_dir = temp_deployment_dir / "deeply" / "nested" / "path" / "that" / "doesnt" / "exist"
+        nested_dir = (
+            temp_deployment_dir
+            / "deeply"
+            / "nested"
+            / "path"
+            / "that"
+            / "doesnt"
+            / "exist"
+        )
         responses = fixture_manager.load_input_fixture("basic_deployment")
 
         harness = CLITestHarness(
@@ -611,9 +499,13 @@ class TestOutputDirectoryEdgeCases:
         assert exit_code == 0
         assert nested_dir.exists()
         assert (nested_dir / ".env").exists()
-        assert compare_output(log_file, nested_dir, "output_dir_nested", fixture_manager)
+        assert compare_output(
+            log_file, nested_dir, "output_dir_nested", fixture_manager
+        )
 
-    def test_output_dir_with_spaces(self, temp_deployment_dir, log_file, docker_templates_dir):
+    def test_output_dir_with_spaces(
+        self, temp_deployment_dir, log_file, docker_templates_dir
+    ):
         """Test output directory with spaces in path."""
         dir_with_spaces = temp_deployment_dir / "path with spaces"
         responses = fixture_manager.load_input_fixture("basic_deployment")
@@ -634,9 +526,10 @@ class TestOutputDirectoryEdgeCases:
         assert dir_with_spaces.exists()
         assert (dir_with_spaces / ".env").exists()
 
-    def test_output_dir_relative_path(self, temp_deployment_dir, log_file, docker_templates_dir):
+    def test_output_dir_relative_path(
+        self, temp_deployment_dir, log_file, docker_templates_dir
+    ):
         """Test output directory with relative path."""
-        import os
 
         original_cwd = os.getcwd()
         try:
@@ -663,9 +556,10 @@ class TestOutputDirectoryEdgeCases:
         finally:
             os.chdir(original_cwd)
 
-    def test_output_dir_readonly_permission(self, temp_deployment_dir, log_file, docker_templates_dir):
+    def test_output_dir_readonly_permission(
+        self, temp_deployment_dir, log_file, docker_templates_dir
+    ):
         """Test error when output directory parent has no write permissions."""
-        import os
         import stat
 
         readonly_parent = temp_deployment_dir / "readonly"
@@ -692,15 +586,16 @@ class TestOutputDirectoryEdgeCases:
 
             # Should fail with permission error
             assert exit_code != 0
-            assert compare_output(log_file, temp_deployment_dir, "output_dir_permission_denied", fixture_manager)
+            assert compare_output(
+                log_file,
+                temp_deployment_dir,
+                "output_dir_permission_denied",
+                fixture_manager,
+            )
 
         finally:
             # Restore permissions for cleanup
             os.chmod(readonly_parent, stat.S_IRWXU)
-
-
-class TestTemplateSourceValidation:
-    """Test template source validation - HIGH PRIORITY."""
 
     def test_template_from_nonexistent_path(self, temp_deployment_dir, log_file):
         """Test error when --template-from points to non-existent directory."""
@@ -720,7 +615,9 @@ class TestTemplateSourceValidation:
         exit_code = harness.run()
 
         assert exit_code != 0
-        assert compare_output(log_file, temp_deployment_dir, "template_source_not_found", fixture_manager)
+        assert compare_output(
+            log_file, temp_deployment_dir, "template_source_not_found", fixture_manager
+        )
 
     def test_template_from_empty_directory(self, temp_deployment_dir, log_file):
         """Test error when --template-from points to empty directory."""
@@ -742,7 +639,9 @@ class TestTemplateSourceValidation:
         exit_code = harness.run()
 
         assert exit_code != 0
-        assert compare_output(log_file, temp_deployment_dir, "template_source_empty", fixture_manager)
+        assert compare_output(
+            log_file, temp_deployment_dir, "template_source_empty", fixture_manager
+        )
 
     def test_template_from_partial_templates(self, temp_deployment_dir, log_file):
         """Test error when template directory is missing required templates."""
@@ -768,9 +667,13 @@ class TestTemplateSourceValidation:
 
         # Should fail listing missing templates
         assert exit_code != 0
-        assert compare_output(log_file, temp_deployment_dir, "template_source_partial", fixture_manager)
+        assert compare_output(
+            log_file, temp_deployment_dir, "template_source_partial", fixture_manager
+        )
 
-    def test_template_from_local_path_verbose(self, temp_deployment_dir, log_file, docker_templates_dir):
+    def test_template_from_local_path_verbose(
+        self, temp_deployment_dir, log_file, docker_templates_dir
+    ):
         """Test --template-from with local path and --verbose shows copy progress."""
         responses = fixture_manager.load_input_fixture("basic_deployment")
 
@@ -791,4 +694,9 @@ class TestTemplateSourceValidation:
         # Verify .avatar-templates directory was created
         templates_dir = temp_deployment_dir / ".avatar-templates"
         assert templates_dir.exists()
-        assert compare_output(log_file, temp_deployment_dir, "template_from_local_verbose", fixture_manager)
+        assert compare_output(
+            log_file,
+            temp_deployment_dir,
+            "template_from_local_verbose",
+            fixture_manager,
+        )

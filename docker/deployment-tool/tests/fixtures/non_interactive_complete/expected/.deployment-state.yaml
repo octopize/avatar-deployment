@@ -11,27 +11,22 @@ steps:
   step_1_email: completed
   step_2_telemetry: completed
   step_3_database: completed
-  step_4_storage: completed
 config:
-  admin_email: admin@complete.com
-  base_url: https://avatar.complete.com
-  dataset_expiration: 30d
-  db_host: db.complete.com
-  db_name: avatar_complete
-  db_user: avatar_user
-  django_secret_key: complete-secret-key-123
-  enable_telemetry: true
-  environment_name: production
-  smtp_from_address: noreply@complete.com
-  smtp_host: smtp.complete.com
-  smtp_password: smtp-pass
-  smtp_port: 587
-  smtp_username: smtp-user
-  storage_backend: seaweedfs
-  storage_bucket: avatar-data
-  storage_endpoint: s3.complete.com:8333
-  PUBLIC_URL: ''
-  ENV_NAME: ''
+  PUBLIC_URL: https://avatar.complete.com
+  ENV_NAME: production
+  SMTP_HOST: smtp.complete.com
+  SMTP_PORT: 587
+  SMTP_SENDER_EMAIL: noreply@complete.com
+  SMTP_USERNAME: smtp-user
+  SMTP_PASSWORD: smtp-pass
+  DB_HOST: db.complete.com
+  DB_NAME: avatar_complete
+  DB_USER: avatar_user
+  DB_PASSWORD: db-password-123
+  STORAGE_BACKEND: seaweedfs
+  STORAGE_ENDPOINT: s3.complete.com:8333
+  STORAGE_BUCKET: avatar-data
+  IS_SENTRY_ENABLED: 'true'
   AVATAR_HOME: /app/avatar
   AVATAR_API_VERSION: 2.20.1
   AVATAR_WEB_VERSION: 0.40.0
@@ -39,7 +34,7 @@ config:
   AVATAR_SEAWEEDFS_VERSION: 0.2.0
   AVATAR_AUTHENTIK_VERSION: 2025.10.2
   MAIL_PROVIDER: aws
-  IS_SENTRY_ENABLED: 'true'
+  USE_EMAIL_AUTHENTICATION: 'true'
   TELEMETRY_S3_ENDPOINT_URL: https://s3.fr-par.scw.cloud
   TELEMETRY_S3_REGION: fr-par
   USE_CONSOLE_LOGGING: 'false'
@@ -48,7 +43,5 @@ config:
   AVATAR_DB_NAME: avatar
   POSTGRES_DB: postgres
   POSTGRES_USER: avatar
-  DATASET_EXPIRATION_DAYS: 30d
-  USE_EMAIL_AUTHENTICATION: 'true'
 step_data: {}
 user_secrets_provided: {}

@@ -57,9 +57,6 @@ ENV_NAME: company-name-prod
 # Application Settings
 # ===========================
 
-# Dataset expiration period (e.g., 30d for 30 days, 2w for 2 weeks)
-# Default: 30d
-# DATASET_EXPIRATION_DAYS: 30d
 
 # Logging configuration
 # Default: INFO

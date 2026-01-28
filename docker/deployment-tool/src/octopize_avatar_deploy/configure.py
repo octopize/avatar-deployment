@@ -43,9 +43,9 @@ from octopize_avatar_deploy.printer import ConsolePrinter, Printer, RichPrinter
 from octopize_avatar_deploy.state_manager import DeploymentState
 from octopize_avatar_deploy.steps import (
     DatabaseStep,
+    DeploymentStep,
     EmailStep,
     RequiredConfigStep,
-    StorageStep,
     TelemetryStep,
 )
 
@@ -61,6 +61,14 @@ class DeploymentConfigurator:
     - Manages deployment state
     """
 
+    # Default step classes (can be overridden in tests)
+    DEFAULT_STEP_CLASSES: list[type[DeploymentStep]] = [
+        RequiredConfigStep,
+        EmailStep,
+        TelemetryStep,
+        DatabaseStep,
+    ]
+
     def __init__(
         self,
         templates_dir: Path,
@@ -70,6 +78,7 @@ class DeploymentConfigurator:
         use_state: bool = True,
         printer: Printer | None = None,
         input_gatherer: InputGatherer | None = None,
+        step_classes: list[type[DeploymentStep]] | None = None,
     ):
         """
         Initialize the configurator.
@@ -81,11 +90,14 @@ class DeploymentConfigurator:
             config: Optional pre-loaded configuration dict
             use_state: Whether to use state management for resuming
             printer: Optional printer for output (defaults to ConsolePrinter)
+            input_gatherer: Optional input gatherer (defaults to ConsoleInputGatherer)
+            step_classes: Optional list of step classes to use (defaults to DEFAULT_STEP_CLASSES)
         """
         self.templates_dir = Path(templates_dir)
         self.output_dir = Path(output_dir)
         self.config = config or {}
         self.use_state = use_state
+        self.step_classes = step_classes or self.DEFAULT_STEP_CLASSES
 
         # Use Rich implementations if in interactive terminal, otherwise Console
         if printer is None:
@@ -253,48 +265,17 @@ class DeploymentConfigurator:
             except Exception as e:
                 raise RuntimeError(f"Failed to load config file: {e}")
 
-        # Define deployment steps
+        # Instantiate deployment steps
         steps = [
-            RequiredConfigStep(
+            step_class(
                 self.output_dir,
                 self.defaults,
                 self.config,
                 interactive,
                 self.printer,
                 self.input_gatherer,
-            ),
-            EmailStep(
-                self.output_dir,
-                self.defaults,
-                self.config,
-                interactive,
-                self.printer,
-                self.input_gatherer,
-            ),
-            TelemetryStep(
-                self.output_dir,
-                self.defaults,
-                self.config,
-                interactive,
-                self.printer,
-                self.input_gatherer,
-            ),
-            DatabaseStep(
-                self.output_dir,
-                self.defaults,
-                self.config,
-                interactive,
-                self.printer,
-                self.input_gatherer,
-            ),
-            StorageStep(
-                self.output_dir,
-                self.defaults,
-                self.config,
-                interactive,
-                self.printer,
-                self.input_gatherer,
-            ),
+            )
+            for step_class in self.step_classes
         ]
 
         self.printer.print_header("Avatar Deployment Configuration")

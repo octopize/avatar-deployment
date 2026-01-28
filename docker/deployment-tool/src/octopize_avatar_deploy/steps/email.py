@@ -62,6 +62,12 @@ class EmailStep(DeploymentStep):
                 else smtp_defaults["sender_email"],
             )
 
+        # Email authentication
+        config["USE_EMAIL_AUTHENTICATION"] = self.config.get(
+            "USE_EMAIL_AUTHENTICATION",
+            self.defaults["application"]["email_authentication"],
+        )
+
         return config
 
     def generate_secrets(self) -> dict[str, str]:
@@ -86,10 +92,10 @@ class EmailStep(DeploymentStep):
                 )
                 if aws_key:
                     secrets_dict["aws_access_key_id"] = aws_key
-                    aws_secret = self.input_gatherer.prompt(
-                        "AWS Secret Access Key", default=""
-                    )
-                    if aws_secret:
-                        secrets_dict["aws_secret_access_key"] = aws_secret
+                aws_secret = self.input_gatherer.prompt(
+                    "AWS Secret Access Key", default=""
+                )
+                if aws_secret:
+                    secrets_dict["aws_secret_access_key"] = aws_secret
 
         return secrets_dict

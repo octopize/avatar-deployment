@@ -55,6 +55,19 @@ class FixtureManager:
 
         return data["responses"]
 
+    def get_config_fixture_path(self, name: str) -> Path | None:
+        """
+        Get path to config fixture file if it exists.
+
+        Args:
+            name: Name of the fixture (scenario subdirectory)
+
+        Returns:
+            Path to config.yaml, or None if it doesn't exist
+        """
+        fixture_path = self.fixtures_dir / name / "config.yaml"
+        return fixture_path if fixture_path.exists() else None
+
     def load_expected_output(self, name: str) -> str:
         """
         Load expected output fixture file.

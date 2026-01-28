@@ -23,7 +23,10 @@ class TestEmailStep:
                     "verify": True,
                     "sender_email": "noreply@example.com",
                 },
-            }
+            },
+            "application": {
+                "email_authentication": True,
+            },
         }
 
     @pytest.fixture
@@ -40,7 +43,10 @@ class TestEmailStep:
                     "verify": True,
                     "sender_email": "noreply@example.com",
                 },
-            }
+            },
+            "application": {
+                "email_authentication": True,
+            },
         }
 
     @pytest.fixture
@@ -66,6 +72,7 @@ class TestEmailStep:
         assert "SMTP_USE_TLS" in config
         assert "SMTP_START_TLS" in config
         assert "SMTP_VERIFY" in config
+        assert "USE_EMAIL_AUTHENTICATION" in config
 
     def test_collect_config_smtp_values(self, step_smtp):
         """Test SMTP configuration has correct values."""
@@ -74,6 +81,7 @@ class TestEmailStep:
         assert config["SMTP_HOST"] == "smtp.example.com"
         assert config["SMTP_PORT"] == "587"
         assert config["SMTP_SENDER_EMAIL"] == "noreply@example.com"
+        assert config["USE_EMAIL_AUTHENTICATION"] is True
 
     def test_collect_config_aws(self, step_aws):
         """Test AWS email configuration collection."""

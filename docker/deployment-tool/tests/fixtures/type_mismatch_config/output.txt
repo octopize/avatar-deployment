@@ -1,4 +1,4 @@
-Loading configuration from {{OUTPUT_DIR}}/type_mismatch.yaml...
+Loading configuration from /home/tom/Documents/dev/octopize/avatar-deployment/docker/deployment-tool/tests/fixtures/type_mismatch_config/config.yaml...
 
 ============================================================
 Avatar Deployment Configuration
@@ -15,8 +15,6 @@ Executing configuration steps...
 
 --- Configure PostgreSQL database credentials ---
 
---- Configure storage backend and generate application secrets ---
-
 ============================================================
 Generating Configuration Files
 ============================================================
@@ -26,7 +24,7 @@ Generating Configuration Files
 
 ✓ Configuration files generated successfully!
 
-Writing 6 secrets to .secrets/ directory...
+Writing 2 secrets to .secrets/ directory...
 ✓ Secrets written successfully
 
 ============================================================

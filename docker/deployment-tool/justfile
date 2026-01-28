@@ -21,7 +21,7 @@ test-integration *ARGS:
 test-all *ARGS:test test-integration
 
 update-test-fixtures:
-    AVATAR_DEPLOY_UPDATE_FIXTURES=1 pytest tests/integration/
+    AVATAR_DEPLOY_UPDATE_FIXTURES=1 just test-integration
 
 # Lint code with ruff
 lint: format
@@ -40,7 +40,7 @@ build:
 
 # Run the tool interactively in a test directory
 run-interactive-github:
-    #!/usr/bin/env bash
+    #!/usr/bin/env bash3
     TEST_DIR=$(mktemp -d)
     echo "Running in temporary directory: $TEST_DIR"
     uv run octopize-avatar-deploy --output-dir "$TEST_DIR" --verbose

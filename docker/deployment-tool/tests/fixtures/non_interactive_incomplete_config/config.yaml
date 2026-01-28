@@ -1,0 +1,3 @@
+PUBLIC_URL: "https://test.local"
+ENV_NAME: "test-env"
+# Deliberately incomplete for testing non-interactive behavior

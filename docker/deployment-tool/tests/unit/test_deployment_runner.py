@@ -76,6 +76,8 @@ class TestDeploymentRunner:
         templates_dir = temp_output_dir / ".avatar-templates"
         templates_dir.mkdir()
         (templates_dir / ".env.template").write_text("# Mock env template")
+        (templates_dir / "nginx.conf.template").write_text("# Mock nginx")
+        (templates_dir / "docker-compose.yml").write_text("# Mock compose")
 
         runner = DeploymentRunner(
             output_dir=temp_output_dir,
@@ -131,6 +133,8 @@ class TestDeploymentRunner:
         assert result is True
         # Verify templates were copied to the expected location
         assert (temp_output_dir / ".avatar-templates" / ".env.template").exists()
+        assert (temp_output_dir / ".avatar-templates" / "nginx.conf.template").exists()
+        assert (temp_output_dir / ".avatar-templates" / "docker-compose.yml").exists()
 
 
     def test_ensure_templates_local_source_not_found(
@@ -226,6 +230,8 @@ class TestDeploymentRunner:
         templates_dir = temp_output_dir / ".avatar-templates"
         templates_dir.mkdir()
         (templates_dir / ".env.template").write_text("# Mock")
+        (templates_dir / "nginx.conf.template").write_text("# Mock nginx")
+        (templates_dir / "docker-compose.yml").write_text("# Mock compose")
 
         runner = DeploymentRunner(
             output_dir=temp_output_dir,

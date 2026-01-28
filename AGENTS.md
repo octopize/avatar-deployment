@@ -5,6 +5,21 @@
 
 **Important**: Do NOT create summary documents or extensive documentation after completing tasks unless explicitly requested by the user. Keep responses concise and focused on the task at hand.
 
+## Testing Requirements
+
+**CRITICAL**: Always run the full test suite after making any code modifications:
+
+```bash
+cd docker/deployment-tool
+just test  # Or: uv run pytest
+```
+
+Verify all tests pass before considering the work complete. This applies to:
+- Source code changes in `src/`
+- Test modifications in `tests/`
+- Configuration changes that affect behavior
+- Fixture updates
+
 ## Architecture Overview
 
 This repository manages deployments for the Avatar platform using two distinct deployment strategies:

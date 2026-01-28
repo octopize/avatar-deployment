@@ -1,0 +1,15 @@
+PUBLIC_URL: "https://avatar.complete.com"
+ENV_NAME: "production"
+SMTP_HOST: "smtp.complete.com"
+SMTP_PORT: 587
+SMTP_SENDER_EMAIL: "noreply@complete.com"
+SMTP_USERNAME: "smtp-user"
+SMTP_PASSWORD: "smtp-pass"
+DB_HOST: "db.complete.com"
+DB_NAME: "avatar_complete"
+DB_USER: "avatar_user"
+DB_PASSWORD: "db-password-123"
+STORAGE_BACKEND: "seaweedfs"
+STORAGE_ENDPOINT: "s3.complete.com:8333"
+STORAGE_BUCKET: "avatar-data"
+IS_SENTRY_ENABLED: true

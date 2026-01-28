@@ -1,0 +1,3 @@
+PUBLIC_URL: "https://avatar.partial.com"
+ENV_NAME: "partial-env"
+# Missing: SMTP, DB, storage credentials - should use defaults or fail in non-interactive mode

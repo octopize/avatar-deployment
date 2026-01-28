@@ -32,7 +32,6 @@ telemetry:
 # Application settings (defaults when no preset is selected)
 application:
   home_directory: "/app/avatar"
-  dataset_expiration: "30d"
   use_console_logging: "false"
   log_level: "INFO"
   sentry_enabled: "true"

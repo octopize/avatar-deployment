@@ -14,8 +14,6 @@ Executing configuration steps...
 
 --- Configure PostgreSQL database credentials ---
 
---- Configure storage backend and generate application secrets ---
-
 ============================================================
 Generating Configuration Files
 ============================================================
@@ -25,7 +23,7 @@ Generating Configuration Files
 
 ✓ Configuration files generated successfully!
 
-Writing 6 secrets to .secrets/ directory...
+Writing 2 secrets to .secrets/ directory...
 ✓ Secrets written successfully
 
 ✓ Configuration saved to {{OUTPUT_DIR}}/deployment-config.yaml

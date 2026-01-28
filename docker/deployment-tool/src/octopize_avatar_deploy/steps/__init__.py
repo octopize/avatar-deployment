@@ -4,7 +4,6 @@ from .base import DeploymentStep
 from .database import DatabaseStep
 from .email import EmailStep
 from .required import RequiredConfigStep
-from .storage import StorageStep
 from .telemetry import TelemetryStep
 
 __all__ = [
@@ -13,5 +12,4 @@ __all__ = [
     "EmailStep",
     "TelemetryStep",
     "DatabaseStep",
-    "StorageStep",
 ]

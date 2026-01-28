@@ -1,0 +1,3 @@
+PUBLIC_URL: "https://avatar.test.com"
+ENV_NAME: "test"
+IS_SENTRY_ENABLED: "yes"  # Should be boolean

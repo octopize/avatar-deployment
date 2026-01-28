@@ -39,14 +39,8 @@ class RequiredConfigStep(DeploymentStep):
         else:
             config["ENV_NAME"] = ""
 
-        # Avatar home directory
-        default_home = self.defaults["application"]["home_directory"]
-        config["AVATAR_HOME"] = self.config.get(
-            "AVATAR_HOME",
-            self.prompt("Avatar home directory", default_home)
-            if self.interactive
-            else default_home,
-        )
+        # Avatar home directory - always use default, not configurable
+        config["AVATAR_HOME"] = self.defaults["application"]["home_directory"]
 
         # Service versions
         config["AVATAR_API_VERSION"] = self.config.get(
