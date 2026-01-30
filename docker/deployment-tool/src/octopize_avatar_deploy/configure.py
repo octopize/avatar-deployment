@@ -34,6 +34,11 @@ from octopize_avatar_deploy.download_templates import (
     LocalTemplateProvider,
     download_templates,
 )
+from octopize_avatar_deploy.version_compat import (
+    SCRIPT_VERSION,
+    VersionError,
+    validate_template_version,
+)
 from octopize_avatar_deploy.input_gatherer import (
     ConsoleInputGatherer,
     InputGatherer,
@@ -496,7 +501,39 @@ class DeploymentRunner:
                 f"Found all {len(REQUIRED_FILES)} required template files"
             )
 
-        return True
+        # Validate template version compatibility
+        return self._validate_template_version()
+
+    def _validate_template_version(self) -> bool:
+        """
+        Validate that the template version is compatible with the script version.
+
+        Returns:
+            True if compatible, False otherwise
+        """
+        version_file = self.templates_dir / ".template-version"
+
+        if not version_file.exists():
+            if self.verbose:
+                self.printer.print_warning(
+                    "No .template-version file found, skipping version check"
+                )
+            return True
+
+        try:
+            validate_template_version(
+                version_file=version_file,
+                script_version=SCRIPT_VERSION,
+                verbose=self.verbose,
+            )
+            if self.verbose:
+                self.printer.print_success(
+                    f"Template version is compatible with script version {SCRIPT_VERSION}"
+                )
+            return True
+        except VersionError as e:
+            self.printer.print_error(str(e))
+            return False
 
     def run(
         self,

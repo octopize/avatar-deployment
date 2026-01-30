@@ -26,7 +26,10 @@ This tool simplifies Avatar deployment by:
 - `.env.template` - Environment configuration template
 - `nginx.conf.template` - Nginx configuration template
 - `docker-compose.yml` - Docker services definition
+- `.template-version` - Template version information
 - Other deployment files
+
+These templates are located in `docker/templates/` in the avatar-deployment repository.
 
 This design means you can install and run the tool without cloning the repository!
 
@@ -162,7 +165,8 @@ After running the tool, you'll have:
 └── .avatar-templates/        # Cached templates (auto-downloaded)
     ├── .env.template
     ├── nginx.conf.template
-    └── docker-compose.yml
+    ├── docker-compose.yml
+    └── .template-version
 ```
 
 ## Configuration Presets in Detail

@@ -19,11 +19,11 @@ def fixtures_dir():
 @pytest.fixture(scope="session")
 def docker_templates_dir():
     """
-    Get the path to actual production templates in docker/ directory.
+    Get the path to actual production templates in docker/templates/ directory.
 
     This allows tests to use real production templates instead of mocks.
     """
-    return Path(__file__).parent.parent.parent.parent / "docker"
+    return Path(__file__).parent.parent.parent.parent / "docker" / "templates"
 
 
 @pytest.fixture

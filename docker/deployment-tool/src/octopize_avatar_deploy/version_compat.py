@@ -262,3 +262,84 @@ def validate_all_templates(
         print(f"\n✓ All {len(templates)} templates are compatible")
 
     return True
+
+
+def validate_template_version(
+    version_file: Path, script_version: str = SCRIPT_VERSION, verbose: bool = False
+) -> None:
+    """
+    Validate that the template version is compatible with the script version.
+
+    This reads the .template-version file which should contain:
+    - First line: template version (e.g., "0.1.0")
+    - Optional second line: compatibility constraint (e.g., ">=1.0.0,<2.0.0")
+
+    Args:
+        version_file: Path to .template-version file
+        script_version: Script version to check against
+        verbose: Print validation details
+
+    Raises:
+        VersionError: If template version is incompatible with script version
+    """
+    try:
+        content = version_file.read_text().strip().split("\n")
+
+        if not content or not content[0].strip():
+            raise VersionError(
+                f"Invalid .template-version file: {version_file} (empty or missing version)"
+            )
+
+        template_version = content[0].strip()
+
+        # Parse template version to validate format
+        try:
+            parse_version(template_version)
+        except ValueError as e:
+            raise VersionError(
+                f"Invalid template version format in {version_file}: {template_version}"
+            ) from e
+
+        # Check for compatibility constraint (optional second line)
+        compatibility_spec = None
+        if len(content) > 1 and content[1].strip():
+            compatibility_spec = content[1].strip()
+
+        if verbose:
+            print(f"\nValidating template version from {version_file.name}:")
+            print(f"  Template version: {template_version}")
+            print(f"  Compatibility spec: {compatibility_spec or 'not specified'}")
+            print(f"  Script version: {script_version}")
+
+        # If no compatibility spec, accept any script version
+        if not compatibility_spec:
+            if verbose:
+                print("  ✓ No version constraints (compatible)")
+            return
+
+        # Check compatibility
+        try:
+            compatible = check_version_compatibility(script_version, compatibility_spec)
+
+            if compatible:
+                if verbose:
+                    print("  ✓ Compatible")
+            else:
+                raise VersionError(
+                    f"Script version {script_version} is not compatible with "
+                    f"template version {template_version} (requires {compatibility_spec}). "
+                    f"Please upgrade octopize-avatar-deploy: "
+                    f"pip install --upgrade octopize-avatar-deploy"
+                )
+
+        except ValueError as e:
+            # Invalid constraint format - log warning but don't fail
+            if verbose:
+                print(f"  ⚠ Warning: Invalid compatibility spec: {e}")
+
+    except FileNotFoundError:
+        raise VersionError(f"Template version file not found: {version_file}")
+    except Exception as e:
+        if isinstance(e, VersionError):
+            raise
+        raise VersionError(f"Failed to validate template version: {e}") from e

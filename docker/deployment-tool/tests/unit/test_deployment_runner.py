@@ -28,6 +28,7 @@ class TestDeploymentRunner:
             (templates_dir / ".env.template").write_text("# Mock env template")
             (templates_dir / "nginx.conf.template").write_text("# Mock nginx template")
             (templates_dir / "docker-compose.yml").write_text("# Mock docker-compose")
+            (templates_dir / ".template-version").write_text("0.1.0\n")
             yield templates_dir
 
     def test_init_default_template_from(self, temp_output_dir):
@@ -78,6 +79,7 @@ class TestDeploymentRunner:
         (templates_dir / ".env.template").write_text("# Mock env template")
         (templates_dir / "nginx.conf.template").write_text("# Mock nginx")
         (templates_dir / "docker-compose.yml").write_text("# Mock compose")
+        (templates_dir / ".template-version").write_text("0.1.0\n")
 
         runner = DeploymentRunner(
             output_dir=temp_output_dir,
@@ -232,6 +234,7 @@ class TestDeploymentRunner:
         (templates_dir / ".env.template").write_text("# Mock")
         (templates_dir / "nginx.conf.template").write_text("# Mock nginx")
         (templates_dir / "docker-compose.yml").write_text("# Mock compose")
+        (templates_dir / ".template-version").write_text("0.1.0\n")
 
         runner = DeploymentRunner(
             output_dir=temp_output_dir,

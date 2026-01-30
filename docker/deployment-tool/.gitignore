@@ -61,10 +61,3 @@ env/
 # OS
 .DS_Store
 Thumbs.db
-
-# Generated test outputs
-test-output/
-.secrets/
-*.env
-nginx/
-deployment-config.yaml

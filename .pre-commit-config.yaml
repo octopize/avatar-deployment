@@ -16,6 +16,15 @@ repos:
         description: "Synchronizes files from common/ to Helm chart and docker"
         verbose: true
 
+      - id: check-version-bump
+        name: Check version bump when templates or scripts change
+        entry: ./scripts/check-version-bump.py
+        language: python
+        pass_filenames: false
+        files: ^(docker/templates/|docker/deployment-tool/src/)
+        description: "Ensures version is bumped when templates or deployment tool code changes"
+        verbose: true
+
       - id: update-image-versions
         name: Update image versions from registries
         entry: ./scripts/update-image-versions.py

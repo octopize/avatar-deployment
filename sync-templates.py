@@ -27,7 +27,7 @@ DOCKER_TARGET_DIR = "docker/authentik/custom-templates"
 # Configuration - Branding Assets
 BRANDING_SOURCE_DIR = "common/authentik-branding"
 BRANDING_HELM_TARGET_DIR = "services-api-helm-chart/branding"
-# Docker uses direct mount from common/authentik-branding, no copy needed
+BRANDING_DOCKER_TARGET_DIR = "docker/authentik/branding"
 
 
 def parse_args() -> argparse.Namespace:
@@ -162,6 +162,7 @@ def main() -> int:
     # Branding assets paths
     branding_source_path = script_dir / BRANDING_SOURCE_DIR
     branding_helm_target_path = script_dir / BRANDING_HELM_TARGET_DIR
+    branding_docker_target_path = script_dir / BRANDING_DOCKER_TARGET_DIR
 
     # Validate email templates source directory exists
     if not source_path.is_dir():
@@ -170,7 +171,7 @@ def main() -> int:
         return 1
 
     # Create target directories if they don't exist
-    all_target_paths = [helm_target_path, docker_target_path, branding_helm_target_path]
+    all_target_paths = [helm_target_path, docker_target_path, branding_helm_target_path, branding_docker_target_path]
     for target_path in all_target_paths:
         if not target_path.exists():
             if args.dry_run:
@@ -203,7 +204,7 @@ def main() -> int:
     print(f"   Source: {BRANDING_SOURCE_DIR}/ ({branding_file_count} files)")
     print("   Targets:")
     print(f"     • {BRANDING_HELM_TARGET_DIR}/ (Helm chart)")
-    print(f"     • Docker uses direct mount from {BRANDING_SOURCE_DIR}/")
+    print(f"     • {BRANDING_DOCKER_TARGET_DIR}/ (Docker Compose)")
     print()
 
     if args.dry_run:
@@ -229,7 +230,7 @@ def main() -> int:
             "*.html",
         )
 
-    # Sync branding assets to Helm target only
+    # Sync branding assets to both targets
     if branding_file_count > 0:
         sync_to_target(
             branding_source_path,
@@ -239,17 +240,27 @@ def main() -> int:
             args.verbose,
             "branding",
         )
+        sync_to_target(
+            branding_source_path,
+            branding_docker_target_path,
+            "Docker Compose (branding)",
+            args.dry_run,
+            args.verbose,
+            "branding",
+        )
 
     if not args.dry_run:
         # Count synced files in each target
         helm_count = len(get_html_files(helm_target_path))
         docker_count = len(get_html_files(docker_target_path))
-        branding_count = len(get_branding_files(branding_helm_target_path))
+        branding_helm_count = len(get_branding_files(branding_helm_target_path))
+        branding_docker_count = len(get_branding_files(branding_docker_target_path))
 
         print("✅ Successfully synchronized files")
         print(f"   • Email templates (Helm): {helm_count} files")
         print(f"   • Email templates (Docker): {docker_count} files")
-        print(f"   • Branding assets (Helm): {branding_count} files")
+        print(f"   • Branding assets (Helm): {branding_helm_count} files")
+        print(f"   • Branding assets (Docker): {branding_docker_count} files")
 
         if args.verbose:
             print()
@@ -269,8 +280,7 @@ def main() -> int:
         print()
         print("Next steps:")
         print("  Docker Compose:")
-        print(f"    • Review: git diff {DOCKER_TARGET_DIR}")
-        print(f"    • Branding files are mounted directly from {BRANDING_SOURCE_DIR}/")
+        print(f"    • Review: git diff {DOCKER_TARGET_DIR} {BRANDING_DOCKER_TARGET_DIR}")
         print("    • Restart: cd docker && docker-compose restart authentik_server authentik_worker")
         print()
         print("  Helm Chart:")
@@ -278,9 +288,8 @@ def main() -> int:
         print("    • Package: just push-helm-chart")
         print()
         print("  Commit all changes:")
-        print(f"    git add {HELM_TARGET_DIR} {DOCKER_TARGET_DIR} {BRANDING_HELM_TARGET_DIR}")
-        print("    git commit -m 'sync: update email templates and brandingIR}")
-        print("    git commit -m 'sync: update email templates'")
+        print(f"    git add {HELM_TARGET_DIR} {DOCKER_TARGET_DIR} {BRANDING_HELM_TARGET_DIR} {BRANDING_DOCKER_TARGET_DIR}")
+        print("    git commit -m 'sync: update email templates and branding'")
         print("━" * 80)
 
     return 0

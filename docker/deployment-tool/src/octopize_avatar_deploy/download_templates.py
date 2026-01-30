@@ -14,11 +14,12 @@ from pathlib import Path
 GITHUB_RAW_BASE = "https://raw.githubusercontent.com/octopize/avatar-deployment"
 DEFAULT_BRANCH = "main"
 
-# Files to download from the docker/ directory
+# Files to download from the docker/templates/ directory
 REQUIRED_FILES = [
     ".env.template",
     "nginx.conf.template",
     "docker-compose.yml",
+    ".template-version",
 ]
 
 
@@ -109,14 +110,14 @@ class GitHubTemplateProvider(TemplateProvider):
         """
         super().__init__(verbose=verbose)
         self.branch = branch
-        self.base_url = f"{GITHUB_RAW_BASE}/{branch}/docker"
+        self.base_url = f"{GITHUB_RAW_BASE}/{branch}/docker/templates"
 
     def provide_file(self, filename: str, destination: Path) -> bool:
         """
         Download a single file from GitHub.
 
         Args:
-            filename: Name of file to download (in docker/ directory)
+            filename: Name of file to download (in docker/templates/ directory)
             destination: Local path where file should be saved
 
         Returns:
