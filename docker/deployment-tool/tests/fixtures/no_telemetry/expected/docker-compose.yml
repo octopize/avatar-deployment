@@ -445,8 +445,9 @@ services:
       # Mount custom email templates (synced from common/authentik-templates)
       - ./authentik/custom-templates:/templates/email:ro
       # Mount custom branding assets (shared source)
-      - ../common/authentik-branding/favicon.ico:/media/public/favicon.ico:ro
-      - ../common/authentik-branding/logo.png:/media/public/brand_logo.png:ro
+      - ./authentik/branding/favicon.ico:/media/public/favicon.ico:ro
+      - ./authentik/branding/logo.png:/media/public/brand_logo.png:ro
+      - ./authentik/branding/background.png:/media/public/background.png:ro
 
     secrets:
       - authentik_database_name
