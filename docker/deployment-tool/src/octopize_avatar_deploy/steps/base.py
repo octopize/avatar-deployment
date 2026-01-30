@@ -163,6 +163,13 @@ class DeploymentStep(ABC):
         """
         return self.input_gatherer.prompt_choice(message, choices, default)
 
+
+    def get_config_value(self, key: str, default: Any = None) -> Any:
+        ret =  self.config.get(key, default)
+        if ret is None:
+            raise ValueError(f"Configuration key '{key}' is required but not set.")
+        return ret
+
     # Utility methods for generating secrets
 
     @staticmethod

@@ -42,11 +42,13 @@ from octopize_avatar_deploy.input_gatherer import (
 from octopize_avatar_deploy.printer import ConsolePrinter, Printer, RichPrinter
 from octopize_avatar_deploy.state_manager import DeploymentState
 from octopize_avatar_deploy.steps import (
+    AuthentikStep,
     DatabaseStep,
     DeploymentStep,
     EmailStep,
     LoggingStep,
     RequiredConfigStep,
+    StorageStep,
     TelemetryStep,
 )
 
@@ -65,10 +67,12 @@ class DeploymentConfigurator:
     # Default step classes (can be overridden in tests)
     DEFAULT_STEP_CLASSES: list[type[DeploymentStep]] = [
         RequiredConfigStep,
+        DatabaseStep,
+        AuthentikStep,
+        StorageStep,
         EmailStep,
         TelemetryStep,
         LoggingStep,
-        DatabaseStep,
     ]
 
     def __init__(

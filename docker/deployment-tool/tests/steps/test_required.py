@@ -61,7 +61,6 @@ class TestRequiredConfigStep:
             "PUBLIC_URL": "custom.example.com",
             "ENV_NAME": "custom-env",
             "AVATAR_API_VERSION": "2.0.0",
-            "AVATAR_HOME": "/custom/path",
         }
         step = RequiredConfigStep(tmp_path, defaults, config, interactive=False)
 
@@ -70,12 +69,22 @@ class TestRequiredConfigStep:
         assert result["PUBLIC_URL"] == "custom.example.com"
         assert result["ENV_NAME"] == "custom-env"
         assert result["AVATAR_API_VERSION"] == "2.0.0"
-        assert result["AVATAR_HOME"] == "/custom/path"
+        # AVATAR_HOME always uses defaults, not configurable
+        assert result["AVATAR_HOME"] == "/opt/avatar"
 
     def test_generate_secrets(self, step):
-        """Test that required config step generates no secrets."""
+        """Test that required config step generates API secrets."""
+        # Call collect_config first to populate self.config
+        step.collect_config()
         secrets_dict = step.generate_secrets()
-        assert secrets_dict == {}
+
+        assert "pepper" in secrets_dict
+        assert "authjwt_secret_key" in secrets_dict
+        assert "organization_name" in secrets_dict
+        assert "clevercloud_sso_salt" in secrets_dict
+        assert len(secrets_dict["pepper"]) > 0
+        assert len(secrets_dict["authjwt_secret_key"]) > 0
+        assert len(secrets_dict["clevercloud_sso_salt"]) > 0
 
     def test_step_metadata(self, step):
         """Test step metadata."""

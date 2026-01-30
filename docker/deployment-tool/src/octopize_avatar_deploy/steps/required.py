@@ -1,5 +1,6 @@
 """Required configuration step - collects mandatory deployment settings."""
 
+import secrets
 from typing import Any
 
 from .base import DeploymentStep
@@ -34,6 +35,16 @@ class RequiredConfigStep(DeploymentStep):
         else:
             config["ENV_NAME"] = ""
 
+        # Organization name - Required
+        if "ORGANIZATION_NAME" in self.config:
+            config["ORGANIZATION_NAME"] = self.config["ORGANIZATION_NAME"]
+        elif self.interactive:
+            config["ORGANIZATION_NAME"] = self.prompt(
+                "Organization name (e.g., MyCompany)"
+            )
+        else:
+            config["ORGANIZATION_NAME"] = ""
+
         # Avatar home directory - always use default, not configurable
         config["AVATAR_HOME"] = self.defaults["application"]["home_directory"]
 
@@ -54,8 +65,16 @@ class RequiredConfigStep(DeploymentStep):
             "AVATAR_AUTHENTIK_VERSION", self.defaults["images"]["authentik"]
         )
 
+        # Update self.config so generate_secrets() can access these values
+        self.config.update(config)
+
         return config
 
     def generate_secrets(self) -> dict[str, str]:
-        """No secrets generated in this step."""
-        return {}
+        """Generate required API secrets."""
+        return {
+            "pepper": secrets.token_hex(),
+            "authjwt_secret_key": secrets.token_hex(),
+            "organization_name": self.config["ORGANIZATION_NAME"],
+            "clevercloud_sso_salt": secrets.token_hex(),
+        }

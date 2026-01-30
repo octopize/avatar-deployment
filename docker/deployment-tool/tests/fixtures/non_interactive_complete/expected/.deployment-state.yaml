@@ -8,10 +8,12 @@ steps:
   prompt_user_secrets: not-started
   finalize: not-started
   step_0_required_config: completed
-  step_1_email: completed
-  step_2_telemetry: completed
-  step_3_logging: completed
-  step_4_database: completed
+  step_1_database: completed
+  step_2_authentik: completed
+  step_3_storage: completed
+  step_4_email: completed
+  step_5_telemetry: completed
+  step_6_logging: completed
 config:
   PUBLIC_URL: https://avatar.complete.com
   ENV_NAME: production
@@ -28,12 +30,16 @@ config:
   STORAGE_ENDPOINT: s3.complete.com:8333
   STORAGE_BUCKET: avatar-data
   IS_SENTRY_ENABLED: 'true'
+  ORGANIZATION_NAME: ''
   AVATAR_HOME: /app/avatar
   AVATAR_API_VERSION: 2.20.1
   AVATAR_WEB_VERSION: 0.40.0
   AVATAR_PDFGENERATOR_VERSION: latest
   AVATAR_SEAWEEDFS_VERSION: 0.2.0
   AVATAR_AUTHENTIK_VERSION: 2025.10.2
+  DB_ADMIN_USER: avatar_dba
+  AUTHENTIK_DATABASE_NAME: authentik
+  AUTHENTIK_DATABASE_USER: authentik
   MAIL_PROVIDER: aws
   USE_EMAIL_AUTHENTICATION: 'true'
   TELEMETRY_S3_ENDPOINT_URL: https://s3.fr-par.scw.cloud

@@ -9,13 +9,17 @@ Executing configuration steps...
 
 --- Collect required deployment settings (PUBLIC_URL, ENV_NAME, etc.) ---
 
+--- Configure PostgreSQL database credentials ---
+
+--- Configure Authentik SSO authentication credentials ---
+
+--- Configure S3-compatible storage (SeaweedFS) credentials ---
+
 --- Configure email provider (AWS SES or SMTP) and credentials ---
 
 --- Configure telemetry and monitoring (Sentry, usage analytics) ---
 
 --- Configure application logging settings ---
-
---- Configure PostgreSQL database credentials ---
 
 ============================================================
 Generating Configuration Files
@@ -26,7 +30,7 @@ Generating Configuration Files
 
 ✓ Configuration files generated successfully!
 
-Writing 2 secrets to .secrets/ directory...
+Writing 17 secrets to .secrets/ directory...
 ✓ Secrets written successfully
 
 ✓ Configuration saved to {{OUTPUT_DIR}}/deployment-config.yaml
