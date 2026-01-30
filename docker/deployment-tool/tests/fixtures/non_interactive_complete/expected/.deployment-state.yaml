@@ -12,11 +12,13 @@ steps:
   step_2_authentik: completed
   step_3_storage: completed
   step_4_email: completed
-  step_5_telemetry: completed
-  step_6_logging: completed
+  step_5_user: completed
+  step_6_telemetry: completed
+  step_7_logging: completed
 config:
   PUBLIC_URL: https://avatar.complete.com
   ENV_NAME: production
+  ORGANIZATION_NAME: TestOrg
   SMTP_HOST: smtp.complete.com
   SMTP_PORT: 587
   SMTP_SENDER_EMAIL: noreply@complete.com
@@ -30,7 +32,6 @@ config:
   STORAGE_ENDPOINT: s3.complete.com:8333
   STORAGE_BUCKET: avatar-data
   IS_SENTRY_ENABLED: 'true'
-  ORGANIZATION_NAME: ''
   AVATAR_HOME: /app/avatar
   AVATAR_API_VERSION: 2.20.1
   AVATAR_WEB_VERSION: 0.40.0
@@ -42,6 +43,7 @@ config:
   AUTHENTIK_DATABASE_USER: authentik
   MAIL_PROVIDER: aws
   USE_EMAIL_AUTHENTICATION: 'true'
+  ADMIN_EMAILS: ''
   TELEMETRY_S3_ENDPOINT_URL: https://s3.fr-par.scw.cloud
   TELEMETRY_S3_REGION: fr-par
   USE_CONSOLE_LOGGING: 'false'

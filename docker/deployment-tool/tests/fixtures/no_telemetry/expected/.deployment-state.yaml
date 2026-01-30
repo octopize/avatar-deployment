@@ -12,8 +12,9 @@ steps:
   step_2_authentik: completed
   step_3_storage: completed
   step_4_email: completed
-  step_5_telemetry: completed
-  step_6_logging: completed
+  step_5_user: completed
+  step_6_telemetry: completed
+  step_7_logging: completed
 config:
   PUBLIC_URL: https://avatar.internal.com
   ENV_NAME: admin@internal.com
@@ -31,6 +32,7 @@ config:
   AUTHENTIK_DATABASE_USER: authentik
   MAIL_PROVIDER: '587'
   USE_EMAIL_AUTHENTICATION: 'true'
+  ADMIN_EMAILS: noreply@internal.com
   IS_SENTRY_ENABLED: 'false'
   TELEMETRY_S3_ENDPOINT_URL: ''
   TELEMETRY_S3_REGION: ''

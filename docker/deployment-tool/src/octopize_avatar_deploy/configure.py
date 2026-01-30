@@ -50,6 +50,7 @@ from octopize_avatar_deploy.steps import (
     RequiredConfigStep,
     StorageStep,
     TelemetryStep,
+    UserStep,
 )
 
 
@@ -71,6 +72,7 @@ class DeploymentConfigurator:
         AuthentikStep,
         StorageStep,
         EmailStep,
+        UserStep,
         TelemetryStep,
         LoggingStep,
     ]

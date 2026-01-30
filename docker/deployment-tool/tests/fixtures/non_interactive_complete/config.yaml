@@ -1,5 +1,6 @@
 PUBLIC_URL: "https://avatar.complete.com"
 ENV_NAME: "production"
+ORGANIZATION_NAME: "TestOrg"
 SMTP_HOST: "smtp.complete.com"
 SMTP_PORT: 587
 SMTP_SENDER_EMAIL: "noreply@complete.com"

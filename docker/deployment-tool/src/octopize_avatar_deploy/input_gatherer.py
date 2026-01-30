@@ -7,6 +7,7 @@ Provides pluggable input gathering through Protocol pattern, enabling:
 - Rich library input with enhanced features
 """
 
+from collections.abc import Callable
 from typing import Protocol, runtime_checkable
 
 try:
@@ -27,13 +28,19 @@ class InputGatherer(Protocol):
     maintaining type safety through Protocol pattern.
     """
 
-    def prompt(self, message: str, default: str = "") -> str:
+    def prompt(
+        self,
+        message: str,
+        default: str | None = None,
+        validate: Callable[[str], tuple[bool, str]] | None = None,
+    ) -> str:
         """
-        Prompt user for input with optional default value.
+        Prompt user for input with optional default value and validation.
 
         Args:
             message: The prompt message
-            default: Default value to use if user presses Enter
+            default: Default value to use if user presses Enter (None = required field)
+            validate: Optional validation function that returns (is_valid, error_message)
 
         Returns:
             User's input or default value
@@ -77,18 +84,33 @@ class ConsoleInputGatherer:
     This is the default implementation for production use.
     """
 
-    def prompt(self, message: str, default: str = "") -> str:
-        """Prompt user for input with optional default value."""
-        if default:
-            response = input(f"{message} [{default}]: ").strip()
-            return response if response else default
-        else:
-            response = ""
-            while not response:
+    def prompt(
+        self,
+        message: str,
+        default: str | None = None,
+        validate: Callable[[str], tuple[bool, str]] | None = None,
+    ) -> str:
+        """Prompt user for input with optional default value and validation."""
+        while True:
+            if default is not None:  # Has a default (including empty string)
+                prompt_text = f"{message} [{default}]: " if default else f"{message} [press Enter to skip]: "
+                response = input(prompt_text).strip()
+                value = response if response else default
+            else:  # No default - required field
                 response = input(f"{message}: ").strip()
                 if not response:
                     print("  ⚠ This value is required")
-            return response
+                    continue
+                value = response
+
+            # Validate if validator provided
+            if validate:
+                is_valid, error_msg = validate(value)
+                if not is_valid:
+                    print(f"  ⚠ {error_msg}")
+                    continue
+
+            return value
 
     def prompt_yes_no(self, message: str, default: bool = True) -> bool:
         """Prompt user for yes/no input."""
@@ -154,12 +176,34 @@ class MockInputGatherer:
         self.current_index += 1
         return response
 
-    def prompt(self, message: str, default: str = "") -> str:
-        """Return next mocked string response."""
+    def prompt(
+        self,
+        message: str,
+        default: str | None = None,
+        validate: Callable[[str], tuple[bool, str]] | None = None,
+    ) -> str:
+        """Return next mocked response."""
         response = self._get_next_response()
+
         if isinstance(response, bool):
-            raise TypeError(f"Expected string response, got bool: {response}")
-        return response if response else default
+            raise TypeError(
+                "Expected string response, got bool: True"
+                if response
+                else "Expected string response, got bool: False"
+            )
+
+        # Use default if response is empty string and default is provided
+        value = response if response else (default if default is not None else response)
+
+        # Validate if validator provided (for testing validation logic)
+        if validate:
+            is_valid, error_msg = validate(value)
+            if not is_valid:
+                raise ValueError(
+                    f"MockInputGatherer: Validation failed for '{value}': {error_msg}"
+                )
+
+        return value
 
     def prompt_yes_no(self, message: str, default: bool = True) -> bool:
         """Return next mocked boolean response."""
@@ -211,18 +255,39 @@ class RichInputGatherer:
             )
         self.console = Console()
 
-    def prompt(self, message: str, default: str = "") -> str:
-        """Prompt user for input with optional default value."""
-        if default:
-            result = Prompt.ask(f"[cyan]{message}[/cyan]", default=default)
-            return result
-        else:
-            # Rich Prompt requires at least empty string, so we loop
-            result = ""
-            while not result:
-                result = Prompt.ask(f"[cyan]{message}[/cyan]").strip()
-                if not result:
-                    self.console.print("[yellow]⚠ This value is required[/yellow]")
+    def prompt(
+        self,
+        message: str,
+        default: str | None = None,
+        validate: Callable[[str], tuple[bool, str]] | None = None,
+    ) -> str:
+        """Prompt user for input with optional default value and validation."""
+        while True:
+            if default is not None:  # Has a default (including empty string)
+                if default:
+                    result = Prompt.ask(f"[cyan]{message}[/cyan]", default=default)
+                else:
+                    # Empty string default - show skip hint
+                    result = Prompt.ask(
+                        f"[cyan]{message} (press Enter to skip)[/cyan]", default=""
+                    )
+            else:  # No default - required field
+                # Rich Prompt requires at least empty string, so we loop
+                result = ""
+                while not result:
+                    result = Prompt.ask(f"[cyan]{message}[/cyan]").strip()
+                    if not result:
+                        self.console.print(
+                            "[yellow]⚠ This value is required[/yellow]"
+                        )
+
+            # Validate if validator provided
+            if validate:
+                is_valid, error_msg = validate(result)
+                if not is_valid:
+                    self.console.print(f"[yellow]⚠ {error_msg}[/yellow]")
+                    continue
+
             return result
 
     def prompt_yes_no(self, message: str, default: bool = True) -> bool:

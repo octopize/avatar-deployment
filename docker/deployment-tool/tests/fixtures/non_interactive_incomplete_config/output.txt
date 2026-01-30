@@ -17,6 +17,8 @@ Executing configuration steps...
 
 --- Configure email provider (AWS SES or SMTP) and credentials ---
 
+--- Configure user authentication settings ---
+
 --- Configure telemetry and monitoring (Sentry, usage analytics) ---
 
 --- Configure application logging settings ---
@@ -30,7 +32,7 @@ Generating Configuration Files
 
 ✓ Configuration files generated successfully!
 
-Writing 19 secrets to .secrets/ directory...
+Writing 22 secrets to .secrets/ directory...
 ✓ Secrets written successfully
 
 ============================================================

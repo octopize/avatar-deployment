@@ -536,11 +536,15 @@ class TestNonInteractiveModeCompleteness:
             os.chdir(temp_deployment_dir)
             responses = fixture_manager.load_input_fixture("basic_deployment")
 
+            # Use a unique directory name to avoid conflicts between test runs
+            import uuid
+            unique_dir = f"relative-{uuid.uuid4().hex[:8]}"
+
             harness = CLITestHarness(
                 responses=responses,
                 args=[
                     "--output-dir",
-                    "../relative/path",
+                    f"../{unique_dir}/path",
                     "--template-from",
                     str(docker_templates_dir),
                 ],
@@ -549,7 +553,7 @@ class TestNonInteractiveModeCompleteness:
             exit_code = harness.run()
 
             assert exit_code == 0
-            relative_dir = temp_deployment_dir.parent / "relative" / "path"
+            relative_dir = temp_deployment_dir.parent / unique_dir / "path"
             assert relative_dir.exists()
             assert (relative_dir / ".env").exists()
 

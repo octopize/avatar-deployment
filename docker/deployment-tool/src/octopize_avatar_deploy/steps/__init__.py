@@ -8,6 +8,7 @@ from .logging import LoggingStep
 from .required import RequiredConfigStep
 from .storage import StorageStep
 from .telemetry import TelemetryStep
+from .user import UserStep
 
 __all__ = [
     "DeploymentStep",
@@ -18,4 +19,5 @@ __all__ = [
     "DatabaseStep",
     "StorageStep",
     "AuthentikStep",
+    "UserStep",
 ]

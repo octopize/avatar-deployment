@@ -8,6 +8,7 @@ for a specific part of the deployment (email, telemetry, storage, etc.).
 import base64
 import secrets
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -121,18 +122,24 @@ class DeploymentStep(ABC):
 
     # Helper methods for prompting user input
 
-    def prompt(self, message: str, default: str = "") -> str:
+    def prompt(
+        self,
+        message: str,
+        default: str | None = None,
+        validate: "Callable[[str], tuple[bool, str]] | None" = None,
+    ) -> str:
         """
-        Prompt user for input with optional default value.
+        Prompt user for input with optional default value and validation.
 
         Args:
             message: The prompt message
-            default: Default value to use if user presses Enter
+            default: Default value to use if user presses Enter (None = required field)
+            validate: Optional validation function that returns (is_valid, error_message)
 
         Returns:
             User's input or default value
         """
-        return self.input_gatherer.prompt(message, default)
+        return self.input_gatherer.prompt(message, default, validate)
 
     def prompt_yes_no(self, message: str, default: bool = True) -> bool:
         """

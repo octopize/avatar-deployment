@@ -39,11 +39,19 @@ class RequiredConfigStep(DeploymentStep):
         if "ORGANIZATION_NAME" in self.config:
             config["ORGANIZATION_NAME"] = self.config["ORGANIZATION_NAME"]
         elif self.interactive:
-            config["ORGANIZATION_NAME"] = self.prompt(
-                "Organization name (e.g., MyCompany)"
-            )
+            while True:
+                org_name = self.prompt("Organization name (e.g., MyCompany)")
+                if org_name.strip():
+                    config["ORGANIZATION_NAME"] = org_name
+                    break
+                self.printer.print_error(
+                    "Organization name is required and cannot be empty"
+                )
         else:
-            config["ORGANIZATION_NAME"] = ""
+            raise ValueError(
+                "ORGANIZATION_NAME is required but not provided in configuration file. "
+                "Please add ORGANIZATION_NAME to your config or run in interactive mode."
+            )
 
         # Avatar home directory - always use default, not configurable
         config["AVATAR_HOME"] = self.defaults["application"]["home_directory"]

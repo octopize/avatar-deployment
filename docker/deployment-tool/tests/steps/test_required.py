@@ -29,6 +29,7 @@ class TestRequiredConfigStep:
         config = {
             "PUBLIC_URL": "test.example.com",
             "ENV_NAME": "test-env",
+            "ORGANIZATION_NAME": "TestOrg",
         }
         return RequiredConfigStep(tmp_path, defaults, config, interactive=False)
 
@@ -46,7 +47,11 @@ class TestRequiredConfigStep:
 
     def test_collect_config_uses_defaults(self, tmp_path, defaults):
         """Test that default values are used when not provided."""
-        config = {}
+        config = {
+            "PUBLIC_URL": "test.example.com",
+            "ENV_NAME": "test-env",
+            "ORGANIZATION_NAME": "TestOrg",
+        }
         step = RequiredConfigStep(tmp_path, defaults, config, interactive=False)
 
         result = step.collect_config()
@@ -60,6 +65,7 @@ class TestRequiredConfigStep:
         config = {
             "PUBLIC_URL": "custom.example.com",
             "ENV_NAME": "custom-env",
+            "ORGANIZATION_NAME": "TestOrg",
             "AVATAR_API_VERSION": "2.0.0",
         }
         step = RequiredConfigStep(tmp_path, defaults, config, interactive=False)

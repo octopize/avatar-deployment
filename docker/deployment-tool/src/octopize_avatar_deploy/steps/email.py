@@ -84,17 +84,9 @@ class EmailStep(DeploymentStep):
 
         # AWS SES credentials (if using AWS)
         elif self.config.get("MAIL_PROVIDER") == "aws":
-            if self.interactive:
-                aws_key = self.input_gatherer.prompt(
-                    "AWS Access Key ID (press Enter to use instance profile)",
-                    default="",
-                )
-                if aws_key:
-                    secrets_dict["aws_access_key_id"] = aws_key
-                aws_secret = self.input_gatherer.prompt(
-                    "AWS Secret Access Key", default=""
-                )
-                if aws_secret:
-                    secrets_dict["aws_secret_access_key"] = aws_secret
+            # Generate empty placeholder files for AWS credentials
+            # These will be provided by Octopize to the user
+            secrets_dict["aws_mail_account_access_key_id"] = ""
+            secrets_dict["aws_mail_account_secret_access_key"] = ""
 
         return secrets_dict

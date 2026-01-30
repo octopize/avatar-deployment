@@ -153,7 +153,11 @@ def _compare_directories(actual_dir: Path, expected_dir: Path) -> bool:
             actual_content = actual_file.read_text().strip()
             expected_content = expected_file.read_text().strip()
 
-            if not actual_content:
+            # Allow both to be empty (placeholder secrets like telemetry credentials)
+            if not actual_content and not expected_content:
+                continue
+            # Fail if only one is empty
+            elif not actual_content:
                 print(f"\n❌ Secret file is empty: {rel_path}")
                 all_match = False
             elif not expected_content:

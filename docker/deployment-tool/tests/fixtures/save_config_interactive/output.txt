@@ -16,6 +16,8 @@ Executing configuration steps...
 
 --- Configure email provider (AWS SES or SMTP) and credentials ---
 
+--- Configure user authentication settings ---
+
 --- Configure telemetry and monitoring (Sentry, usage analytics) ---
 
 --- Configure application logging settings ---
