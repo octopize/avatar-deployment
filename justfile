@@ -7,27 +7,16 @@ default:
 tag VERSION:
     @git tag -s services-api-helm-chart-v{{VERSION}} -m "Release new services-api helm chart v{{VERSION}}"
 
-# Install deployment tool dependencies in .venv
-install-deploy-tool:
-    @echo "Installing deployment tool dependencies..."
-    cd deployment-tool && uv sync --extra dev
+setup-precommit:
+    #/usr/bin/env bash
+    set -euo pipefail
 
-# Lint deployment tool with ruff
-lint-deploy-tool: format-deploy-tool
-    @echo "Linting deployment tool..."
-    cd deployment-tool && uvx ruff check src/
+    pip install pre-commit
+    pre-commit install
+    @echo "✓ Pre-commit hooks installed"
 
-# Format deployment tool with ruff
-format-deploy-tool:
-    @echo "Formatting deployment tool..."
-    cd deployment-tool && uvx ruff format src/
+update-image-versions:
+    uv run ./scripts/update-image-versions.py --verbose
 
-# Build deployment tool package
-build-deploy-tool:
-    @echo "Building deployment tool package..."
-    cd deployment-tool && uvx --from build pyproject-build .
-
-# Test deployment tool with pytest
-test-deploy-tool:
-    @echo "Testing deployment tool..."
-    cd deployment-tool && uv run --extra dev pytest -v
+check-image-versions:
+    uv run ./scripts/update-image-versions.py --check-only --verbose

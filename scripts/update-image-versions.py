@@ -21,11 +21,9 @@ Options:
 Authentication:
     For private repositories, set environment variables:
     - QUAY_TOKEN: Bearer token for quay.io private repositories
-    - GITHUB_TOKEN: Personal access token for GitHub Container Registry
 
 Example:
     export QUAY_TOKEN="your_quay_bearer_token"
-    export GITHUB_TOKEN="your_github_token"
     python scripts/update-image-versions.py --verbose"""
 
 import argparse
@@ -176,45 +174,53 @@ def get_quay_tags(repository: str, verbose: bool = False) -> list[str]:
 
 def get_ghcr_tags(repository: str, verbose: bool = False) -> list[str]:
     """Fetch all tags for a repository from ghcr.io (GitHub Container Registry)."""
-    # GitHub Container Registry uses GitHub Packages API
-    # We need to extract org/repo from the repository string
-    org, repo = repository.split("/", 1)
-
-    # Use GitHub API to get package versions
-    url = f"https://api.github.com/orgs/{org}/packages/container/{repo}/versions"
-    headers = {"Accept": "application/vnd.github.v3+json"}
-
-    # Get token from environment if available
-    github_token = os.environ.get("GITHUB_TOKEN")
-    if github_token:
-        headers["Authorization"] = f"Bearer {github_token}"
+    # ghcr.io requires getting a token from the registry's auth endpoint first
 
     if verbose:
         print(f"  Fetching tags from ghcr.io/{repository}...")
-        if github_token:
-            print("  Using authentication token")
 
     try:
-        response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status()
-        data = response.json()
+        # Step 1: Get a registry token
+        token_url = f"https://ghcr.io/token?scope=repository:{repository}:pull"
+        token_headers = {}
+        token_response = requests.get(token_url, headers=token_headers, timeout=10)
+        token_response.raise_for_status()
+        registry_token = token_response.json().get("token")
 
-        # Extract tags from metadata
-        tags = []
-        for version in data:
-            if "metadata" in version and "container" in version["metadata"]:
-                tags.extend(version["metadata"]["container"].get("tags", []))
+        if not registry_token:
+            if verbose:
+                print("  Warning: No registry token received", file=sys.stderr)
+            return []
+
+        # Step 2: Use the registry token to fetch tags with pagination
+        all_tags = []
+        tags_url = f"https://ghcr.io/v2/{repository}/tags/list?n=1000"  # Request up to 1000 tags per page
+        tags_headers = {"Authorization": f"Bearer {registry_token}"}
+
+        while tags_url:
+            tags_response = requests.get(tags_url, headers=tags_headers, timeout=10)
+            tags_response.raise_for_status()
+            data = tags_response.json()
+
+            all_tags.extend(data.get("tags", []))
+
+            # Check for Link header for pagination
+            link_header = tags_response.headers.get("Link")
+            tags_url = None
+            if link_header:
+                # Parse Link header: </v2/repo/tags/list?n=1000&last=tag>; rel="next"
+                import re
+                match = re.search(r'<([^>]+)>;\s*rel="next"', link_header)
+                if match:
+                    tags_url = f"https://ghcr.io{match.group(1)}"
 
         if verbose:
-            print(f"  Found {len(tags)} tags")
+            print(f"  Found {len(all_tags)} tags")
 
-        return list(set(tags))  # Remove duplicates
+        return all_tags
     except requests.RequestException as e:
         if verbose:
             print(f"  Warning: Failed to fetch tags from ghcr.io: {e}", file=sys.stderr)
-            if "401" in str(e) or "Unauthorized" in str(e):
-                if not github_token:
-                    print("  Hint: Set GITHUB_TOKEN environment variable for private repos", file=sys.stderr)
         return []
 
 

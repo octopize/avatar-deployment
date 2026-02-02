@@ -60,11 +60,6 @@ check-image-versions:  ## Check for available image updates without modifying fi
 	@./scripts/update-image-versions.py --check-only --verbose
 .PHONY: check-image-versions
 
-setup-precommit:  ## Install pre-commit hooks
-	pip install pre-commit
-	pre-commit install
-	@echo "✓ Pre-commit hooks installed"
-.PHONY: setup-precommit
 
 .DEFAULT_GOAL := help
 help: Makefile
