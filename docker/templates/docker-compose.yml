@@ -54,8 +54,6 @@ services:
     hostname: api
     networks:
       - default
-    volumes:
-      - ${HOST_SHARED_STORAGE_PATH}:/home/${CONTAINER_USER_NAME-avatar}/shared # only used for local or on-premise
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 5s
@@ -163,8 +161,6 @@ services:
     hostname: my-dask-scheduler
     networks:
       - default
-    volumes:
-      - ${HOST_SHARED_STORAGE_PATH}:/home/${CONTAINER_USER_NAME-avatar}/shared # only used for local or on-premise
     <<: *api-environment
 
     secrets:
@@ -201,8 +197,6 @@ services:
     hostname: my-dask-worker
     networks:
       - default
-    volumes:
-      - ${HOST_SHARED_STORAGE_PATH}:/home/${CONTAINER_USER_NAME-avatar}/shared # only used for local or on-premise
     <<: *api-environment
     secrets:
       - db_name
@@ -445,8 +439,9 @@ services:
       # Mount custom email templates (synced from common/authentik-templates)
       - ./authentik/custom-templates:/templates/email:ro
       # Mount custom branding assets (shared source)
-      - ../common/authentik-branding/favicon.ico:/media/public/favicon.ico:ro
-      - ../common/authentik-branding/logo.png:/media/public/brand_logo.png:ro
+      - ./authentik/branding/favicon.ico:/media/public/favicon.ico:ro
+      - ./authentik/branding/logo.png:/media/public/brand_logo.png:ro
+      - ./authentik/branding/background.png:/media/public/background.png:ro
 
     secrets:
       - authentik_database_name
@@ -541,6 +536,11 @@ secrets:
     file: ${SECRETS_DIR-.secrets}/authentik_database_password
   authentik_secret_key:
     file: ${SECRETS_DIR-.secrets}/authentik_secret_key
+
+  telemetry_s3_access_key_id:
+    file: ${SECRETS_DIR-.secrets}/telemetry_s3_access_key_id
+  telemetry_s3_secret_access_key:
+    file: ${SECRETS_DIR-.secrets}/telemetry_s3_secret_access_key
 
 networks:
   default:

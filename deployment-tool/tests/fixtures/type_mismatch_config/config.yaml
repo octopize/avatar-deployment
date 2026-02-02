@@ -1,0 +1,5 @@
+PUBLIC_URL: "https://avatar.test.com"
+ENV_NAME: "test"
+ORGANIZATION_NAME: "TestOrg"
+ORGANIZATION_NAME: "TestOrg"
+IS_SENTRY_ENABLED: "yes"  # Should be boolean

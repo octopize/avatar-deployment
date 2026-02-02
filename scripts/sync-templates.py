@@ -17,7 +17,6 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import List
 
 # Configuration - Email Templates
 SOURCE_DIR = "common/authentik-templates"
@@ -27,7 +26,7 @@ DOCKER_TARGET_DIR = "docker/authentik/custom-templates"
 # Configuration - Branding Assets
 BRANDING_SOURCE_DIR = "common/authentik-branding"
 BRANDING_HELM_TARGET_DIR = "services-api-helm-chart/branding"
-# Docker uses direct mount from common/authentik-branding, no copy needed
+BRANDING_DOCKER_TARGET_DIR = "docker/authentik/branding"
 
 
 def parse_args() -> argparse.Namespace:
@@ -49,14 +48,14 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def get_html_files(directory: Path) -> List[Path]:
+def get_html_files(directory: Path) -> list[Path]:
     """Get all .html files in a directory (non-recursive)."""
     if not directory.exists():
         return []
     return sorted(directory.glob("*.html"))
 
 
-def get_branding_files(directory: Path) -> List[Path]:
+def get_branding_files(directory: Path) -> list[Path]:
     """Get branding asset files (favicon.ico, logo.png)."""
     if not directory.exists():
         return []
@@ -77,13 +76,13 @@ def sync_with_rsync(
     """Sync files using rsync if available."""
     if not shutil.which("rsync"):
         return False
-    
+
     rsync_opts = [
         "rsync",
         "-av",
         "--delete",
     ]
-    
+
     # Add file pattern filters
     if file_pattern == "*.html":
         rsync_opts.extend(["--include=*.html", "--exclude=*"])
@@ -93,16 +92,16 @@ def sync_with_rsync(
             "--include=*.png",
             "--exclude=*",
         ])
-    
+
     if dry_run:
         rsync_opts.append("--dry-run")
-    
+
     if not verbose:
         rsync_opts.append("--quiet")
-    
+
     # Add trailing slashes to paths for rsync
     rsync_opts.extend([f"{source}/", f"{target}/"])
-    
+
     try:
         subprocess.run(rsync_opts, check=True)
         return True
@@ -120,11 +119,11 @@ def sync_manual(source: Path, target: Path, dry_run: bool = False, file_pattern:
         else:  # branding assets
             source_files = get_branding_files(source)
             target_files = get_branding_files(target)
-        
+
         # Remove old files from target
         for old_file in target_files:
             old_file.unlink()
-        
+
         # Copy new files
         for file_path in source_files:
             shutil.copy2(file_path, target / file_path.name)
@@ -141,7 +140,7 @@ def sync_to_target(
     """Sync to a target directory."""
     if verbose:
         print(f"→ Syncing to {target_name}...")
-    
+
     # Try rsync first, fall back to manual copy
     if not sync_with_rsync(source, target, dry_run, verbose, file_pattern):
         sync_manual(source, target, dry_run, file_pattern)
@@ -150,27 +149,28 @@ def sync_to_target(
 def main() -> int:
     """Main execution function."""
     args = parse_args()
-    
-    # Resolve paths relative to script location
-    script_dir = Path(__file__).parent.resolve()
+
+    # Resolve paths relative to script location (scripts/ dir, go up one level to repo root)
+    script_dir = Path(__file__).parent.parent.resolve()
 
     # Email templates paths
     source_path = script_dir / SOURCE_DIR
     helm_target_path = script_dir / HELM_TARGET_DIR
     docker_target_path = script_dir / DOCKER_TARGET_DIR
-    
+
     # Branding assets paths
     branding_source_path = script_dir / BRANDING_SOURCE_DIR
     branding_helm_target_path = script_dir / BRANDING_HELM_TARGET_DIR
-    
+    branding_docker_target_path = script_dir / BRANDING_DOCKER_TARGET_DIR
+
     # Validate email templates source directory exists
     if not source_path.is_dir():
         print(f"❌ ERROR: Email templates source directory not found: {source_path}")
         print(f"   Expected: {SOURCE_DIR}/")
         return 1
-    
+
     # Create target directories if they don't exist
-    all_target_paths = [helm_target_path, docker_target_path, branding_helm_target_path]
+    all_target_paths = [helm_target_path, docker_target_path, branding_helm_target_path, branding_docker_target_path]
     for target_path in all_target_paths:
         if not target_path.exists():
             if args.dry_run:
@@ -179,18 +179,18 @@ def main() -> int:
                 target_path.mkdir(parents=True, exist_ok=True)
                 if args.verbose:
                     print(f"📁 Created directory: {target_path}")
-    
+
     # Count source files
     source_files = get_html_files(source_path)
     source_file_count = len(source_files)
-    
+
     branding_files = get_branding_files(branding_source_path) if branding_source_path.exists() else []
     branding_file_count = len(branding_files)
-    
+
     if source_file_count == 0:
         print("⚠️  WARNING: No .html files found in email templates source directory")
         print(f"   Source: {source_path}")
-    
+
     print("🔄 Synchronizing authentik email templates and branding...")
     print()
     print("📧 Email Templates:")
@@ -203,13 +203,13 @@ def main() -> int:
     print(f"   Source: {BRANDING_SOURCE_DIR}/ ({branding_file_count} files)")
     print("   Targets:")
     print(f"     • {BRANDING_HELM_TARGET_DIR}/ (Helm chart)")
-    print(f"     • Docker uses direct mount from {BRANDING_SOURCE_DIR}/")
+    print(f"     • {BRANDING_DOCKER_TARGET_DIR}/ (Docker Compose)")
     print()
-    
+
     if args.dry_run:
         print("🔍 DRY RUN MODE - No files will be modified")
         print()
-    
+
     # Sync email templates to both targets
     if source_file_count > 0:
         sync_to_target(
@@ -228,8 +228,8 @@ def main() -> int:
             args.verbose,
             "*.html",
         )
-    
-    # Sync branding assets to Helm target only
+
+    # Sync branding assets to both targets
     if branding_file_count > 0:
         sync_to_target(
             branding_source_path,
@@ -239,18 +239,28 @@ def main() -> int:
             args.verbose,
             "branding",
         )
-    
+        sync_to_target(
+            branding_source_path,
+            branding_docker_target_path,
+            "Docker Compose (branding)",
+            args.dry_run,
+            args.verbose,
+            "branding",
+        )
+
     if not args.dry_run:
         # Count synced files in each target
         helm_count = len(get_html_files(helm_target_path))
         docker_count = len(get_html_files(docker_target_path))
-        branding_count = len(get_branding_files(branding_helm_target_path))
-        
+        branding_helm_count = len(get_branding_files(branding_helm_target_path))
+        branding_docker_count = len(get_branding_files(branding_docker_target_path))
+
         print("✅ Successfully synchronized files")
         print(f"   • Email templates (Helm): {helm_count} files")
         print(f"   • Email templates (Docker): {docker_count} files")
-        print(f"   • Branding assets (Helm): {branding_count} files")
-        
+        print(f"   • Branding assets (Helm): {branding_helm_count} files")
+        print(f"   • Branding assets (Docker): {branding_docker_count} files")
+
         if args.verbose:
             print()
             print("Synchronized email templates:")
@@ -260,7 +270,7 @@ def main() -> int:
             print("Synchronized branding assets:")
             for brand_file in get_branding_files(branding_helm_target_path):
                 print(f"  ✓ {brand_file.name}")
-    
+
     # Show next steps
     if not args.dry_run:
         print()
@@ -269,8 +279,7 @@ def main() -> int:
         print()
         print("Next steps:")
         print("  Docker Compose:")
-        print(f"    • Review: git diff {DOCKER_TARGET_DIR}")
-        print(f"    • Branding files are mounted directly from {BRANDING_SOURCE_DIR}/")
+        print(f"    • Review: git diff {DOCKER_TARGET_DIR} {BRANDING_DOCKER_TARGET_DIR}")
         print("    • Restart: cd docker && docker-compose restart authentik_server authentik_worker")
         print()
         print("  Helm Chart:")
@@ -278,11 +287,10 @@ def main() -> int:
         print("    • Package: just push-helm-chart")
         print()
         print("  Commit all changes:")
-        print(f"    git add {HELM_TARGET_DIR} {DOCKER_TARGET_DIR} {BRANDING_HELM_TARGET_DIR}")
-        print("    git commit -m 'sync: update email templates and brandingIR}")
-        print("    git commit -m 'sync: update email templates'")
+        print(f"    git add {HELM_TARGET_DIR} {DOCKER_TARGET_DIR} {BRANDING_HELM_TARGET_DIR} {BRANDING_DOCKER_TARGET_DIR}")
+        print("    git commit -m 'sync: update email templates and branding'")
         print("━" * 80)
-    
+
     return 0
 
 

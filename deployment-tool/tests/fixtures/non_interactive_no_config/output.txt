@@ -1,0 +1,9 @@
+
+============================================================
+Avatar Deployment Configuration
+============================================================
+
+Executing configuration steps...
+
+
+--- Collect required deployment settings (PUBLIC_URL, ENV_NAME, etc.) ---

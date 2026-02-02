@@ -1,0 +1,5 @@
+PUBLIC_URL: "https://avatar.test.com"
+ENV_NAME: "test"
+ORGANIZATION_NAME: "TestOrg"
+SMTP_HOST: "smtp.test.com"
+SMTP_PORT: "not-a-number"

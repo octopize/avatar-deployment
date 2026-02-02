@@ -3,6 +3,23 @@
 **Project**: Avatar Deployment Infrastructure  
 **Purpose**: Multi-environment deployment configs for Octopize Avatar platform (Kubernetes Helm + Docker Compose)
 
+**Important**: Do NOT create summary documents or extensive documentation after completing tasks unless explicitly requested by the user. Keep responses concise and focused on the task at hand.
+
+## Testing Requirements
+
+**CRITICAL**: Always run the full test suite after making any code modifications:
+
+```bash
+cd deployment-tool
+just test-all  # Or: uv run pytest
+```
+
+Verify all tests pass before considering the work complete. This applies to:
+- Source code changes in `src/`
+- Test modifications in `tests/`
+- Configuration changes that affect behavior
+- Fixture updates
+
 ## Architecture Overview
 
 This repository manages deployments for the Avatar platform using two distinct deployment strategies:
@@ -10,7 +27,7 @@ This repository manages deployments for the Avatar platform using two distinct d
 1. **Kubernetes/Helm** (`services-api-helm-chart/`) - Production clusters with authentik SSO
 2. **Docker Compose** (`docker/`) - Single-instance deployments
 
-**Critical Principle**: Templates sync from `common/authentik-templates/` → deployment targets via `sync-templates.py`
+**Critical Principle**: Templates sync from `common/authentik-templates/` → deployment targets via `scripts/sync-templates.py`
 
 ### Component Structure
 
@@ -59,7 +76,7 @@ When modifying email templates:
 ```bash
 # 1. Edit templates in common/authentik-templates/
 # 2. Sync to deployment targets
-./sync-templates.py [--dry-run] [--verbose]
+./scripts/sync-templates.py [--dry-run] [--verbose]
 
 # This copies HTML files to:
 #   - services-api-helm-chart/templates-files/
@@ -137,7 +154,7 @@ See [docker/deploying-on-single-instance.md](docker/deploying-on-single-instance
 ### Workflow
 
 1. Edit/create in `common/authentik-templates/email_*.html`
-2. Run `./sync-templates.py` to propagate changes
+2. Run `./scripts/sync-templates.py` to propagate changes
 3. Templates deployed via ConfigMap (Helm) or volume mount (Docker)
 
 ---
@@ -149,6 +166,30 @@ See [docker/deploying-on-single-instance.md](docker/deploying-on-single-instance
 3. **Using `latest` image tags** - Pin specific versions in values.yaml (see avatarServiceApiVersion)
 4. **Helm template variable confusion** - Authentik templates use `{{ }}` for Django, Helm uses `{{ .Values }}` - they don't interfere because `.Files.Glob` loads raw content
 
+
+---
+
+## Docker Deployment Tool Testing
+
+**Trigger**: Working with tests in `deployment-tool/tests/`  
+**Quick Reference**: [deployment-tool/tests/QUICK_REFERENCE.md](deployment-tool/tests/QUICK_REFERENCE.md)
+
+### Testing Workflow
+
+When adding or modifying tests for the deployment tool, **always consult QUICK_REFERENCE.md** first for:
+
+- Running tests (`just test-deploy-tool` or `uv run pytest`)
+- Creating new test cases with fixtures
+- Updating expected output fixtures
+- Using CLITestHarness for integration tests
+- Available pytest fixtures and utilities
+
+**Key Points**:
+
+- Use `--template-from <path>` argument (not `--skip-download` or `--templates-dir`)
+- Templates are always stored at `output-dir/.avatar-templates`
+- Update fixtures with `AVATAR_DEPLOY_UPDATE_FIXTURES=1 uv run pytest`
+- Test patterns documented in QUICK_REFERENCE.md with working examples
 
 ---
 
@@ -166,7 +207,14 @@ See [docker/deploying-on-single-instance.md](docker/deploying-on-single-instance
 │   ├── Makefile                       ← Secret generation targets
 │   ├── docker-compose.yml             ← Service definitions
 │   └── authentik/custom-templates/    ← Synced from common/ (DO NOT EDIT)
+├── deployment-tool/                   ← Deployment configuration tool
+│   └── tests/                         ← Test suite with fixtures
+│       └── QUICK_REFERENCE.md         ← Testing guide (READ THIS FIRST)
 ├── justfile & helm.just               ← Primary build tool (Helm operations)
-├── sync-templates.py                  ← Template sync script (rsync or copy)
+├── scripts/                           ← Validation and utility scripts
+│   ├── sync-templates.py              ← Template sync script (rsync or copy)
+│   ├── validate-authentik-blueprint.py ← Blueprint template validator
+│   ├── check-version-bump.py          ← Version bump verification
+│   └── update-image-versions.py       ← Image version updater
 └── skills/                            ← Agent skill definitions
 ```

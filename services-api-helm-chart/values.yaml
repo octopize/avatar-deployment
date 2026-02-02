@@ -59,13 +59,13 @@ debug:
     useLocal: false
 
 web:
-  image: 
+  image:
     registry: quay.io
     repository: octopize/avatar-web
     tag: "0.0.6"
     pullPolicy: "IfNotPresent"
   replicas: 1
-  resources: 
+  resources:
     memoryRequest: "2Gi"
     cpuRequest: "500m"
   port: 3000
@@ -90,7 +90,7 @@ api:
   #       This will require modifying the values in the pulumi program
   # Externally accessible API url (should be with https)
   baseUrl: https://avatar.yourcompany.com/api
-  
+
   # This Url is the customer facing url for the web client
   # It will typically be used to format emails.
   webClientUrl: https://avatar.yourcompany.com
@@ -112,7 +112,7 @@ api:
   # firstUserName and firstUserPassword.
   useEmailAuthentication: false
   organizationName: ""
-  adminEmails: 
+  adminEmails:
     - ""
   firstUserName: ""
   firstUserPassword: ""   # python -c "import secrets; print(secrets.token_hex(), end='')"
@@ -202,7 +202,7 @@ authentik:
       #   memory: 256Mi
 
     replicas: 1
-    
+
     volumes:
       - name: custom-email-templates
         configMap:
@@ -210,7 +210,7 @@ authentik:
       - name: branding-assets
         configMap:
           name: authentik-branding
-    
+
     volumeMounts:
       # Mount custom templates directory so authentik can discover them in the UI
       # Templates will appear in the email stage dropdown
@@ -241,7 +241,7 @@ authentik:
       - name: branding-assets
         configMap:
           name: authentik-branding
-    
+
     volumeMounts:
       # Mount custom templates directory so authentik can discover them in the UI
       # Templates will appear in the email stage dropdown

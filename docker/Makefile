@@ -8,6 +8,23 @@ MAKEFLAGS += --no-builtin-rules
 
 SECRETS_DIR := .secrets
 NOTEBOOK_PORT ?= 8888
+DEPLOYMENT_TOOL_DIR := ../deployment-tool
+
+
+# Automated deployment configuration
+
+.PHONY: configure
+configure: ## Run automated deployment configuration tool (interactive)
+	@echo "Running automated deployment configurator..."
+	cd $(DEPLOYMENT_TOOL_DIR) && uv run configure.py --output-dir $(CURDIR)
+
+.PHONY: configure-non-interactive
+configure-non-interactive: ## Run automated deployment in non-interactive mode (requires CONFIG_FILE)
+ifndef CONFIG_FILE
+	$(error CONFIG_FILE is not set. Usage: make configure-non-interactive CONFIG_FILE=my-config.yaml)
+endif
+	@echo "Running automated deployment configurator (non-interactive)..."
+	cd $(DEPLOYMENT_TOOL_DIR) && uv run configure.py --config $(CONFIG_FILE) --non-interactive --output-dir $(CURDIR)
 
 
 # File-based recipes
@@ -15,13 +32,13 @@ NOTEBOOK_PORT ?= 8888
 common-secrets: db-secrets storage-secrets telemetry-secrets authentik-secrets $(SECRETS_DIR)/pepper $(SECRETS_DIR)/authjwt_secret_key $(SECRETS_DIR)/organization_name $(SECRETS_DIR)/clevercloud_sso_salt
 .PHONY: common-secrets
 
-db-secrets: $(SECRETS_DIR)/db_password $(SECRETS_DIR)/db_admin_password $(SECRETS_DIR)/db_user $(SECRETS_DIR)/db_admin_user $(SECRETS_DIR)/db_name 
+db-secrets: $(SECRETS_DIR)/db_password $(SECRETS_DIR)/db_admin_password $(SECRETS_DIR)/db_user $(SECRETS_DIR)/db_admin_user $(SECRETS_DIR)/db_name
 .PHONY: db-secrets
 
 authentik-secrets: $(SECRETS_DIR)/authentik_database_name $(SECRETS_DIR)/authentik_database_user $(SECRETS_DIR)/authentik_database_password $(SECRETS_DIR)/authentik_secret_key
 .PHONY: authentik-secrets
 
-storage-secrets: $(SECRETS_DIR)/file_jwt_secret_key $(SECRETS_DIR)/file_encryption_key $(SECRETS_DIR)/storage_admin_access_key_id $(SECRETS_DIR)/storage_admin_secret_access_key 
+storage-secrets: $(SECRETS_DIR)/file_jwt_secret_key $(SECRETS_DIR)/file_encryption_key $(SECRETS_DIR)/storage_admin_access_key_id $(SECRETS_DIR)/storage_admin_secret_access_key
 .PHONY: storage-secrets
 
 telemetry-secrets: $(SECRETS_DIR)/telemetry_s3_access_key_id $(SECRETS_DIR)/telemetry_s3_secret_access_key
@@ -41,7 +58,7 @@ endif
 ifndef AVATAR_PASSWORD
 	$(error AVATAR_PASSWORD is not set)
 endif
-	docker run -p $(NOTEBOOK_PORT):$(NOTEBOOK_PORT) -e AVATAR_BASE_URL="http://api:8000" --net=avatar_default -e AVATAR_USERNAME=$(AVATAR_USERNAME)  -e AVATAR_PASSWORD=$(AVATAR_PASSWORD) --rm quay.io/octopize/notebook-server start-notebook.py --port=$(NOTEBOOK_PORT)	
+	docker run -p $(NOTEBOOK_PORT):$(NOTEBOOK_PORT) -e AVATAR_BASE_URL="http://api:8000" --net=avatar_default -e AVATAR_USERNAME=$(AVATAR_USERNAME)  -e AVATAR_PASSWORD=$(AVATAR_PASSWORD) --rm quay.io/octopize/notebook-server start-notebook.py --port=$(NOTEBOOK_PORT)
 .PHONY: launch-notebook-server
 
 

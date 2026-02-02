@@ -1,0 +1,75 @@
+# Example Configuration for Octopize Avatar Deployment
+#
+# This file can be used with the deployment tool in non-interactive mode:
+#   uv run configure.py --config my-config.yaml --non-interactive --output-dir /app/avatar
+#
+# Copy this file and customize it for your deployment:
+#   cp config.example.yaml my-config.yaml
+#   # Edit my-config.yaml with your values
+#
+# Note: Only include fields you want to override.
+# Default values are loaded from defaults.yaml automatically.
+
+# ===========================
+# Required Settings
+# ===========================
+
+# Public URL - The domain name where Avatar will be accessible (REQUIRED)
+PUBLIC_URL: avatar.example.com
+
+# Environment name - Identifier for this deployment (REQUIRED)
+ENV_NAME: company-name-prod
+
+# ===========================
+# Optional Settings
+# (Defaults are loaded from defaults.yaml)
+# ===========================
+
+# Avatar home directory - Where Avatar will be installed
+# Default: /app/avatar
+
+
+# ===========================
+# Service Versions
+# (Defaults from defaults.yaml - only override if needed)
+# ===========================
+
+# Uncomment to override default versions:
+# AVATAR_API_VERSION: 2.20.1
+# AVATAR_WEB_VERSION: 0.40.0
+# AVATAR_PDFGENERATOR_VERSION: latest
+
+# ===========================
+# Email Configuration
+# ===========================
+
+# Mail provider: 'aws' (Octopize-provided) or 'smtp' (your own SMTP server)
+# Default: aws
+# MAIL_PROVIDER: aws
+
+# SMTP Configuration (only if MAIL_PROVIDER=smtp)
+# These have defaults from defaults.yaml - override if needed:
+# SMTP_HOST: mail.mycompany.com
+# SMTP_PORT: 587
+# SMTP_SENDER_EMAIL: noreply@mycompany.com
+
+# ===========================
+# Application Settings
+# ===========================
+
+
+# Logging configuration
+# Default: INFO
+# LOG_LEVEL: INFO
+
+# ===========================
+# Telemetry Settings
+# Telemetry is configured interactively or via these settings
+# ===========================
+
+# When enabled, uses defaults from defaults.yaml
+# To enable telemetry, set TELEMETRY_S3_ENDPOINT_URL
+# To disable, leave empty or comment out
+# TELEMETRY_S3_ENDPOINT_URL: https://s3.fr-par.scw.cloud
+# TELEMETRY_S3_REGION: fr-par
+# TELEMETRY_S3_BUCKET_NAME will be provided by Octopize

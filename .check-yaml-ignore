@@ -1,0 +1,10 @@
+# Files to ignore during YAML validation
+# These files use custom YAML tags or template syntax that standard parsers don't understand
+
+# Authentik blueprint files use custom tags like !Find, !KeyOf, !Context
+docker/templates/authentik/octopize-avatar-blueprint.yaml
+docker/templates/authentik/octopize-avatar-blueprint.yaml.j2
+deployment-tool/tests/fixtures/
+
+# Helm templates use Go template syntax
+services-api-helm-chart/templates/

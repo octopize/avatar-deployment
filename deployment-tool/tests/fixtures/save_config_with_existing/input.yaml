@@ -1,0 +1,18 @@
+# Responses to override some values when loading existing config
+responses:
+  - "https://modified.com"  # New base URL
+  - "admin@modified.com"  # New admin email
+  - "smtp.test.com"
+  - "587"
+  - "noreply@test.com"
+  - "user"
+  - "pass"
+  - "postgres.local"
+  - "avatar"
+  - "avatar_user"
+  - "seaweedfs"
+  - "s3.local:8333"
+  - "avatar-bucket"
+  - "30d"
+  - true
+  - "production"

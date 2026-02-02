@@ -1,0 +1,3 @@
+PUBLIC_URL: "not-a-valid-url"
+ENV_NAME: "test"
+ORGANIZATION_NAME: "TestOrg"

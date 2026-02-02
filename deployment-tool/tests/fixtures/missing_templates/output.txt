@@ -1,0 +1,1 @@
+✗ Template source directory not found: {{OUTPUT_DIR}}/non-existent-templates
