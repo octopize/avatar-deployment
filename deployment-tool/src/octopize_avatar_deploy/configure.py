@@ -217,12 +217,31 @@ class DeploymentConfigurator:
             "authentik/octopize-avatar-blueprint.yaml",
         )
 
-        # Copy docker-compose.yml from templates (it may be templated in the future)
+        # Copy docker-compose.yml from templates
         docker_compose_src = self.templates_dir / "docker-compose.yml"
         docker_compose_dst = self.output_dir / "docker-compose.yml"
         if docker_compose_src.exists():
             shutil.copy2(docker_compose_src, docker_compose_dst)
             self.printer.print_success(f"Generated: {docker_compose_dst}")
+
+        # Copy authentik custom templates (email templates)
+        custom_templates_src = self.templates_dir / "authentik" / "custom-templates"
+        custom_templates_dst = self.output_dir / "authentik" / "custom-templates"
+        if custom_templates_src.exists():
+            custom_templates_dst.mkdir(parents=True, exist_ok=True)
+            for template_file in custom_templates_src.glob("*.html"):
+                shutil.copy2(template_file, custom_templates_dst / template_file.name)
+            self.printer.print_success(f"Copied: email templates to {custom_templates_dst}")
+
+        # Copy authentik branding files
+        branding_src = self.templates_dir / "authentik" / "branding"
+        branding_dst = self.output_dir / "authentik" / "branding"
+        if branding_src.exists():
+            branding_dst.mkdir(parents=True, exist_ok=True)
+            for branding_file in branding_src.glob("*"):
+                if branding_file.is_file():
+                    shutil.copy2(branding_file, branding_dst / branding_file.name)
+            self.printer.print_success(f"Copied: branding files to {branding_dst}")
 
         self.printer.print()
         self.printer.print_success("Configuration files generated successfully!")
@@ -483,16 +502,24 @@ class DeploymentRunner:
         Returns:
             True if templates are available, False otherwise
         """
-        from octopize_avatar_deploy.download_templates import REQUIRED_FILES
+        from octopize_avatar_deploy.download_templates import (
+            REQUIRED_TEMPLATE_FILES,
+            REQUIRED_DOCKER_FILES,
+        )
 
         if not self.templates_dir.exists():
             if self.verbose:
                 self.printer.print_error(f"Templates directory not found: {self.templates_dir}")
             return False
 
-        # Check for required files
+        # Check for required template files
         missing_files = []
-        for filename in REQUIRED_FILES:
+        for filename in REQUIRED_TEMPLATE_FILES:
+            if not (self.templates_dir / filename).exists():
+                missing_files.append(filename)
+
+        # Check for required docker files
+        for filename in REQUIRED_DOCKER_FILES:
             if not (self.templates_dir / filename).exists():
                 missing_files.append(filename)
 
@@ -503,8 +530,9 @@ class DeploymentRunner:
                 )
             return False
 
+        total_files = len(REQUIRED_TEMPLATE_FILES) + len(REQUIRED_DOCKER_FILES)
         if self.verbose:
-            self.printer.print_success(f"Found all {len(REQUIRED_FILES)} required template files")
+            self.printer.print_success(f"Found all {total_files} required template files")
 
         # Validate template version compatibility
         return self._validate_template_version()

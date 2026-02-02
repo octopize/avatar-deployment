@@ -15,12 +15,25 @@ GITHUB_RAW_BASE = "https://raw.githubusercontent.com/octopize/avatar-deployment"
 DEFAULT_BRANCH = "main"
 
 # Files to download from the docker/templates/ directory
-REQUIRED_FILES = [
+REQUIRED_TEMPLATE_FILES = [
     ".env.template",
     "nginx.conf.template",
     "docker-compose.yml",
     ".template-version",
     "authentik/octopize-avatar-blueprint.yaml.j2",
+]
+
+# Additional files to download from docker/ directory (not in templates/)
+REQUIRED_DOCKER_FILES = [
+    "authentik/custom-templates/email_account_confirmation.html",
+    "authentik/custom-templates/email_account_exists.html",
+    "authentik/custom-templates/email_account_invitation.html",
+    "authentik/custom-templates/email_forgotten_password.html",
+    "authentik/custom-templates/email_password_changed.html",
+    "authentik/custom-templates/email_password_reset.html",
+    "authentik/branding/favicon.ico",
+    "authentik/branding/logo.png",
+    "authentik/branding/background.png",
 ]
 
 
@@ -37,12 +50,26 @@ class TemplateProvider(ABC):
         self.verbose = verbose
 
     @abstractmethod
-    def provide_file(self, filename: str, destination: Path) -> bool:
+    def provide_template_file(self, filename: str, destination: Path) -> bool:
         """
-        Provide a single file to the destination.
+        Provide a single template file to the destination.
 
         Args:
-            filename: Name of file to provide
+            filename: Name of file to provide (from docker/templates/)
+            destination: Local path where file should be saved
+
+        Returns:
+            True if successful, False otherwise
+        """
+        pass
+
+    @abstractmethod
+    def provide_docker_file(self, filename: str, destination: Path) -> bool:
+        """
+        Provide a single docker file to the destination.
+
+        Args:
+            filename: Name of file to provide (from docker/)
             destination: Local path where file should be saved
 
         Returns:
@@ -52,7 +79,7 @@ class TemplateProvider(ABC):
 
     def provide_all(self, output_dir: Path) -> bool:
         """
-        Provide all required template files.
+        Provide all required template and docker files.
 
         Args:
             output_dir: Directory where files should be saved
@@ -67,9 +94,17 @@ class TemplateProvider(ABC):
             print(f"\nProviding templates to {output_dir}/")
             print("=" * 60)
 
-        for filename in REQUIRED_FILES:
+        # Provide template files
+        for filename in REQUIRED_TEMPLATE_FILES:
             destination = output_dir / filename
-            if not self.provide_file(filename, destination):
+            if not self.provide_template_file(filename, destination):
+                success = False
+                print(f"⚠ Warning: Failed to provide {filename}")
+
+        # Provide docker files (authentik branding, email templates, etc.)
+        for filename in REQUIRED_DOCKER_FILES:
+            destination = output_dir / filename
+            if not self.provide_docker_file(filename, destination):
                 success = False
                 print(f"⚠ Warning: Failed to provide {filename}")
 
@@ -92,7 +127,10 @@ class TemplateProvider(ABC):
             True if all required files exist
         """
         output_dir = Path(output_dir)
-        for filename in REQUIRED_FILES:
+        for filename in REQUIRED_TEMPLATE_FILES:
+            if not (output_dir / filename).exists():
+                return False
+        for filename in REQUIRED_DOCKER_FILES:
             if not (output_dir / filename).exists():
                 return False
         return True
@@ -111,11 +149,12 @@ class GitHubTemplateProvider(TemplateProvider):
         """
         super().__init__(verbose=verbose)
         self.branch = branch
-        self.base_url = f"{GITHUB_RAW_BASE}/{branch}/docker/templates"
+        self.templates_base_url = f"{GITHUB_RAW_BASE}/{branch}/docker/templates"
+        self.docker_base_url = f"{GITHUB_RAW_BASE}/{branch}/docker"
 
-    def provide_file(self, filename: str, destination: Path) -> bool:
+    def provide_template_file(self, filename: str, destination: Path) -> bool:
         """
-        Download a single file from GitHub.
+        Download a single template file from GitHub.
 
         Args:
             filename: Name of file to download (in docker/templates/ directory)
@@ -124,7 +163,7 @@ class GitHubTemplateProvider(TemplateProvider):
         Returns:
             True if successful, False otherwise
         """
-        url = f"{self.base_url}/{filename}"
+        url = f"{self.templates_base_url}/{filename}"
 
         if self.verbose:
             print(f"Downloading {filename}...")
@@ -151,22 +190,43 @@ class GitHubTemplateProvider(TemplateProvider):
                 print(f"  ✗ Failed: {e}")
             return False
 
-    def check_cached_templates(self, output_dir: Path) -> bool:
+    def provide_docker_file(self, filename: str, destination: Path) -> bool:
         """
-        Check if templates are already cached locally.
+        Download a single docker file from GitHub.
 
         Args:
-            output_dir: Directory to check for cached templates
+            filename: Name of file to download (in docker/ directory)
+            destination: Local path where file should be saved
 
         Returns:
-            True if all required files exist
+            True if successful, False otherwise
         """
-        output_dir = Path(output_dir)
-        for filename in REQUIRED_FILES:
-            if not (output_dir / filename).exists():
-                return False
-        return True
+        url = f"{self.docker_base_url}/{filename}"
 
+        if self.verbose:
+            print(f"Downloading {filename}...")
+            print(f"  URL: {url}")
+            print(f"  Destination: {destination}")
+
+        try:
+            with urllib.request.urlopen(url, timeout=10) as response:
+                content = response.read()
+
+            # Ensure parent directory exists
+            destination.parent.mkdir(parents=True, exist_ok=True)
+
+            # Write file
+            destination.write_bytes(content)
+
+            if self.verbose:
+                print(f"  ✓ Downloaded {len(content)} bytes")
+
+            return True
+
+        except Exception as e:
+            if self.verbose:
+                print(f"  ✗ Failed: {e}")
+            return False
 
 class LocalTemplateProvider(TemplateProvider):
     """Provides templates from a local directory (for testing)."""
@@ -176,24 +236,64 @@ class LocalTemplateProvider(TemplateProvider):
         Initialize local template provider.
 
         Args:
-            source_dir: Local directory containing template files
+            source_dir: Local directory containing template files (docker/templates/)
             verbose: Print progress information
         """
         super().__init__(verbose=verbose)
         self.source_dir = Path(source_dir)
+        # Parent of templates is docker/
+        self.docker_dir = self.source_dir.parent
 
-    def provide_file(self, filename: str, destination: Path) -> bool:
+    def provide_template_file(self, filename: str, destination: Path) -> bool:
         """
-        Copy a single file from source to destination.
+        Copy a single template file from source to destination.
 
         Args:
-            filename: Name of file to copy
+            filename: Name of file to copy (from docker/templates/)
             destination: Local path where file should be saved
 
         Returns:
             True if successful, False otherwise
         """
         source = self.source_dir / filename
+
+        if self.verbose:
+            print(f"Copying {filename}...")
+            print(f"  Source: {source}")
+            print(f"  Destination: {destination}")
+
+        try:
+            if not source.exists():
+                raise FileNotFoundError(f"Source file not found: {source}")
+
+            # Ensure parent directory exists
+            destination.parent.mkdir(parents=True, exist_ok=True)
+
+            # Copy file
+            shutil.copy2(source, destination)
+
+            if self.verbose:
+                print(f"  ✓ Copied {source.stat().st_size} bytes")
+
+            return True
+
+        except Exception as e:
+            if self.verbose:
+                print(f"  ✗ Failed: {e}")
+            return False
+
+    def provide_docker_file(self, filename: str, destination: Path) -> bool:
+        """
+        Copy a single docker file from source to destination.
+
+        Args:
+            filename: Name of file to copy (from docker/)
+            destination: Local path where file should be saved
+
+        Returns:
+            True if successful, False otherwise
+        """
+        source = self.docker_dir / filename
 
         if self.verbose:
             print(f"Copying {filename}...")
