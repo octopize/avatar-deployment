@@ -50,9 +50,10 @@ class TelemetryStep(DeploymentStep):
     def generate_secrets(self) -> dict[str, str]:
         """Generate telemetry-related secrets."""
         # Only generate secrets if telemetry is enabled
-        if self.config["TELEMETRY_S3_ENDPOINT_URL"]:
-            return {
-                "telemetry_s3_access_key_id": "",
-                "telemetry_s3_secret_access_key": "",
-            }
+
+        # The user will have to provide these if telemetry is enabled
+        return {
+            "telemetry_s3_access_key_id": "",
+            "telemetry_s3_secret_access_key": "",
+        }
         return {}

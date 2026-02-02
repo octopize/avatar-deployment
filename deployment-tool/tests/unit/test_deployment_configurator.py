@@ -325,8 +325,8 @@ class TestDeploymentConfigurator:
 
         assert db_pass_file.exists()
         assert api_key_file.exists()
-        assert db_pass_file.read_text() == "secret123\n"
-        assert api_key_file.read_text() == "key456\n"
+        assert db_pass_file.read_text() == "secret123"
+        assert api_key_file.read_text() == "key456"
 
     def test_run_executes_all_steps(
         self,
@@ -429,7 +429,7 @@ class TestDeploymentConfigurator:
         # Secret should be written
         secret_file = temp_output_dir / ".secrets/secret_key"
         assert secret_file.exists()
-        assert secret_file.read_text() == "abc123\n"
+        assert secret_file.read_text() == "abc123"
 
     def test_run_validation_failure_raises_error(
         self,

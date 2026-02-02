@@ -34,7 +34,7 @@ Generating Configuration Files
 
 ✓ Configuration files generated successfully!
 
-Writing 18 secrets to .secrets/ directory...
+Writing 20 secrets to .secrets/ directory...
 ✓ Secrets written successfully
 
 ============================================================
