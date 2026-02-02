@@ -48,11 +48,11 @@ run-interactive-github:
     echo "\nGenerated files in: $TEST_DIR"
     ls -la "$TEST_DIR"
 
-run-interactive-local:
+run-interactive-local *ARGS:
     #!/usr/bin/env bash
     TEST_DIR=$(mktemp -d)
     echo "Running in temporary directory: $TEST_DIR"
-    uv run octopize-avatar-deploy --output-dir "$TEST_DIR" --template-from ../docker/templates --verbose
+    uv run octopize-avatar-deploy --output-dir "$TEST_DIR" --template-from ../docker/templates --verbose {{ARGS}}
     echo "\nGenerated files in: $TEST_DIR"
     ls -la "$TEST_DIR"
 

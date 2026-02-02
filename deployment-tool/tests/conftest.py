@@ -175,11 +175,12 @@ def _compare_directories(actual_dir: Path, expected_dir: Path) -> bool:
         expected_content = expected_file.read_text()
 
         # Normalize random values in .deployment-state.yaml, deployment-config.yaml,
-        # and blueprint template
+        # blueprint template, and .env file
         if rel_path.name in [
             ".deployment-state.yaml",
             "deployment-config.yaml",
             "octopize-avatar-blueprint.yaml",
+            ".env",
         ]:
             import re
 
@@ -247,6 +248,28 @@ def _compare_directories(actual_dir: Path, expected_dir: Path) -> bool:
             expected_content = re.sub(
                 r"#   [0-9a-f]{64}         - OAuth2 Client Secret",
                 "#   RANDOM_CLIENT_SECRET         - OAuth2 Client Secret",
+                expected_content,
+            )
+            # Normalize SSO_CLIENT_ID in .env file
+            actual_content = re.sub(
+                r"SSO_CLIENT_ID=[0-9a-f]{64}",
+                "SSO_CLIENT_ID=RANDOM_CLIENT_ID",
+                actual_content,
+            )
+            expected_content = re.sub(
+                r"SSO_CLIENT_ID=[0-9a-f]{64}",
+                "SSO_CLIENT_ID=RANDOM_CLIENT_ID",
+                expected_content,
+            )
+            # Normalize SSO_CLIENT_SECRET in .env file
+            actual_content = re.sub(
+                r"SSO_CLIENT_SECRET=[0-9a-f]{64}",
+                "SSO_CLIENT_SECRET=RANDOM_CLIENT_SECRET",
+                actual_content,
+            )
+            expected_content = re.sub(
+                r"SSO_CLIENT_SECRET=[0-9a-f]{64}",
+                "SSO_CLIENT_SECRET=RANDOM_CLIENT_SECRET",
                 expected_content,
             )
 

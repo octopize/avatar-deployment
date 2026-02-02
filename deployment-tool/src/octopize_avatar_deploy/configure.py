@@ -187,7 +187,9 @@ class DeploymentConfigurator:
 
             output_path = self.output_dir / output_name
             output_path.parent.mkdir(parents=True, exist_ok=True)
-            output_path.write_text(rendered)
+            # Ensure trailing newline for pre-commit end-of-file-fixer
+            content = rendered if rendered.endswith('\n') else rendered + '\n'
+            output_path.write_text(content)
 
             self.printer.print_success(f"Generated: {output_path}")
         except Exception as e:
@@ -263,7 +265,7 @@ class DeploymentConfigurator:
         # Check for existing state and prompt to resume or restart
         if self.state and self.state.has_started() and not self.state.is_complete():
             if interactive:
-                self.state.print_status()
+                self.state.print_status(self.printer)
                 self.printer.print_header("")
                 response = self.input_gatherer.prompt_yes_no(
                     "Resume from where you left off?", default=True

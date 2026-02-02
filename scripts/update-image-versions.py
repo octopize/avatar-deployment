@@ -31,26 +31,29 @@ Example:
 import argparse
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
-from typing import Optional, Tuple, dict, list
+from typing import Optional
 
-try:
-    import requests
-    import yaml
-except ImportError:
-    print("Error: Missing dependencies. Install with:", file=sys.stderr)
-    print("  pip install pyyaml requests", file=sys.stderr)
-    print("Or run with uv:", file=sys.stderr)
-    print("  uv run scripts/update-image-versions.py", file=sys.stderr)
-    sys.exit(1)
+import requests
+import yaml
+
+# Find defaults.yaml relative to script location
+SCRIPT_DIR = Path(__file__).parent
+REPO_ROOT = SCRIPT_DIR.parent
+DEFAULTS_PATH = REPO_ROOT / "deployment-tool" / "src" / "octopize_avatar_deploy" /  "defaults.yaml"
+
+# 1Password item name for Quay API key
+ONEPASSWORD_QUAY_ITEM = "Quay API Key for avatar-deployment/update-image-versions.py"
+
 
 
 # Image configurations: registry, org/repo, version pattern
 IMAGE_CONFIGS = {
     "api": {
         "registry": "quay.io",
-        "repository": "octopize/services-api",
+        "repository": "octopize/avatar-service-api",
         "pattern": r"^\d+\.\d+\.\d+$",  # Semantic versioning only
     },
     "web": {
@@ -65,7 +68,7 @@ IMAGE_CONFIGS = {
     },
     "seaweedfs": {
         "registry": "quay.io",
-        "repository": "octopize/seaweedfs-chart",
+        "repository": "octopize/seaweedfs",
         "pattern": r"^\d+\.\d+\.\d+$",
     },
     "authentik": {
@@ -76,11 +79,53 @@ IMAGE_CONFIGS = {
 }
 
 
-def parse_semver(version: str) -> Tuple[int, ...]:
+def parse_semver(version: str) -> tuple[int, ...]:
     """Parse semantic version string into tuple of integers for comparison."""
     # Handle authentik's year.minor.patch format
     parts = version.split(".")
     return tuple(int(p) for p in parts)
+
+
+def get_token_from_1password(item_name: str, verbose: bool = False) -> Optional[str]:
+    """Fetch a token from 1Password using the `op` CLI.
+
+    Args:
+        item_name: Name of the 1Password item (should be a secure note)
+        verbose: Whether to print debug information
+
+    Returns:
+        Token string if found, None otherwise
+    """
+    try:
+        # Get the note content from the named item
+        result = subprocess.run(
+            ["op", "item", "get", item_name, "--field", "notesPlain"],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+
+        if result.returncode == 0:
+            token = result.stdout.strip()
+            if token:
+                if verbose:
+                    print(f"✓ Retrieved token from 1Password: {item_name}")
+                return token
+        else:
+            if verbose:
+                print(f"Warning: Could not retrieve from 1Password: {result.stderr.strip()}", file=sys.stderr)
+
+    except FileNotFoundError:
+        if verbose:
+            print("Warning: 'op' CLI not found. Install 1Password CLI or set QUAY_TOKEN manually.", file=sys.stderr)
+    except subprocess.TimeoutExpired:
+        if verbose:
+            print("Warning: 1Password CLI timed out", file=sys.stderr)
+    except Exception as e:
+        if verbose:
+            print(f"Warning: Error accessing 1Password: {e}", file=sys.stderr)
+
+    return None
 
 
 def get_quay_tags(repository: str, verbose: bool = False) -> list[str]:
@@ -232,12 +277,12 @@ def update_image_versions(
     defaults_path: Path,
     check_only: bool = False,
     verbose: bool = False
-) -> Tuple[bool, list[str]]:
+) -> tuple[bool, list[str]]:
     """
     Update image versions in defaults.yaml.
 
     Returns:
-        Tuple of (has_updates, list of update messages)
+        tuple of (has_updates, list of update messages)
     """
     if verbose:
         print(f"Loading defaults from: {defaults_path}")
@@ -307,18 +352,22 @@ def main():
 
     args = parser.parse_args()
 
-    # Find defaults.yaml relative to script location
-    script_dir = Path(__file__).parent
-    repo_root = script_dir.parent
-    defaults_path = repo_root / "deployment-tool" / "defaults.yaml"
+    # Set up authentication tokens
+    # Try 1Password first if QUAY_TOKEN not already set
+    if not os.environ.get("QUAY_TOKEN"):
+        quay_token = get_token_from_1password(ONEPASSWORD_QUAY_ITEM, args.verbose)
+        if quay_token:
+            os.environ["QUAY_TOKEN"] = quay_token
+        elif args.verbose:
+            print("\nNo QUAY_TOKEN found in environment or 1Password")
 
-    if not defaults_path.exists():
-        print(f"Error: defaults.yaml not found at {defaults_path}", file=sys.stderr)
+    if not DEFAULTS_PATH.exists():
+        print(f"Error: defaults.yaml not found at {DEFAULTS_PATH}", file=sys.stderr)
         sys.exit(1)
 
     try:
         has_changes, updates = update_image_versions(
-            defaults_path,
+            DEFAULTS_PATH,
             check_only=args.check_only,
             verbose=args.verbose
         )

@@ -711,3 +711,97 @@ class TestNonInteractiveModeCompleteness:
             "template_from_local_verbose",
             fixture_manager,
         )
+
+
+class TestCLIResumeWorkflow:
+    """Test resuming interrupted configurations."""
+
+    def test_resume_from_interrupted_configuration(
+        self, temp_deployment_dir, log_file, docker_templates_dir
+    ):
+        """Test resuming configuration after partial completion."""
+
+        # First run - simulate interruption by providing incomplete responses
+        # This will complete only the first few steps before running out of responses
+        first_run_path = FIXTURES_DIR / "resume_interrupted" / "input_first_run.yaml"
+        with open(first_run_path) as f:
+            first_run_responses = yaml.safe_load(f)["responses"]
+
+        # We expect the first run to fail/exit because we don't have enough responses
+        # But it should save state for completed steps
+        first_run_log = temp_deployment_dir / "output_first_run.log"
+        harness1 = CLITestHarness(
+            responses=first_run_responses,
+            args=[
+                "--output-dir",
+                str(temp_deployment_dir),
+                "--template-from",
+                str(docker_templates_dir),
+            ],
+            log_file=str(first_run_log),
+        )
+        exit_code1 = harness1.run()
+
+        # First run should fail due to incomplete responses
+        assert exit_code1 != 0, "First run should fail with incomplete responses"
+
+        # Verify first run output shows partial completion
+        first_output = first_run_log.read_text()
+        assert "Avatar Deployment Configuration" in first_output
+        assert "Executing configuration steps..." in first_output
+
+        # Compare first run output (partial completion with error)
+        assert compare_output(
+            first_run_log,
+            temp_deployment_dir,
+            "resume_interrupted/first_run",
+            fixture_manager,
+        )
+
+        # State should be saved for completed steps
+        state_file = temp_deployment_dir / ".deployment-state.yaml"
+        assert state_file.exists(), "State file should be created after partial run"
+
+        # Second run - resume with answer "yes" to resume prompt
+        resume_path = FIXTURES_DIR / "resume_interrupted" / "input_resume.yaml"
+        with open(resume_path) as f:
+            resume_responses = yaml.safe_load(f)["responses"]
+
+        # Use separate log file for resume run
+        resume_log = temp_deployment_dir / "output_resume.log"
+        harness2 = CLITestHarness(
+            responses=resume_responses,
+            args=[
+                "--output-dir",
+                str(temp_deployment_dir),
+                "--template-from",
+                str(docker_templates_dir),
+            ],
+            log_file=str(resume_log),
+        )
+        exit_code2 = harness2.run()
+
+        # Second run should succeed
+        assert exit_code2 == 0, "Resume run should complete successfully"
+
+        # Verify the resume output contains expected messages
+        resume_output = resume_log.read_text()
+
+        # Should show deployment status screen
+        assert "Deployment Configuration Status" in resume_output
+        assert "steps completed" in resume_output
+
+        # Should show resume message (this is logged via printer)
+        assert "Resuming from last completed step..." in resume_output
+
+        # Should show SKIPPED markers for already-completed steps
+        assert "[SKIPPED - already completed]" in resume_output
+
+        # Verify multiple steps were skipped
+        skipped_count = resume_output.count("[SKIPPED - already completed]")
+        assert skipped_count >= 5, "Should have skipped at least 5 completed steps"
+
+        # Compare resume run output
+        assert compare_output(
+            resume_log, temp_deployment_dir, "resume_interrupted/resume", fixture_manager
+        )

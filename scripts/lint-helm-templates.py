@@ -101,24 +101,18 @@ def run_yamllint(files: list[Path]) -> int:
 
 
 def main():
-    print("🔍 Linting Helm templates...")
-
-    # First run helm lint for basic syntax checking
-    print("  Running helm lint...")
     try:
         subprocess.run(
             ["helm", "lint", PATH_TO_CHART],
             check=True,
             capture_output=True,
         )
-        print("  ✅ Helm syntax check passed")
     except subprocess.CalledProcessError as e:
         print("  ❌ Helm lint failed:")
         print(e.stderr.decode())
         return 1
 
     # Render templates
-    print("  Rendering templates...")
     rendered_yaml = render_helm_templates()
 
     # Split into individual files
@@ -133,14 +127,10 @@ def main():
             print("  ⚠️  No templates found to lint")
             return 0
 
-        print(f"  Linting {len(our_files)} template file(s)...")
-
         # Run yamllint
         exit_code = run_yamllint(our_files)
 
-        if exit_code == 0:
-            print("  ✅ All templates passed yamllint")
-        else:
+        if exit_code != 0:
             print("  ❌ yamllint found issues")
 
         return exit_code

@@ -19,11 +19,16 @@ class RequiredConfigStep(DeploymentStep):
 
         # Public URL - Required
         if "PUBLIC_URL" in self.config:
-            config["PUBLIC_URL"] = self.config["PUBLIC_URL"]
+            public_url = self.config["PUBLIC_URL"]
         elif self.interactive:
-            config["PUBLIC_URL"] = self.prompt("Public URL (domain name, e.g., avatar.example.com)")
+            public_url = self.prompt("Public URL (domain name, e.g., avatar.example.com)")
         else:
-            config["PUBLIC_URL"] = ""
+            public_url = ""
+
+        # Normalize PUBLIC_URL to strip protocol and store just the domain
+        if public_url:
+            public_url = public_url.replace("https://", "").replace("http://", "").rstrip("/")
+        config["PUBLIC_URL"] = public_url
 
         # Environment name - Required
         if "ENV_NAME" in self.config:

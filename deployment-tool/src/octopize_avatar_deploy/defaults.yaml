@@ -1,63 +1,47 @@
-# Default Configuration Values for Avatar Deployment
-# Version: 1.0.0 (MAJOR.MINOR.PATCH)
-# Compatible with script version: >=1.0.0,<2.0.0
-
-version: "1.0.0"
-
-# Image versions - updated regularly with new releases
+version: 1.0.0
 images:
-  api: "2.20.1"
-  web: "0.40.0"
-  pdfgenerator: "latest"
-  seaweedfs: "0.2.0"
-  authentik: "2025.10.2"
-
-# Email configuration defaults
+  api: 2.47.0
+  web: 0.52.0
+  pdfgenerator: 0.2.3
+  seaweedfs: 0.4.0
+  authentik: 2025.10.2
 email:
-  provider: "aws"  # 'aws' or 'smtp'
+  provider: aws
   smtp:
-    host: "email-smtp.eu-west-3.amazonaws.com"
-    port: "587"
-    use_tls: "true"
-    start_tls: "false"
-    verify: "true"
-    sender_email: "noreply@octopize.io"
-
-# Telemetry configuration (for usage analytics)
+    host: email-smtp.eu-west-3.amazonaws.com
+    port: '587'
+    use_tls: 'true'
+    start_tls: 'false'
+    verify: 'true'
+    sender_email: noreply@octopize.io
 telemetry:
-  enabled: true  # Ask user if they want to enable telemetry
-  endpoint_url: "https://s3.fr-par.scw.cloud"
-  region: "fr-par"
-
-# Application settings (defaults when no preset is selected)
+  enabled: true
+  endpoint_url: https://s3.fr-par.scw.cloud
+  region: fr-par
 application:
-  use_console_logging: "false"
-  log_level: "INFO"
-  sentry_enabled: "true"
-  email_authentication: "true"
-
-# Deployment presets - pre-configured settings for common scenarios
+  use_console_logging: 'false'
+  log_level: INFO
+  sentry_enabled: 'true'
+  email_authentication: 'true'
 presets:
   default:
-    description: "Production-ready configuration with telemetry and monitoring"
+    description: Production-ready configuration with telemetry and monitoring
     application:
-      use_console_logging: "false"
-      sentry_enabled: "true"
+      use_console_logging: 'false'
+      sentry_enabled: 'true'
     telemetry:
       enabled: true
-
   dev-mode:
-    description: "Development mode with console logging, no external services"
+    description: Development mode with console logging, no external services
     application:
-      use_console_logging: "true"
-      sentry_enabled: "false"
+      use_console_logging: 'true'
+      sentry_enabled: 'false'
     telemetry:
       enabled: false
-
   airgapped:
-    description: "Air-gapped deployment without external monitoring or telemetry"
+    description: Air-gapped deployment without external monitoring or telemetry
     application:
-      use_console_logging: "false"
-      sentry_enabled: "false"
+      use_console_logging: 'false'
+      sentry_enabled: 'false'
     telemetry:
       enabled: false

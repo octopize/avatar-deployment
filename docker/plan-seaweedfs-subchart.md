@@ -33,4 +33,3 @@ This plan integrates the Bitnami SeaweedFS Helm chart as a dependency subchart, 
 4. **Update [api-deployment.yaml](services-api-helm-chart/templates/api-deployment.yaml) environment variables** — Ensure `STORAGE_ENDPOINT_HOST`, `STORAGE_ENDPOINT_PORT`, `ACCESS_CONTROL_ENDPOINT_HOST`, `ACCESS_CONTROL_ENDPOINT_PORT` use the SeaweedFS helpers when enabled, falling back to manual values otherwise.
 
 5. **Add Apache 2.0 license attribution file** — Create `THIRD_PARTY_LICENSES.md` in `services-api-helm-chart/` documenting Bitnami SeaweedFS chart usage with link to source (`https://github.com/bitnami/charts/tree/main/bitnami/seaweedfs`) and Apache 2.0 license.
-

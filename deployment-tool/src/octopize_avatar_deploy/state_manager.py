@@ -116,21 +116,28 @@ class DeploymentState:
         total = len(self.steps)
         return f"{completed}/{total} steps completed"
 
-    def print_status(self) -> None:
-        """Print current status."""
-        print("\n" + "=" * 60)
-        print("Deployment Configuration Status")
-        print("=" * 60)
-        print(f"\n{self.get_progress_summary()}\n")
+    def print_status(self, printer=None) -> None:
+        """
+        Print current status.
+
+        Args:
+            printer: Optional printer to use for output. If None, uses built-in print().
+        """
+        _print = printer.print if printer else print
+
+        _print("\n" + "=" * 60)
+        _print("Deployment Configuration Status")
+        _print("=" * 60)
+        _print(f"\n{self.get_progress_summary()}\n")
 
         for step in self.steps:
             status = self.get_step_status(step)
             icon = "✓" if status == "completed" else "○" if status == "not-started" else "◐"
-            print(f"  {icon} {step.replace('_', ' ').title()}: {status}")
+            _print(f"  {icon} {step.replace('_', ' ').title()}: {status}")
 
         if self.is_complete():
-            print("\n✓ Configuration is complete!")
+            _print("\n✓ Configuration is complete!")
         elif self.has_started():
             next_step = self.get_next_step()
             if next_step:
-                print(f"\n→ Next step: {next_step.replace('_', ' ').title()}")
+                _print(f"\n→ Next step: {next_step.replace('_', ' ').title()}")

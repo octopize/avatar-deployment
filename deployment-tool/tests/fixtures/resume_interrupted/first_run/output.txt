@@ -1,0 +1,19 @@
+
+============================================================
+Avatar Deployment Configuration
+============================================================
+
+Executing configuration steps...
+
+
+--- Collect required deployment settings (PUBLIC_URL, ENV_NAME, etc.) ---
+
+--- Configure PostgreSQL database credentials ---
+
+--- Configure Authentik SSO authentication credentials ---
+
+--- Configure Authentik SSO blueprint settings ---
+
+--- Configure S3-compatible storage (SeaweedFS) credentials ---
+
+--- Configure email provider (AWS SES or SMTP) and credentials ---

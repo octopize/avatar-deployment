@@ -38,7 +38,7 @@ dev = [
 ]
 
 [project.scripts]
-octopize-avatar-deploy = "octopize_avatar_deploy.configure:main"
+octopize-deploy-tool = "octopize_avatar_deploy.configure:main"
 
 [project.urls]
 Homepage = "https://octopize.io"

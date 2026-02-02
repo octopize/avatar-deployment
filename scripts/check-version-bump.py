@@ -194,7 +194,6 @@ def main() -> int:
             print("", file=sys.stderr)
         return 1
 
-    print("✓ Version bump check passed")
     return 0
 
 
