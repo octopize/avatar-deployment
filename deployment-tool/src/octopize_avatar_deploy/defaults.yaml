@@ -4,7 +4,7 @@ images:
   web: 0.52.0
   pdfgenerator: 0.2.3
   seaweedfs: 0.4.0
-  authentik: 2025.12.2
+  authentik: 2025.12.3
 email:
   provider: aws
   smtp:

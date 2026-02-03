@@ -19,22 +19,6 @@ class TestDeploymentRunner:
         with tempfile.TemporaryDirectory() as tmpdir:
             yield Path(tmpdir)
 
-    @pytest.fixture
-    def temp_templates_dir(self):
-        """Create a temporary templates directory with mock templates."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            templates_dir = Path(tmpdir)
-            # Create mock template files - all required files
-            (templates_dir / ".env.template").write_text("# Mock env template")
-            (templates_dir / "nginx.conf.template").write_text("# Mock nginx template")
-            (templates_dir / "docker-compose.yml").write_text("# Mock docker-compose")
-            (templates_dir / ".template-version").write_text("0.1.0\n")
-            # Create authentik directory and blueprint template
-            authentik_dir = templates_dir / "authentik"
-            authentik_dir.mkdir(parents=True, exist_ok=True)
-            (authentik_dir / "octopize-avatar-blueprint.yaml.j2").write_text("# Blueprint")
-            yield templates_dir
-
     def test_init_default_template_from(self, temp_output_dir):
         """Test initialization with default template source (github)."""
         runner = DeploymentRunner(output_dir=temp_output_dir)
@@ -44,12 +28,12 @@ class TestDeploymentRunner:
         assert runner.template_from == "github"
         assert runner.verbose is False
 
-    def test_init_local_template_source(self, temp_output_dir, temp_templates_dir):
+    def test_init_local_template_source(self, temp_output_dir, mock_docker_source):
         """Test initialization with local template source."""
-        runner = DeploymentRunner(output_dir=temp_output_dir, template_from=str(temp_templates_dir))
+        runner = DeploymentRunner(output_dir=temp_output_dir, template_from=str(mock_docker_source))
 
         assert runner.output_dir == temp_output_dir
-        assert runner.template_from == str(temp_templates_dir)
+        assert runner.template_from == str(mock_docker_source)
         # Templates are always stored at output_dir/.avatar-templates
         assert runner.templates_dir == temp_output_dir / ".avatar-templates"
 
@@ -73,17 +57,11 @@ class TestDeploymentRunner:
 
     def test_verify_templates_success(self, temp_output_dir, temp_templates_dir):
         """Test template verification with valid templates."""
-        # Copy templates to the expected location
+        # Copy templates to the expected location using shutil
+        import shutil
+
         templates_dir = temp_output_dir / ".avatar-templates"
-        templates_dir.mkdir()
-        (templates_dir / ".env.template").write_text("# Mock env template")
-        (templates_dir / "nginx.conf.template").write_text("# Mock nginx")
-        (templates_dir / "docker-compose.yml").write_text("# Mock compose")
-        (templates_dir / ".template-version").write_text("0.1.0\n")
-        # Create authentik directory and blueprint template
-        authentik_dir = templates_dir / "authentik"
-        authentik_dir.mkdir(parents=True, exist_ok=True)
-        (authentik_dir / "octopize-avatar-blueprint.yaml.j2").write_text("# Blueprint")
+        shutil.copytree(temp_templates_dir, templates_dir)
 
         runner = DeploymentRunner(
             output_dir=temp_output_dir,
@@ -123,11 +101,11 @@ class TestDeploymentRunner:
 
         assert result is False
 
-    def test_ensure_templates_with_local_source(self, temp_output_dir, temp_templates_dir):
+    def test_ensure_templates_with_local_source(self, temp_output_dir, mock_docker_source):
         """Test ensure_templates with local template source."""
         runner = DeploymentRunner(
             output_dir=temp_output_dir,
-            template_from=str(temp_templates_dir),
+            template_from=str(mock_docker_source),
             verbose=True,
         )
 
@@ -154,7 +132,7 @@ class TestDeploymentRunner:
         assert result is False
 
     @patch("octopize_avatar_deploy.configure.DeploymentConfigurator")
-    def test_run_success(self, mock_configurator_class, temp_output_dir, temp_templates_dir):
+    def test_run_success(self, mock_configurator_class, temp_output_dir, mock_docker_source):
         """Test successful run of deployment process."""
         # Setup mock
         mock_configurator = MagicMock()
@@ -162,7 +140,7 @@ class TestDeploymentRunner:
 
         runner = DeploymentRunner(
             output_dir=temp_output_dir,
-            template_from=str(temp_templates_dir),
+            template_from=str(mock_docker_source),
         )
 
         runner.run(interactive=False, save_config=True)
@@ -183,7 +161,7 @@ class TestDeploymentRunner:
 
     @patch("octopize_avatar_deploy.configure.DeploymentConfigurator")
     def test_run_with_config_file(
-        self, mock_configurator_class, temp_output_dir, temp_templates_dir
+        self, mock_configurator_class, temp_output_dir, mock_docker_source
     ):
         """Test run with config file parameter."""
         mock_configurator = MagicMock()
@@ -194,7 +172,7 @@ class TestDeploymentRunner:
 
         runner = DeploymentRunner(
             output_dir=temp_output_dir,
-            template_from=str(temp_templates_dir),
+            template_from=str(mock_docker_source),
         )
 
         runner.run(config_file=config_file)
@@ -219,23 +197,18 @@ class TestDeploymentRunner:
     @patch("octopize_avatar_deploy.configure.download_templates")
     @patch("octopize_avatar_deploy.configure.DeploymentConfigurator")
     def test_run_downloads_templates_before_configure(
-        self, mock_configurator_class, mock_download, temp_output_dir
+        self, mock_configurator_class, mock_download, temp_output_dir, temp_templates_dir
     ):
         """Test run ensures templates are downloaded before configurator runs."""
+        import shutil
+
         mock_download.return_value = True
         mock_configurator = MagicMock()
         mock_configurator_class.return_value = mock_configurator
 
+        # Copy complete templates to expected location
         templates_dir = temp_output_dir / ".avatar-templates"
-        templates_dir.mkdir()
-        (templates_dir / ".env.template").write_text("# Mock")
-        (templates_dir / "nginx.conf.template").write_text("# Mock nginx")
-        (templates_dir / "docker-compose.yml").write_text("# Mock compose")
-        (templates_dir / ".template-version").write_text("0.1.0\n")
-        # Create authentik directory and blueprint template
-        authentik_dir = templates_dir / "authentik"
-        authentik_dir.mkdir(parents=True, exist_ok=True)
-        (authentik_dir / "octopize-avatar-blueprint.yaml.j2").write_text("# Blueprint")
+        shutil.copytree(temp_templates_dir, templates_dir)
 
         runner = DeploymentRunner(
             output_dir=temp_output_dir,
@@ -255,16 +228,16 @@ class TestDeploymentRunner:
         # Then configure
         mock_configurator.run.assert_called_once()
 
-    def test_all_constructor_parameters_combination(self, temp_output_dir, temp_templates_dir):
+    def test_all_constructor_parameters_combination(self, temp_output_dir, mock_docker_source):
         """Test that all constructor parameters can be used together."""
         runner = DeploymentRunner(
             output_dir=str(temp_output_dir),
-            template_from=str(temp_templates_dir),
+            template_from=str(mock_docker_source),
             verbose=True,
         )
 
         assert runner.output_dir == temp_output_dir
-        assert runner.template_from == str(temp_templates_dir)
+        assert runner.template_from == str(mock_docker_source)
         assert runner.templates_dir == temp_output_dir / ".avatar-templates"
         assert runner.verbose is True
 
@@ -274,11 +247,11 @@ class TestDeploymentRunner:
         # Verify templates were copied
         assert (temp_output_dir / ".avatar-templates" / ".env.template").exists()
 
-    def test_verbose_prints_messages(self, temp_output_dir, temp_templates_dir, capsys):
+    def test_verbose_prints_messages(self, temp_output_dir, mock_docker_source, capsys):
         """Test that verbose mode prints informative messages."""
         runner = DeploymentRunner(
             output_dir=temp_output_dir,
-            template_from=str(temp_templates_dir),
+            template_from=str(mock_docker_source),
             verbose=True,
         )
 
@@ -291,13 +264,13 @@ class TestDeploymentRunner:
 
         captured = capsys.readouterr()
         assert "Copying templates" in captured.out
-        assert str(temp_templates_dir) in captured.out
+        assert str(mock_docker_source) in captured.out
 
-    def test_verbose_false_no_prints(self, temp_output_dir, temp_templates_dir, capsys):
+    def test_verbose_false_no_prints(self, temp_output_dir, mock_docker_source, capsys):
         """Test that verbose=False suppresses informational messages."""
         runner = DeploymentRunner(
             output_dir=temp_output_dir,
-            template_from=str(temp_templates_dir),
+            template_from=str(mock_docker_source),
             verbose=False,
         )
 

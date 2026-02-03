@@ -1,6 +1,6 @@
 Copying templates from /home/tom/Documents/dev/octopize/avatar-deployment/docker/templates
-✓ Found all 5 required template files
-✓ Template version is compatible with script version 2.2.0
+✓ Found all 14 required template files
+✓ Template version is compatible with script version 2.5.0
 
 ============================================================
 Avatar Deployment Configuration
@@ -34,6 +34,8 @@ Generating Configuration Files
 ✓ Generated: {{OUTPUT_DIR}}/nginx/nginx.conf
 ✓ Generated: {{OUTPUT_DIR}}/authentik/octopize-avatar-blueprint.yaml
 ✓ Generated: {{OUTPUT_DIR}}/docker-compose.yml
+✓ Copied: email templates to {{OUTPUT_DIR}}/authentik/custom-templates
+✓ Copied: branding files to {{OUTPUT_DIR}}/authentik/branding
 
 ✓ Configuration files generated successfully!
 

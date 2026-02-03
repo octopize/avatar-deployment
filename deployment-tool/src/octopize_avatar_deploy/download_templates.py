@@ -228,6 +228,7 @@ class GitHubTemplateProvider(TemplateProvider):
                 print(f"  ✗ Failed: {e}")
             return False
 
+
 class LocalTemplateProvider(TemplateProvider):
     """Provides templates from a local directory (for testing)."""
 

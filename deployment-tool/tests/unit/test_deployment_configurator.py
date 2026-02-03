@@ -56,27 +56,6 @@ class TestDeploymentConfigurator:
             yield Path(tmpdir)
 
     @pytest.fixture
-    def temp_templates_dir(self):
-        """Create a temporary templates directory with mock templates."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            templates_dir = Path(tmpdir)
-            # Create mock template files
-            (templates_dir / ".env.template").write_text(
-                "# Environment Configuration\nAPI_URL={{ api_url }}\nDB_HOST={{ db_host }}\n"
-            )
-            (templates_dir / "nginx.conf.template").write_text(
-                "server {\n    server_name {{ domain }};\n}\n"
-            )
-            # Create authentik directory and blueprint template
-            authentik_dir = templates_dir / "authentik"
-            authentik_dir.mkdir(parents=True, exist_ok=True)
-            (authentik_dir / "octopize-avatar-blueprint.yaml.j2").write_text(
-                "# Blueprint template\nclient_id: {{ BLUEPRINT_CLIENT_ID }}\n"
-                "client_secret: {{ BLUEPRINT_CLIENT_SECRET }}\n"
-            )
-            yield templates_dir
-
-    @pytest.fixture
     def defaults_file(self, temp_output_dir):
         """Create a mock defaults.yaml file."""
         defaults = {
@@ -186,8 +165,8 @@ class TestDeploymentConfigurator:
         )
 
         configurator.config = {
-            "api_url": "https://api.example.com",
-            "db_host": "db.example.com",
+            "PUBLIC_URL": "example.com",
+            "ENV_NAME": "production",
         }
 
         configurator.render_template(".env.template", ".env")
@@ -196,8 +175,8 @@ class TestDeploymentConfigurator:
         assert env_file.exists()
 
         content = env_file.read_text()
-        assert "API_URL=https://api.example.com" in content
-        assert "DB_HOST=db.example.com" in content
+        assert "AVATAR_DOMAIN=example.com" in content
+        assert "ENV_NAME=production" in content
 
     def test_render_template_creates_subdirectories(
         self, temp_templates_dir, temp_output_dir, defaults_file
@@ -209,12 +188,12 @@ class TestDeploymentConfigurator:
             defaults_file=defaults_file,
         )
 
-        configurator.config = {"domain": "example.com"}
+        configurator.config = {"PUBLIC_URL": "example.com"}
         configurator.render_template("nginx.conf.template", "deep/nested/nginx.conf")
 
         nginx_file = temp_output_dir / "deep/nested/nginx.conf"
         assert nginx_file.exists()
-        assert "server_name example.com" in nginx_file.read_text()
+        assert "server_name          example.com" in nginx_file.read_text()
 
     def test_render_template_handles_errors(
         self, temp_templates_dir, temp_output_dir, defaults_file

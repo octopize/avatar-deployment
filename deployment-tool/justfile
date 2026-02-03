@@ -1,6 +1,10 @@
 # Justfile for Avatar Deployment Tool
 # Run `just` or `just --list` to see available commands
 
+PATHS := (
+ "src" +
+ " tests")
+
 # Show available commands
 default:
     @just --list
@@ -25,14 +29,22 @@ update-test-fixtures:
 
 # Lint code with ruff
 lint: format
-    uv run ruff check src/ tests/
+    uv run ruff check {{PATHS}}
 
-# Format code with black
+# Format code with ruff
 format:
-    uv run ruff format src/ tests/
+    uv run ruff check --fix {{PATHS}}
+    uv run ruff format {{PATHS}}
 
 # Format and lint
-check: format lint
+lint-fix: format lint
+
+# Check types with mypy
+typecheck:
+    uv run mypy {{PATHS}}
+
+lci: lint-fix typecheck test-all
+
 
 # Build the package
 build:
@@ -56,9 +68,7 @@ run-interactive-local *ARGS:
     echo "\nGenerated files in: $TEST_DIR"
     ls -la "$TEST_DIR"
 
-# Check types with mypy
-typecheck:
-    uv run mypy src/
+
 
 # Run the help command
 help:

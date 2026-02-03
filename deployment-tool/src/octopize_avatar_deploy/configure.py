@@ -30,6 +30,8 @@ import yaml
 from jinja2 import Environment, FileSystemLoader
 
 from octopize_avatar_deploy.download_templates import (
+    REQUIRED_DOCKER_FILES,
+    REQUIRED_TEMPLATE_FILES,
     LocalTemplateProvider,
     download_templates,
 )
@@ -188,7 +190,7 @@ class DeploymentConfigurator:
             output_path = self.output_dir / output_name
             output_path.parent.mkdir(parents=True, exist_ok=True)
             # Ensure trailing newline for pre-commit end-of-file-fixer
-            content = rendered if rendered.endswith('\n') else rendered + '\n'
+            content = rendered if rendered.endswith("\n") else rendered + "\n"
             output_path.write_text(content)
 
             self.printer.print_success(f"Generated: {output_path}")
@@ -502,11 +504,6 @@ class DeploymentRunner:
         Returns:
             True if templates are available, False otherwise
         """
-        from octopize_avatar_deploy.download_templates import (
-            REQUIRED_TEMPLATE_FILES,
-            REQUIRED_DOCKER_FILES,
-        )
-
         if not self.templates_dir.exists():
             if self.verbose:
                 self.printer.print_error(f"Templates directory not found: {self.templates_dir}")

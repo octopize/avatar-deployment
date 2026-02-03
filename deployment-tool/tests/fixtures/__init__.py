@@ -102,7 +102,7 @@ class FixtureManager:
         fixture_path = self.fixtures_dir / name / "output.txt"
         fixture_path.parent.mkdir(parents=True, exist_ok=True)
         # Ensure trailing newline for pre-commit end-of-file-fixer
-        content = output if output.endswith('\n') else output + '\n'
+        content = output if output.endswith("\n") else output + "\n"
         fixture_path.write_text(content)
 
     def compare_output(

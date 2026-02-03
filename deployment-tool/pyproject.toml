@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "octopize.deploy_tool"
-version = "0.1.0"
+version = "0.2.0"
 description = "Deployment configuration tool for Octopize Avatar platform"
 readme = "README.md"
 requires-python = ">=3.13"

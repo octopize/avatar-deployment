@@ -6,8 +6,8 @@
 #
 # Required Placeholders (fill before import):
 #   avatar.complete.com                - Base domain (e.g., staging.octopize.tech)
-#   8bb89cefdb857e7f71b80ba6cef6f7203f36c419912c1a3e1ade666487079a9f             - OAuth2 Client ID
-#   523f519e1c58c93cee5fc3c81704f1e012d1633d7766ddf90224a79f9bd78232         - OAuth2 Client Secret
+#   f3756e948305a81f2838b1577f4e34b72e7127f854509b879ba696a5faabc8ff             - OAuth2 Client ID
+#   873b6a58a218a93939c4c7d2657f8d72c6664e68e8f3aa3a251846d41935af80         - OAuth2 Client Secret
 #   https://avatar.complete.com/api/login/sso/auth      - Full redirect URI for API (e.g., https://avatar.complete.com/api/login/sso/auth)
 #   demo  - License type for self-service signups (e.g., demo, trial, full)
 
@@ -646,8 +646,8 @@ entries:
     attrs:
       name: !Format ["Provider for %s", !Context app_name]
       client_type: confidential
-      client_id: "8bb89cefdb857e7f71b80ba6cef6f7203f36c419912c1a3e1ade666487079a9f"
-      client_secret: "523f519e1c58c93cee5fc3c81704f1e012d1633d7766ddf90224a79f9bd78232"
+      client_id: "f3756e948305a81f2838b1577f4e34b72e7127f854509b879ba696a5faabc8ff"
+      client_secret: "873b6a58a218a93939c4c7d2657f8d72c6664e68e8f3aa3a251846d41935af80"
 
       # Token validity settings
       access_code_validity: minutes=1

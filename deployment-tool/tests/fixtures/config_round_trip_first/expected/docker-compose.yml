@@ -435,7 +435,6 @@ services:
     <<: *authentik-environment
 
     volumes:
-      - ./authentik/media:/media
       # Mount custom email templates (synced from common/authentik-templates)
       - ./authentik/custom-templates:/templates/email:ro
       # Mount custom branding assets (shared source)
@@ -467,7 +466,6 @@ services:
 
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./authentik/media:/media
       - ./authentik/certs:/certs
       # Mount custom email templates (synced from common/authentik-templates)
       - ./authentik/custom-templates:/templates/email:ro

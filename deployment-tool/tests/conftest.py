@@ -9,6 +9,8 @@ from pathlib import Path
 
 import pytest
 
+from octopize_avatar_deploy.download_templates import LocalTemplateProvider
+
 
 @pytest.fixture(scope="session")
 def fixtures_dir():
@@ -46,6 +48,58 @@ def log_file(temp_deployment_dir):
     Returns the path to output.log that will be used by CLITestHarness.
     """
     return temp_deployment_dir / "output.log"
+
+
+@pytest.fixture
+def mock_docker_source(docker_templates_dir):
+    """
+    Create a temporary copy of the actual docker source directory structure.
+
+    This fixture copies the real production templates from docker/templates/
+    to a temporary location, allowing tests to use actual production templates
+    while maintaining isolation. This ensures tests exercise the real template
+    content and will catch issues with actual templates.
+
+    Yields:
+        Path: Path to copied docker/templates/ directory (suitable for LocalTemplateProvider)
+    """
+    import shutil
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Copy the entire docker directory structure to temp location
+        real_docker_dir = docker_templates_dir.parent  # docker/templates/ -> docker/
+        temp_docker_dir = Path(tmpdir) / "docker"
+
+        # Copy the entire docker directory
+        shutil.copytree(real_docker_dir, temp_docker_dir)
+
+        # Yield the templates_dir which LocalTemplateProvider expects as source_dir
+        yield temp_docker_dir / "templates"
+
+
+@pytest.fixture
+def temp_templates_dir(mock_docker_source):
+    """
+    Create a temporary templates directory provisioned with all required files.
+
+    This fixture uses LocalTemplateProvider to copy all required template and
+    docker files from mock_docker_source to a temporary location, ensuring
+    tests use the same provisioning logic as production code.
+
+    Yields:
+        Path: Path to provisioned templates directory (flat structure with all files)
+    """
+    with tempfile.TemporaryDirectory() as tmpdir:
+        templates_dir = Path(tmpdir)
+
+        # Use LocalTemplateProvider to provision all files
+        provider = LocalTemplateProvider(source_dir=mock_docker_source, verbose=False)
+        success = provider.provide_all(templates_dir)
+
+        if not success:
+            raise RuntimeError("Failed to provision test templates using LocalTemplateProvider")
+
+        yield templates_dir
 
 
 def normalize_output(output: str, temp_dir: Path) -> str:
@@ -152,6 +206,10 @@ def _compare_directories(actual_dir: Path, expected_dir: Path) -> bool:
     for rel_path in actual_files:
         actual_file = actual_dir / rel_path
         expected_file = expected_dir / rel_path
+
+        # Skip binary files (images, etc.) - just verify they exist
+        if rel_path.suffix in {".png", ".ico", ".jpg", ".jpeg", ".gif"}:
+            continue
 
         # For secrets files, only verify they exist and are not empty
         if ".secrets" in str(rel_path):
