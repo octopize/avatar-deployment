@@ -1,0 +1,4 @@
+✗ Invalid YAML syntax in config file: {{OUTPUT_DIR}}/malformed.yaml
+✗ while scanning for the next token
+found character '\t' that cannot start any token
+  in "{{OUTPUT_DIR}}/malformed.yaml", line 2, column 1

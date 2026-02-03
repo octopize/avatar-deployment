@@ -9,11 +9,60 @@ repos:
     hooks:
       - id: sync-authentik-templates
         name: Sync authentik values common to Helm and Docker
-        entry: ./sync-templates.py
+        entry: ./scripts/sync-templates.py
         language: python
         pass_filenames: false
         files: ^common/
         description: "Synchronizes files from common/ to Helm chart and docker"
+        verbose: true
+
+      - id: check-version-bump
+        name: Check version bump when templates or scripts change
+        entry: ./scripts/check-version-bump.py
+        language: python
+        pass_filenames: false
+        files: ^(docker/templates/|deployment-tool/src/)
+        description: "Ensures version is bumped when templates or deployment tool code changes"
+        verbose: true
+
+      - id: update-image-versions
+        name: Update image versions from registries
+        entry: uv run ./scripts/update-image-versions.py
+        language: python
+        pass_filenames: false
+        always_run: true
+        files: ^deployment-tool/defaults\.yaml$
+        description: "Checks quay.io and ghcr.io for latest image versions and updates defaults.yaml"
+        verbose: true
+
+      - id: validate-authentik-blueprint
+        name: Validate Authentik blueprint template
+        entry: python scripts/validate-authentik-blueprint.py
+        language: python
+        pass_filenames: false
+        files: ^docker/templates/authentik/octopize-avatar-blueprint\.yaml$
+        description: "Validates Authentik blueprint template for correctness"
+        verbose: true
+
+      - id: lint-helm-templates
+        name: Lint Helm chart templates
+        entry: uv run scripts/lint-helm-templates.py
+        language: python
+        pass_filenames: false
+        files: ^services-api-helm-chart/(templates/|values\.yaml|Chart\.yaml)
+        description: "Renders and lints Helm templates with yamllint"
+        verbose: true
+
+  # Custom YAML checker with ignore file support
+  - repo: local
+    hooks:
+      - id: check-yaml-custom
+        name: Check YAML files (with ignore support)
+        entry: uv run scripts/check-yaml.py
+        language: python
+        types: [yaml]
+        args: ['--unsafe']  # Allow custom YAML tags
+        description: "Check YAML files for syntax errors, respecting .check-yaml-ignore"
         verbose: true
 
   # Standard pre-commit hooks
@@ -24,9 +73,6 @@ repos:
         exclude: ^.*\.(md|html)$
       - id: end-of-file-fixer
         exclude: ^.*\.html$
-      - id: check-yaml
-        args: ['--unsafe']  # Allow custom YAML tags in Helm templates
-        exclude: ^services-api-helm-chart/templates/
       - id: check-added-large-files
         args: ['--maxkb=1000']
       - id: check-merge-conflict

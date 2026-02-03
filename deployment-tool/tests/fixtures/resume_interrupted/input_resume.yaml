@@ -1,0 +1,7 @@
+# Resume run - continuing from where we left off
+responses:
+  - true                           # Resume from where you left off? YES
+  - ""                             # SMTP password (empty/skip) - continuing from email step
+  - "admin@example.com"            # ADMIN_EMAILS (string prompt for email auth)
+  - true                           # Enable Sentry?
+  - true                           # Enable usage telemetry?

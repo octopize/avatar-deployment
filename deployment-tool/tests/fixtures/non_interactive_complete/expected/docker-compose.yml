@@ -1,0 +1,556 @@
+x-logging: &default-logging
+  options:
+    max-size: "12m"
+    max-file: "5"
+  driver: json-file
+
+x-environment: &api-environment
+  environment:
+    # These take precedence over the environment variables defined in the env_file
+    ENV_NAME: ${ENV_NAME}
+    DB_HOST: db
+    STORAGE_ENDPOINT_HOST: http://s3
+    ACCESS_CONTROL_ENDPOINT_HOST: http://iam
+    DASK_SCHEDULER: my-dask-scheduler:8786
+    SECRETS_DIR: /var/run/secrets
+  env_file:
+    - path: .env
+      required: true
+
+x-authentik-environment: &authentik-environment
+  environment:
+    AUTHENTIK_WEB__PATH: /sso/
+    AUTHENTIK_POSTGRESQL__HOST: authentik_db
+    AUTHENTIK_POSTGRESQL__NAME: file:///run/secrets/authentik_database_name
+    AUTHENTIK_POSTGRESQL__PASSWORD: file:///run/secrets/authentik_database_password
+    AUTHENTIK_POSTGRESQL__USER: file:///run/secrets/authentik_database_user
+    AUTHENTIK_SECRET_KEY: file:///run/secrets/authentik_secret_key
+    AUTHENTIK_DISABLE_STARTUP_ANALYTICS: true
+    AUTHENTIK_DISABLE_UPDATE_CHECK: true
+    AUTHENTIK_ERROR_REPORTING__ENABLED: false
+    AUTHENTIK_EMAIL__HOST: ${SMTP_HOST}
+    AUTHENTIK_EMAIL__PORT: ${SMTP_PORT}
+    AUTHENTIK_EMAIL__USERNAME: ${SMTP_USERNAME}
+    AUTHENTIK_EMAIL__PASSWORD: ${SMTP_PASSWORD}
+    # Use StartTLS
+    AUTHENTIK_EMAIL__USE_TLS: ${SMTP_START_TLS}
+    # Use SSL
+    AUTHENTIK_EMAIL__USE_SSL: ${SMTP_USE_TLS}
+    AUTHENTIK_EMAIL__TIMEOUT: 30
+    AUTHENTIK_EMAIL__FROM: ${SMTP_SENDER_EMAIL}
+
+
+x-defaults:
+  platform: linux/amd64
+
+name: octopize-avatar
+
+services:
+  api:
+    image: &api-image-version quay.io/octopize/avatar-service-api:${AVATAR_API_VERSION}
+    restart: &default-restart unless-stopped
+    platform: &default-platform linux/amd64
+    logging: *default-logging
+    hostname: api
+    networks:
+      - default
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 5s
+      retries: 10
+      start_period: 10s
+    <<: *api-environment
+    secrets:
+      - db_name
+      - db_user
+      - db_password
+      - organization_name
+      - pepper
+      - authjwt_secret_key
+      # If using username-password authentication
+      # - avatar_first_user_name
+      # - avatar_first_user_password
+
+      # If using email-password authentication
+      - admin_emails
+      - aws_mail_account_access_key_id
+      - aws_mail_account_secret_access_key
+
+      - file_jwt_secret_key
+      - storage_admin_access_key_id
+      - storage_admin_secret_access_key
+
+      # For telemetry usage
+      - telemetry_s3_access_key_id
+      - telemetry_s3_secret_access_key
+
+      # If using clevercloud
+      - clevercloud_sso_salt
+    depends_on:
+      init-db:
+        condition: service_completed_successfully
+
+  init-db:
+    image: *api-image-version
+    platform: *default-platform
+    command: ["sh", "-c", "cd /app/avatar && python bin/dbtool.py setup"]
+    restart: on-failure:10
+    logging: *default-logging
+    hostname: init-db
+    networks:
+      - default
+    <<: *api-environment
+    secrets:
+      - db_name
+      - db_user
+      - db_password
+      - organization_name
+      - pepper
+      - authjwt_secret_key
+
+      # If using username-password authentication
+      # - avatar_first_user_name
+      # - avatar_first_user_password
+
+      # If using email-password authentication
+      - admin_emails
+      - aws_mail_account_access_key_id
+      - aws_mail_account_secret_access_key
+
+      - file_jwt_secret_key
+      - storage_admin_access_key_id
+      - storage_admin_secret_access_key
+
+      - db_admin_user
+      - db_admin_password
+    depends_on:
+      db:
+        condition: service_started
+      iam:
+        condition: service_healthy
+      s3:
+        condition: service_healthy
+
+  init-storage:
+    image: &seaweedfs-image ${AVATAR_SEAWEEDFS_REGISTRY-chrislusf}/seaweedfs:${AVATAR_SEAWEEDFS_VERSION-3.97}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      [
+        'echo "s3.configure -apply -user power_user -access_key $(cat /var/run/secrets/storage_admin_access_key_id) -secret_key  $(cat /var/run/secrets/storage_admin_secret_access_key)  -actions Admin" | weed shell -master=master:9333 -filer=filer:8888',
+      ]
+    restart: on-failure:10
+    logging: *default-logging
+    hostname: init-storage
+    networks:
+      - default
+    secrets:
+      - storage_admin_access_key_id
+      - storage_admin_secret_access_key
+    depends_on:
+      filer:
+        condition: service_healthy
+      master:
+        condition: service_healthy
+
+  dask-scheduler:
+    image: *api-image-version
+    platform: *default-platform
+    command: ["dask", "scheduler"]
+    restart: *default-restart
+    logging: *default-logging
+    hostname: my-dask-scheduler
+    networks:
+      - default
+    <<: *api-environment
+
+    secrets:
+      - db_name
+      - db_user
+      - db_password
+      - organization_name
+      - pepper
+      - authjwt_secret_key
+      # If using username-password authentication
+      # - avatar_first_user_name
+      # - avatar_first_user_password
+      - admin_emails
+      # If using AWS
+      - aws_mail_account_access_key_id
+      - aws_mail_account_secret_access_key
+      - file_jwt_secret_key
+      - storage_admin_access_key_id
+      - storage_admin_secret_access_key
+
+  dask-worker:
+    image: *api-image-version
+    platform: *default-platform
+    command:
+      [
+        "dask",
+        "worker",
+        "my-dask-scheduler:8786",
+        "--preload",
+        "api.domain.dask_worker_setup",
+      ]
+    restart: *default-restart
+    logging: *default-logging
+    hostname: my-dask-worker
+    networks:
+      - default
+    <<: *api-environment
+    secrets:
+      - db_name
+      - db_user
+      - db_password
+      - organization_name
+      - pepper
+      - authjwt_secret_key
+      # If using username-password authentication
+      # - avatar_first_user_name
+      # - avatar_first_user_password
+      - admin_emails
+      # If using AWS
+      - aws_mail_account_access_key_id
+      - aws_mail_account_secret_access_key
+      - file_jwt_secret_key
+      - storage_admin_access_key_id
+      - storage_admin_secret_access_key
+
+  db:
+    image: postgres:14.0
+    restart: *default-restart
+    logging: *default-logging
+    platform: *default-platform
+    hostname: db
+    networks:
+      - default
+    environment:
+      # Appending any env variable with '_FILE' allows the file content to
+      # be used to create the database
+      # Source: https://hub.docker.com/_/postgres/
+      POSTGRES_USER_FILE: /run/secrets/db_admin_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_admin_password
+    healthcheck:
+      interval: 30s
+      retries: 5
+      start_period: 20s
+      test:
+        - CMD-SHELL
+        - pg_isready -d avatar -U $(cat /run/secrets/db_admin_user)
+      timeout: 5s
+
+    secrets:
+      - db_admin_user
+      - db_admin_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  nginx:
+    image: nginx:1.27.3
+    logging: *default-logging
+    platform: *default-platform
+    restart: *default-restart
+    networks:
+      default:
+        aliases:
+          # Fixes Internal DNS Override.
+          # Short-circuits the public domain to this container's internal IP.
+          # Allows other containers to talk to Authentik via Port 443 on this proxy,
+          # satisfying Authentik's strict Host Header validation.
+          - ${AVATAR_DOMAIN}
+    hostname: nginx
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./tls:/etc/nginx/tls:ro
+    environment:
+      AVATAR_API_URL: ${AVATAR_API_URL}
+    ports:
+      - "443:443"
+      - "8080:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_started
+      s3:
+        condition: service_healthy
+
+  pdfgenerator:
+    image: quay.io/octopize/pdfgenerator:${AVATAR_PDFGENERATOR_VERSION}
+    restart: *default-restart
+    logging: *default-logging
+    platform: *default-platform
+    hostname: pdfgenerator
+    networks:
+      - default
+
+  web:
+    image: quay.io/octopize/avatar-web:${AVATAR_WEB_VERSION}
+    platform: *default-platform
+    logging: *default-logging
+    restart: *default-restart
+    networks:
+      - default
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      ENV_NAME: ${ENV_NAME}
+      AVATAR_WEB_CLIENT_URL: ${AVATAR_WEB_CLIENT_URL}
+      AVATAR_API_PUBLIC_URL: ${AVATAR_API_URL}
+      AVATAR_API_INTERNAL_URL: "http://api:8000"
+      AVATAR_STORAGE_ENDPOINT_PUBLIC_URL: ${AVATAR_STORAGE_ENDPOINT_PUBLIC_URL}
+      AVATAR_STORAGE_ENDPOINT_INTERNAL_URL: ${AVATAR_STORAGE_ENDPOINT_INTERNAL_URL}
+      AVATAR_SSO_URL: ${AVATAR_API_URL}/login/sso
+      AVATAR_SSO_ENABLED: false
+
+  master:
+    image: *seaweedfs-image
+    logging: *default-logging
+    restart: *default-restart
+    networks:
+      - default
+    command: "-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} master -ip=master -volumeSizeLimitMB=10 -raftBootstrap -raftHashicorp -electionTimeout=1s"
+    healthcheck:
+      test:
+        ["CMD", "echo", "--fail", "-I", "http://localhost:9333/cluster/healthz"]
+      interval: 5s
+      # Wait for 5s seconds to wait for the master to be up, before starting healthchecks.
+      # This is a workaround for the fact that the master and filer are not fully ready when they are declared healthy
+      start_interval: 5s
+      start_period: 5s
+    volumes:
+      - ./tls:/etc/seaweedfs/tls
+  volume:
+    image: *seaweedfs-image
+    logging: *default-logging
+    restart: *default-restart
+    networks:
+      - default
+    command: "-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} volume -mserver=master:9333 -port=8080 -ip=volume -preStopSeconds=1 -max=10000"
+    healthcheck:
+      test: ["CMD", "echo", "--fail", "-I", "http://volume:8080/status"]
+      interval: 5s
+    depends_on:
+      master:
+        condition: service_healthy
+    volumes:
+      - ./tls:/etc/seaweedfs/tls
+  filer:
+    image: *seaweedfs-image
+    logging: *default-logging
+    restart: *default-restart
+    networks:
+      - default
+    command: '-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} filer -ip.bind=0.0.0.0 -master="master:9333"'
+    healthcheck:
+      test: ["CMD", "echo", "--fail", "-I", "http://localhost:8888"]
+      interval: 5s
+    depends_on:
+      master:
+        condition: service_healthy
+      volume:
+        condition: service_healthy
+
+    volumes:
+      - ./tls:/etc/seaweedfs/tls
+      - seaweedfs-data:/data
+
+  iam:
+    image: *seaweedfs-image
+    logging: *default-logging
+    restart: *default-restart
+    networks:
+      - default
+    command: '-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} iam -filer="filer:8888" -master="master:9333"'
+    healthcheck:
+      test: ["CMD", "echo", "--fail", "--get", "http://localhost:8111"]
+      interval: 5s
+    depends_on:
+      master:
+        condition: service_healthy
+      volume:
+        condition: service_healthy
+      filer:
+        condition: service_healthy
+
+    volumes:
+      - ./tls:/etc/seaweedfs/tls
+  s3:
+    image: *seaweedfs-image
+    logging: *default-logging
+    restart: *default-restart
+    networks:
+      - default
+    command: '-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} s3 -filer="filer:8888" -ip.bind=s3'
+    healthcheck:
+      test: ["CMD", "echo", "--fail", "--get", "http://localhost:8333/healthz"]
+      interval: 5s
+    depends_on:
+      master:
+        condition: service_healthy
+      volume:
+        condition: service_healthy
+      filer:
+        condition: service_healthy
+    volumes:
+      - ./tls:/etc/seaweedfs/tls
+
+  authentik_db:
+    image: docker.io/library/postgres:16-alpine
+    logging: *default-logging
+    platform: *default-platform
+    restart: *default-restart
+    networks:
+      - default
+    hostname: authentik_db
+    environment:
+      POSTGRES_DB_FILE: /run/secrets/authentik_database_name
+      POSTGRES_USER_FILE: /run/secrets/authentik_database_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/authentik_database_password
+    healthcheck:
+      interval: 30s
+      retries: 5
+      start_period: 20s
+      test:
+        - CMD-SHELL
+        - pg_isready -d $(cat /run/secrets/authentik_database_name) -U $(cat /run/secrets/authentik_database_user)
+      timeout: 5s
+    volumes:
+      - authentik_postgres_data:/var/lib/postgresql/data
+    secrets:
+      - authentik_database_name
+      - authentik_database_user
+      - authentik_database_password
+
+  authentik_server:
+    image: &authentik_image ${AVATAR_AUTHENTIK_REPOSITORY}/server:${AVATAR_AUTHENTIK_VERSION}
+    logging: *default-logging
+    platform: *default-platform
+    restart: *default-restart
+    networks:
+      - default
+    hostname: authentik_server
+    command: server
+    <<: *authentik-environment
+
+    volumes:
+      - ./authentik/media:/media
+      # Mount custom email templates (synced from common/authentik-templates)
+      - ./authentik/custom-templates:/templates/email:ro
+      # Mount custom branding assets (shared source)
+      - ./authentik/branding/favicon.ico:/media/public/favicon.ico:ro
+      - ./authentik/branding/logo.png:/media/public/brand_logo.png:ro
+      - ./authentik/branding/background.png:/media/public/background.png:ro
+
+    secrets:
+      - authentik_database_name
+      - authentik_database_user
+      - authentik_database_password
+      - authentik_secret_key
+
+    depends_on:
+      authentik_db:
+        condition: service_healthy
+
+  authentik_worker:
+    image: *authentik_image
+    logging: *default-logging
+    platform: *default-platform
+    restart: *default-restart
+    hostname: authentik_worker
+    networks:
+      - default
+    command: worker
+    user: root
+    <<: *authentik-environment
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./authentik/media:/media
+      - ./authentik/certs:/certs
+      # Mount custom email templates (synced from common/authentik-templates)
+      - ./authentik/custom-templates:/templates/email:ro
+      # Mount custom branding assets (shared source)
+      - ../common/authentik-branding/favicon.ico:/media/public/favicon.ico:ro
+      - ../common/authentik-branding/logo.png:/media/public/brand_logo.png:ro
+
+    secrets:
+      - authentik_database_name
+      - authentik_database_user
+      - authentik_database_password
+      - authentik_secret_key
+
+    depends_on:
+      authentik_db:
+        condition: service_healthy
+
+secrets:
+  db_admin_user:
+    file: ${SECRETS_DIR-.secrets}/db_admin_user
+  db_admin_password:
+    file: ${SECRETS_DIR-.secrets}/db_admin_password
+  db_user:
+    file: ${SECRETS_DIR-.secrets}/db_user
+  db_password:
+    file: ${SECRETS_DIR-.secrets}/db_password
+  db_name:
+    file: ${SECRETS_DIR-.secrets}/db_name
+  pepper:
+    file: ${SECRETS_DIR-.secrets}/pepper
+  authjwt_secret_key:
+    file: ${SECRETS_DIR-.secrets}/authjwt_secret_key
+  organization_name:
+    file: ${SECRETS_DIR-.secrets}/organization_name
+  file_jwt_secret_key:
+    file: ${SECRETS_DIR-.secrets}/file_jwt_secret_key
+
+  # If using username-password authentication, you should have the following secrets present
+  # avatar_first_user_name:
+  #   file: ${SECRETS_DIR-.secrets}/avatar_first_user_name
+  # avatar_first_user_password:
+  #   file: ${SECRETS_DIR-.secrets}/avatar_first_user_password
+
+  storage_admin_access_key_id:
+    file: ${SECRETS_DIR-.secrets}/storage_admin_access_key_id
+  storage_admin_secret_access_key:
+    file: ${SECRETS_DIR-.secrets}/storage_admin_secret_access_key
+
+  # If using email-password authentication, you should have the following secrets present
+  admin_emails:
+    file: ${SECRETS_DIR-.secrets}/admin_emails
+  aws_mail_account_access_key_id:
+    file: ${SECRETS_DIR-.secrets}/aws_mail_account_access_key_id
+  aws_mail_account_secret_access_key:
+    file: ${SECRETS_DIR-.secrets}/aws_mail_account_secret_access_key
+
+  # If using clevercloud
+  clevercloud_sso_salt:
+    file: ${SECRETS_DIR-.secrets}/clevercloud_sso_salt
+
+  authentik_database_name:
+    file: ${SECRETS_DIR-.secrets}/authentik_database_name
+  authentik_database_user:
+    file: ${SECRETS_DIR-.secrets}/authentik_database_user
+  authentik_database_password:
+    file: ${SECRETS_DIR-.secrets}/authentik_database_password
+  authentik_secret_key:
+    file: ${SECRETS_DIR-.secrets}/authentik_secret_key
+
+  telemetry_s3_access_key_id:
+    file: ${SECRETS_DIR-.secrets}/telemetry_s3_access_key_id
+  telemetry_s3_secret_access_key:
+    file: ${SECRETS_DIR-.secrets}/telemetry_s3_secret_access_key
+
+networks:
+  default:
+    driver: bridge
+
+volumes:
+  seaweedfs-data:
+    name: ${SEAWEEDFS_VOLUME}
+  postgres_data:
+    name: ${DB_VOLUME}
+    external: true
+  authentik_postgres_data:
+    name: avatar_authentik_postgres_data

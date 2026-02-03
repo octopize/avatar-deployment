@@ -1,0 +1,41 @@
+name: Release Deploy Tool
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "deploy-tool-v*.*.*"
+
+jobs:
+  deploy-tool-pypi-release:
+    name: Release deploy-tool on PyPI
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}/deployment-tool
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          lfs: true
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.13"
+          working-directory: ${{ github.workspace }}/deployment-tool
+          enable-cache: true
+
+      - name: Install Just
+        uses: extractions/setup-just@v3
+
+
+      - name: Install dependencies
+        run: just install
+
+      - name: Build and publish project on PyPI
+        run: just release
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_DEPLOY_TOOL_TOKEN }}

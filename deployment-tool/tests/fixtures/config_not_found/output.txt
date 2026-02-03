@@ -1,0 +1,1 @@
+✗ Config file not found: {{OUTPUT_DIR}}/missing-config.yaml

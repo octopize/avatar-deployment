@@ -1,0 +1,123 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "octopize.deploy_tool"
+version = "0.1.0"
+description = "Deployment configuration tool for Octopize Avatar platform"
+readme = "README.md"
+requires-python = ">=3.13"
+license = { text = "MIT" }
+authors = [
+    { name = "Octopize", email = "contact@octopize.io" }
+]
+keywords = ["octopize", "avatar", "deployment", "configuration"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: System Administrators",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: System :: Installation/Setup",
+    "Topic :: System :: Systems Administration",
+]
+
+dependencies = [
+    "pyyaml>=6.0",
+    "jinja2>=3.1.0",
+    "rich>=13.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "ruff>=0.1.0",
+    "mypy",
+]
+
+[project.scripts]
+octopize-deploy-tool = "octopize_avatar_deploy.configure:main"
+
+[project.urls]
+Homepage = "https://octopize.io"
+Documentation = "https://docs.octopize.io/docs/deploying/self-hosted"
+Repository = "https://github.com/octopize/avatar-deployment"
+Issues = "https://github.com/octopize/avatar-deployment/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/octopize_avatar_deploy"]
+
+[tool.hatch.build.targets.wheel.sources]
+"src" = ""
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/",
+    "tests/",
+    "README.md",
+    "pyproject.toml",
+]
+
+[tool.pytest.ini_options]
+# Test discovery
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+# Output options
+addopts = [
+    "-v",                          # Verbose output
+    "--strict-markers",            # Error on unknown markers
+    "--tb=short",                  # Short traceback format
+    "--color=yes",                 # Colored output
+    "-ra",                         # Show summary of all test results
+]
+
+[tool.coverage.run]
+source = ["src/octopize_avatar_deploy"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/.venv/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstract",
+]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+ignore = [
+    "F401",  # Unused import - Template used in try/except validation
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["octopize_avatar_deploy"]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.14.1",
+    "types-pyyaml>=6.0.12.20241230",
+]

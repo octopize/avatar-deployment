@@ -1,0 +1,4 @@
+PUBLIC_URL: "https://avatar.partial.com"
+ENV_NAME: "partial-env"
+ORGANIZATION_NAME: "TestOrg"
+# Missing: SMTP, DB, storage credentials - should use defaults or fail in non-interactive mode

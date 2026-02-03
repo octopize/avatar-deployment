@@ -3,7 +3,8 @@ extends: relaxed
 
 rules:
   line-length:
-    max: 120
+    max: 200  # Increased to allow long inline CSS in email templates
+    level: warning  # Make it a warning instead of error
   indentation:
     spaces: 2
 

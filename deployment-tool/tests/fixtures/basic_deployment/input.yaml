@@ -1,0 +1,13 @@
+# Basic deployment scenario
+responses:
+  - "https://avatar.example.com"   # PUBLIC_URL
+  - "production"                   # ENV_NAME
+  - "MyCompany"                    # ORGANIZATION_NAME
+  - "smtp"                         # MAIL_PROVIDER
+  - "smtp.example.com"            # SMTP_HOST
+  - "587"                          # SMTP_PORT
+  - "noreply@example.com"         # SMTP_SENDER_EMAIL
+  - ""                             # SMTP password (empty/skip)
+  - "admin@example.com"            # ADMIN_EMAILS (string prompt for email auth)
+  - true                           # Enable Sentry?
+  - true                           # Enable usage telemetry?

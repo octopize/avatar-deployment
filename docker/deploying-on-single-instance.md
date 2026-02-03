@@ -190,7 +190,6 @@ If you want to move it out of the `/home` directory (see [storage location](#sto
 You have to ensure that:
 
 - the directory is owned by the user whose `USER_ID` is the one provided to Docker
-- `HOST_SHARED_STORAGE_PATH` is modified accordingly in the `docker-compose.yml`.
 
 ### Handling HTTPS and certificates
 
@@ -249,7 +248,6 @@ GROUP_ID="$(id -g)\
 SECRETS_DIR=.secrets\
 DOCKER_BUILDKIT=1\
 COMPOSE_PROJECT_NAME=avatar\
-HOST_SHARED_STORAGE_PATH=./shared\
 AVATAR_API_VERSION=latest\
 AVATAR_PDFGENERATOR_VERSION=latest\
 AVATAR_NOTEBOOK_HUB_VERSION=latest\

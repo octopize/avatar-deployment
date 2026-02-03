@@ -50,6 +50,17 @@ create-docker-zip:  ## Create an archive to ease deployment on single instance
 	git archive -o docker-install.zip  --format zip HEAD:docker
 .PHONY: create-zip
 
+##@ Development
+
+update-image-versions:  ## Check and update container image versions in defaults.yaml
+	@./scripts/update-image-versions.py --verbose
+.PHONY: update-image-versions
+
+check-image-versions:  ## Check for available image updates without modifying files
+	@./scripts/update-image-versions.py --check-only --verbose
+.PHONY: check-image-versions
+
+
 .DEFAULT_GOAL := help
 help: Makefile
 	@awk 'BEGIN {FS = ":.*##"; printf "Usage: make \033[36m<target>\033[0m\n"} /^[\/\.a-zA-Z1-9_-]+:.*?##/ { printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)

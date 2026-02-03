@@ -1,0 +1,47 @@
+version: 1.0.0
+images:
+  api: 2.47.0
+  web: 0.52.0
+  pdfgenerator: 0.2.3
+  seaweedfs: 0.4.0
+  authentik: 2025.12.2
+email:
+  provider: aws
+  smtp:
+    host: email-smtp.eu-west-3.amazonaws.com
+    port: '587'
+    use_tls: 'true'
+    start_tls: 'false'
+    verify: 'true'
+    sender_email: noreply@octopize.io
+telemetry:
+  enabled: true
+  endpoint_url: https://s3.fr-par.scw.cloud
+  region: fr-par
+application:
+  use_console_logging: 'false'
+  log_level: INFO
+  sentry_enabled: 'true'
+  email_authentication: 'true'
+presets:
+  default:
+    description: Production-ready configuration with telemetry and monitoring
+    application:
+      use_console_logging: 'false'
+      sentry_enabled: 'true'
+    telemetry:
+      enabled: true
+  dev-mode:
+    description: Development mode with console logging, no external services
+    application:
+      use_console_logging: 'true'
+      sentry_enabled: 'false'
+    telemetry:
+      enabled: false
+  airgapped:
+    description: Air-gapped deployment without external monitoring or telemetry
+    application:
+      use_console_logging: 'false'
+      sentry_enabled: 'false'
+    telemetry:
+      enabled: false

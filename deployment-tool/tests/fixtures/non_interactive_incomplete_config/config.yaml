@@ -1,0 +1,4 @@
+PUBLIC_URL: "https://test.local"
+ENV_NAME: "test-env"
+ORGANIZATION_NAME: "TestOrg"
+# Deliberately incomplete for testing non-interactive behavior

@@ -1,31 +1,24 @@
-# Docker deployment
+# Docker Deployment
 
-## Objective
+## Quick Start (Recommended)
 
-The goal of this file folder is to have a pre-packaged directory to easily deploy a production-grade Avatars deployment using `docker`.
-
-## Prerequisite
-
-- Install `git`
-
-## Download
-
-Once you are on the target server where you want to install the stack, run the following commands to only
-download the necessary docker folder.
+Use the deployment tool to automatically download templates and generate configuration:
 
 ```bash
-git clone --depth 1 --filter=blob:none --sparse https://github.com/octopize/avatar-deployment
-cd avatar-deployment
-git sparse-checkout set docker
+# Install the tool
+pip install octopize-avatar-deploy
+
+# Run interactive configuration
+octopize-avatar-deploy --output-dir /app/avatar
+
+# Start services
+cd /app/avatar
+docker compose down --volumes --remove-orphans  # Clean up any old deployments
+docker compose up -d
 ```
 
-## Create secrets
+See [deployment-tool/README.md](../deployment-tool/README.md) for full documentation.
 
-The Makefile contains a target to generate the necessary secrets for the deployment. Run the following command to generate the secrets. Some of them are pre-filled with default values.
+## Manual Deployment (Advanced)
 
-```bash
-# If using email based authentication
-make secrets-with-email-auth
-# If using username based authentication
-make secrets-with-username-auth
-```
+For manual configuration, see [deploying-on-single-instance.md](./deploying-on-single-instance.md).

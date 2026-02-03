@@ -171,4 +171,3 @@ Define the default app env variables
                   name: avatar-api-config
                   key: SSO_PROVIDER_URL
 {{- end }}
-

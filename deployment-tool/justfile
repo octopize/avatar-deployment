@@ -1,0 +1,116 @@
+# Justfile for Avatar Deployment Tool
+# Run `just` or `just --list` to see available commands
+
+# Show available commands
+default:
+    @just --list
+
+# Install dependencies
+install:
+    uv sync --all-extras
+
+# Run all tests (excluding integration tests by default)
+test *ARGS:
+    uv run pytest tests/unit {{ARGS}}
+
+# Run integration tests only
+test-integration *ARGS:
+    uv run pytest tests/integration {{ARGS}}
+
+# Run all tests including integration tests
+test-all *ARGS:test test-integration
+
+update-test-fixtures:
+    AVATAR_DEPLOY_UPDATE_FIXTURES=1 just test-integration
+
+# Lint code with ruff
+lint: format
+    uv run ruff check src/ tests/
+
+# Format code with black
+format:
+    uv run ruff format src/ tests/
+
+# Format and lint
+check: format lint
+
+# Build the package
+build:
+    rm -rf dist/
+    uv build
+
+# Run the tool interactively in a test directory
+run-interactive-github:
+    #!/usr/bin/env bash3
+    TEST_DIR=$(mktemp -d)
+    echo "Running in temporary directory: $TEST_DIR"
+    uv run octopize-avatar-deploy --output-dir "$TEST_DIR" --verbose
+    echo "\nGenerated files in: $TEST_DIR"
+    ls -la "$TEST_DIR"
+
+run-interactive-local *ARGS:
+    #!/usr/bin/env bash
+    TEST_DIR=$(mktemp -d)
+    echo "Running in temporary directory: $TEST_DIR"
+    uv run octopize-avatar-deploy --output-dir "$TEST_DIR" --template-from ../docker/templates --verbose {{ARGS}}
+    echo "\nGenerated files in: $TEST_DIR"
+    ls -la "$TEST_DIR"
+
+# Check types with mypy
+typecheck:
+    uv run mypy src/
+
+# Run the help command
+help:
+    uv run octopize-avatar-deploy --help
+
+# Show defaults.yaml content
+show-defaults:
+    @cat src/octopize_avatar_deploy/defaults.yaml
+
+# Publish package to PyPI
+release: build
+    uv publish
+
+# Get current version from pyproject.toml
+@get-version:
+    grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/'
+
+# Bump patch version (0.1.0 -> 0.1.1)
+bump-patch:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    current=$(just get-version)
+    new_version=$(echo $current | awk -F. '{print $1"."$2"."$3+1}')
+    sed -i "s/^version = \".*\"/version = \"$new_version\"/" pyproject.toml
+    git add pyproject.toml
+    git commit -m "chore: bump version to $new_version"
+    git tag -a "deploy-tool-v$new_version" -m "Release version $new_version"
+    echo "✓ Bumped version to $new_version and created tag deploy-tool-v$new_version"
+    echo "  Push with: git push && git push --tags"
+
+# Bump minor version (0.1.0 -> 0.2.0)
+bump-minor:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    current=$(just get-version)
+    new_version=$(echo $current | awk -F. '{print $1"."$2+1".0"}')
+    sed -i "s/^version = \".*\"/version = \"$new_version\"/" pyproject.toml
+    git add pyproject.toml
+    git commit -m "chore: bump version to $new_version"
+    git tag -a "deploy-tool-v$new_version" -m "Release version $new_version"
+    echo "✓ Bumped version to $new_version and created tag deploy-tool-v$new_version"
+    echo "  Push with: git push && git push --tags"
+
+# Bump major version (0.1.0 -> 1.0.0)
+bump-major:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    current=$(just get-version)
+    new_version=$(echo $current | awk -F. '{print $1+1".0.0"}')
+    sed -i "s/^version = \".*\"/version = \"$new_version\"/" pyproject.toml
+    git add pyproject.toml
+    git commit -m "chore: bump version to $new_version"
+    git tag -a "deploy-tool-v$new_version" -m "Release version $new_version"
+    echo "✓ Bumped version to $new_version and created tag deploy-tool-v$new_version"
+    echo "  Push with: git push && git push --tags"

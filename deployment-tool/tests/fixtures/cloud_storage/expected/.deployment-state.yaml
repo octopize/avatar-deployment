@@ -1,0 +1,40 @@
+version: '1.0'
+steps:
+  step_0_required_config: completed
+  step_1_database: completed
+  step_2_authentik: completed
+  step_3_authentik-blueprint: completed
+  step_4_storage: completed
+  step_5_email: completed
+  step_6_user: completed
+  step_7_telemetry: completed
+  step_8_logging: completed
+config:
+  PUBLIC_URL: avatar.cloud.example.com
+  ENV_NAME: admin@cloud.example.com
+  ORGANIZATION_NAME: smtp.cloud.com
+  AVATAR_API_VERSION: 2.47.0
+  AVATAR_WEB_VERSION: 0.52.0
+  AVATAR_PDFGENERATOR_VERSION: 0.2.3
+  AVATAR_SEAWEEDFS_VERSION: 0.4.0
+  AVATAR_AUTHENTIK_VERSION: 2025.12.2
+  DB_NAME: avatar
+  DB_USER: avatar
+  DB_ADMIN_USER: avatar_dba
+  AUTHENTIK_DATABASE_NAME: authentik
+  AUTHENTIK_DATABASE_USER: authentik
+  BLUEPRINT_DOMAIN: avatar.cloud.example.com
+  BLUEPRINT_CLIENT_ID: 4a860c8871dc894f52feab0f711ddb51c6b1cfc73fe1f24a3228d45e7611ae32
+  BLUEPRINT_CLIENT_SECRET: 5eea4463bd3bdebf5f4ea139d8586ce0593363c7331e300917438d3e54537457
+  BLUEPRINT_API_REDIRECT_URI: https://avatar.cloud.example.com/api/login/sso/auth
+  BLUEPRINT_SELF_SERVICE_LICENSE: demo
+  MAIL_PROVIDER: '587'
+  USE_EMAIL_AUTHENTICATION: 'true'
+  ADMIN_EMAILS: noreply@cloud.example.com
+  IS_SENTRY_ENABLED: 'false'
+  TELEMETRY_S3_ENDPOINT_URL: ''
+  TELEMETRY_S3_REGION: ''
+  USE_CONSOLE_LOGGING: 'false'
+  LOG_LEVEL: INFO
+step_data: {}
+user_secrets_provided: {}

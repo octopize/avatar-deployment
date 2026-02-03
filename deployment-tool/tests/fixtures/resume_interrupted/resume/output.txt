@@ -1,0 +1,73 @@
+
+============================================================
+Deployment Configuration Status
+============================================================
+
+5/9 steps completed
+
+  ✓ Step 0 Required Config: completed
+  ✓ Step 1 Database: completed
+  ✓ Step 2 Authentik: completed
+  ✓ Step 3 Authentik-Blueprint: completed
+  ✓ Step 4 Storage: completed
+  ◐ Step 5 Email: in-progress
+  ○ Step 6 User: not-started
+  ○ Step 7 Telemetry: not-started
+  ○ Step 8 Logging: not-started
+
+→ Next step: Step 5 Email
+
+============================================================
+
+============================================================
+Resuming from last completed step...
+
+============================================================
+Avatar Deployment Configuration
+============================================================
+
+Executing configuration steps...
+
+
+--- Collect required deployment settings (PUBLIC_URL, ENV_NAME, etc.) [SKIPPED - already completed] ---
+
+--- Configure PostgreSQL database credentials [SKIPPED - already completed] ---
+
+--- Configure Authentik SSO authentication credentials [SKIPPED - already completed] ---
+
+--- Configure Authentik SSO blueprint settings [SKIPPED - already completed] ---
+
+--- Configure S3-compatible storage (SeaweedFS) credentials [SKIPPED - already completed] ---
+
+--- Configure email provider (AWS SES or SMTP) and credentials ---
+
+--- Configure user authentication settings ---
+
+--- Configure telemetry and monitoring (Sentry, usage analytics) ---
+
+--- Configure application logging settings ---
+
+============================================================
+Generating Configuration Files
+============================================================
+✓ Generated: {{OUTPUT_DIR}}/.env
+✓ Generated: {{OUTPUT_DIR}}/nginx/nginx.conf
+✓ Generated: {{OUTPUT_DIR}}/authentik/octopize-avatar-blueprint.yaml
+✓ Generated: {{OUTPUT_DIR}}/docker-compose.yml
+
+✓ Configuration files generated successfully!
+
+Writing 5 secrets to .secrets/ directory...
+✓ Secrets written successfully
+
+============================================================
+Configuration Complete!
+============================================================
+
+Configuration files generated in: {{OUTPUT_DIR}}
+
+Next steps:
+1. Review and edit the generated .env file
+2. Fill in any remaining secrets in .secrets/ directory
+3. Configure TLS certificates in the tls/ directory
+4. Run: docker compose up -d
