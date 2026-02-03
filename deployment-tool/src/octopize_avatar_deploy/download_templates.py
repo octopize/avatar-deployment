@@ -14,27 +14,74 @@ from pathlib import Path
 GITHUB_RAW_BASE = "https://raw.githubusercontent.com/octopize/avatar-deployment"
 DEFAULT_BRANCH = "main"
 
-# Files to download from the docker/templates/ directory
-REQUIRED_TEMPLATE_FILES = [
-    ".env.template",
-    "nginx.conf.template",
-    "docker-compose.yml",
-    ".template-version",
-    "authentik/octopize-avatar-blueprint.yaml.j2",
-]
+# Hardcoded manifest of required files with source roots and categories.
+# The configurator should stay opaque and rely on provider verification.
+REQUIRED_FILE_MANIFEST: dict[str, dict[str, object]] = {
+    "templates": {
+        "category": "template",
+        "files": [
+            ".env.template",
+            "nginx.conf.template",
+            "docker-compose.yml",
+            ".template-version",
+            "authentik/octopize-avatar-blueprint.yaml.j2",
+        ],
+    },
+    "docker": {
+        "category": "docker",
+        "files": [
+            "authentik/custom-templates/email_account_confirmation.html",
+            "authentik/custom-templates/email_account_exists.html",
+            "authentik/custom-templates/email_account_invitation.html",
+            "authentik/custom-templates/email_forgotten_password.html",
+            "authentik/custom-templates/email_password_changed.html",
+            "authentik/custom-templates/email_password_reset.html",
+            "authentik/branding/favicon.ico",
+            "authentik/branding/logo.png",
+            "authentik/branding/background.png",
+        ],
+    },
+}
 
-# Additional files to download from docker/ directory (not in templates/)
-REQUIRED_DOCKER_FILES = [
-    "authentik/custom-templates/email_account_confirmation.html",
-    "authentik/custom-templates/email_account_exists.html",
-    "authentik/custom-templates/email_account_invitation.html",
-    "authentik/custom-templates/email_forgotten_password.html",
-    "authentik/custom-templates/email_password_changed.html",
-    "authentik/custom-templates/email_password_reset.html",
-    "authentik/branding/favicon.ico",
-    "authentik/branding/logo.png",
-    "authentik/branding/background.png",
-]
+
+def iter_required_files():
+    """Iterate required files with source keys and category names."""
+    for source_key, entry in REQUIRED_FILE_MANIFEST.items():
+        category = str(entry["category"])
+        for filename in entry["files"]:
+            yield {
+                "source_key": source_key,
+                "category": category,
+                "path": str(filename),
+            }
+
+
+def verify_required_files(output_dir: Path) -> tuple[bool, str | None, int]:
+    """
+    Verify all required files exist in output_dir.
+
+    Returns:
+        (is_valid, error_message, total_files)
+    """
+    output_dir = Path(output_dir)
+    missing_by_category: dict[str, list[str]] = {}
+    total_files = 0
+
+    for entry in iter_required_files():
+        total_files += 1
+        destination = output_dir / entry["path"]
+        if not destination.exists():
+            missing_by_category.setdefault(entry["category"], []).append(entry["path"])
+
+    if not missing_by_category:
+        return True, None, total_files
+
+    details = []
+    for category, files in missing_by_category.items():
+        details.append(f"{category}: {', '.join(files)}")
+
+    message = "Missing required template files: " + "; ".join(details)
+    return False, message, total_files
 
 
 class TemplateProvider(ABC):
@@ -94,19 +141,21 @@ class TemplateProvider(ABC):
             print(f"\nProviding templates to {output_dir}/")
             print("=" * 60)
 
-        # Provide template files
-        for filename in REQUIRED_TEMPLATE_FILES:
-            destination = output_dir / filename
-            if not self.provide_template_file(filename, destination):
-                success = False
-                print(f"⚠ Warning: Failed to provide {filename}")
+        for entry in iter_required_files():
+            destination = output_dir / entry["path"]
+            if entry["source_key"] == "templates":
+                provided = self.provide_template_file(entry["path"], destination)
+            elif entry["source_key"] == "docker":
+                provided = self.provide_docker_file(entry["path"], destination)
+            else:
+                provided = False
 
-        # Provide docker files (authentik branding, email templates, etc.)
-        for filename in REQUIRED_DOCKER_FILES:
-            destination = output_dir / filename
-            if not self.provide_docker_file(filename, destination):
+            if not provided:
                 success = False
-                print(f"⚠ Warning: Failed to provide {filename}")
+                print(
+                    f"⚠ Warning: Failed to provide {entry['path']} "
+                    f"({entry['category']})"
+                )
 
         if self.verbose:
             if success:
@@ -127,11 +176,8 @@ class TemplateProvider(ABC):
             True if all required files exist
         """
         output_dir = Path(output_dir)
-        for filename in REQUIRED_TEMPLATE_FILES:
-            if not (output_dir / filename).exists():
-                return False
-        for filename in REQUIRED_DOCKER_FILES:
-            if not (output_dir / filename).exists():
+        for entry in iter_required_files():
+            if not (output_dir / entry["path"]).exists():
                 return False
         return True
 

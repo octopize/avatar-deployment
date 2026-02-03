@@ -3,6 +3,8 @@ responses:
   - "https://avatar.cloud.example.com"  # Base URL
   - "admin@cloud.example.com"          # Admin email
   - "smtp.cloud.com"                   # SMTP host
+  - ""                                  # NGINX_SSL_CERTIFICATE_PATH (default)
+  - ""                                  # NGINX_SSL_CERTIFICATE_KEY_PATH (default)
   - "587"                              # SMTP port
   - "noreply@cloud.example.com"        # From address
   - "user"                             # SMTP username

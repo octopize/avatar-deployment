@@ -3,6 +3,8 @@ responses:
   - "https://modified.com"  # New base URL
   - "admin@modified.com"  # New admin email
   - "smtp.test.com"
+  - ""  # NGINX_SSL_CERTIFICATE_PATH (default)
+  - ""  # NGINX_SSL_CERTIFICATE_KEY_PATH (default)
   - "587"
   - "noreply@test.com"
   - "user"

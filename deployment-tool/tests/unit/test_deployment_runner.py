@@ -138,6 +138,8 @@ class TestDeploymentRunner:
         mock_configurator = MagicMock()
         mock_configurator_class.return_value = mock_configurator
 
+        (temp_output_dir / ".avatar-templates").mkdir(parents=True, exist_ok=True)
+
         runner = DeploymentRunner(
             output_dir=temp_output_dir,
             template_from=str(mock_docker_source),
@@ -194,39 +196,42 @@ class TestDeploymentRunner:
         with pytest.raises(RuntimeError, match="Templates not available"):
             runner.run()
 
-    @patch("octopize_avatar_deploy.configure.download_templates")
-    @patch("octopize_avatar_deploy.configure.DeploymentConfigurator")
-    def test_run_downloads_templates_before_configure(
-        self, mock_configurator_class, mock_download, temp_output_dir, temp_templates_dir
-    ):
-        """Test run ensures templates are downloaded before configurator runs."""
-        import shutil
+    def test_run_downloads_templates_before_configure(self, temp_output_dir):
+        """Test run ensures templates are provided before configurator runs."""
+        with patch(
+            "octopize_avatar_deploy.configure.DeploymentRunner._verify_templates",
+            return_value=True,
+        ):
+            with patch(
+                "octopize_avatar_deploy.configure.GitHubTemplateProvider"
+            ) as mock_provider_class:
+                with patch(
+                    "octopize_avatar_deploy.configure.DeploymentConfigurator"
+                ) as mock_configurator_class:
+                    mock_provider = MagicMock()
+                    mock_provider.check_cached_templates.return_value = False
 
-        mock_download.return_value = True
-        mock_configurator = MagicMock()
-        mock_configurator_class.return_value = mock_configurator
+                    def _provide_all(dest_dir):
+                        dest_dir.mkdir(parents=True, exist_ok=True)
+                        return True
 
-        # Copy complete templates to expected location
-        templates_dir = temp_output_dir / ".avatar-templates"
-        shutil.copytree(temp_templates_dir, templates_dir)
+                    mock_provider.provide_all.side_effect = _provide_all
+                    mock_provider_class.return_value = mock_provider
 
-        runner = DeploymentRunner(
-            output_dir=temp_output_dir,
-            template_from="github",
-        )
+                    mock_configurator = MagicMock()
+                    mock_configurator_class.return_value = mock_configurator
 
-        runner.run(interactive=False)
+                    runner = DeploymentRunner(
+                        output_dir=temp_output_dir,
+                        template_from="github",
+                    )
 
-        # Should download first
-        mock_download.assert_called_once_with(
-            output_dir=templates_dir,
-            force=False,
-            branch="main",
-            verbose=False,
-        )
+                    runner.run(interactive=False)
 
-        # Then configure
-        mock_configurator.run.assert_called_once()
+                    mock_provider.provide_all.assert_called_once_with(
+                        temp_output_dir / ".avatar-templates"
+                    )
+                    mock_configurator.run.assert_called_once()
 
     def test_all_constructor_parameters_combination(self, temp_output_dir, mock_docker_source):
         """Test that all constructor parameters can be used together."""

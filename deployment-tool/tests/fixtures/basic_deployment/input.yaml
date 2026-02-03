@@ -3,6 +3,8 @@ responses:
   - "https://avatar.example.com"   # PUBLIC_URL
   - "production"                   # ENV_NAME
   - "MyCompany"                    # ORGANIZATION_NAME
+  - ""                              # NGINX_SSL_CERTIFICATE_PATH (default)
+  - ""                              # NGINX_SSL_CERTIFICATE_KEY_PATH (default)
   - "smtp"                         # MAIL_PROVIDER
   - "smtp.example.com"            # SMTP_HOST
   - "587"                          # SMTP_PORT

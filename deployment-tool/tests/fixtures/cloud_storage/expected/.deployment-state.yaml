@@ -1,14 +1,15 @@
 version: '1.0'
 steps:
   step_0_required_config: completed
-  step_1_database: completed
-  step_2_authentik: completed
-  step_3_authentik-blueprint: completed
-  step_4_storage: completed
-  step_5_email: completed
-  step_6_user: completed
-  step_7_telemetry: completed
-  step_8_logging: completed
+  step_1_nginx_tls: completed
+  step_2_database: completed
+  step_3_authentik: completed
+  step_4_authentik-blueprint: completed
+  step_5_storage: completed
+  step_6_email: completed
+  step_7_user: completed
+  step_8_telemetry: completed
+  step_9_logging: completed
 config:
   PUBLIC_URL: avatar.cloud.example.com
   ENV_NAME: admin@cloud.example.com
@@ -18,14 +19,16 @@ config:
   AVATAR_PDFGENERATOR_VERSION: 0.2.3
   AVATAR_SEAWEEDFS_VERSION: 0.4.0
   AVATAR_AUTHENTIK_VERSION: 2025.12.3
+  NGINX_SSL_CERTIFICATE_PATH: ./tls/server.fullchain.crt
+  NGINX_SSL_CERTIFICATE_KEY_PATH: ./tls/private/server.decrypted.key
   DB_NAME: avatar
   DB_USER: avatar
   DB_ADMIN_USER: avatar_dba
   AUTHENTIK_DATABASE_NAME: authentik
   AUTHENTIK_DATABASE_USER: authentik
   BLUEPRINT_DOMAIN: avatar.cloud.example.com
-  BLUEPRINT_CLIENT_ID: 170704bf861a779c9e4743500ba5450e8732040a5002577c764627c6d691c718
-  BLUEPRINT_CLIENT_SECRET: 70d7d764ad1810b1165832f5251c8f1226b1f66a827e7cba6f7c266a0d00892d
+  BLUEPRINT_CLIENT_ID: 2d94ae8e4db73af5917409b0840d02a93cdb8eb71f91a048584782d53554a1ed
+  BLUEPRINT_CLIENT_SECRET: a50c2d3b2769f9380c7e9fcbf9ac2c4a5806946b349d540630e726efdbd34638
   BLUEPRINT_API_REDIRECT_URI: https://avatar.cloud.example.com/api/login/sso/auth
   BLUEPRINT_SELF_SERVICE_LICENSE: demo
   MAIL_PROVIDER: '587'

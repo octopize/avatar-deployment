@@ -23,6 +23,9 @@ application:
   log_level: INFO
   sentry_enabled: 'true'
   email_authentication: 'true'
+nginx:
+  ssl_certificate_path: ./tls/server.fullchain.crt
+  ssl_certificate_key_path: ./tls/private/server.decrypted.key
 presets:
   default:
     description: Production-ready configuration with telemetry and monitoring

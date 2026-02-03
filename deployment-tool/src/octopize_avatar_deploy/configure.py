@@ -30,10 +30,11 @@ import yaml
 from jinja2 import Environment, FileSystemLoader
 
 from octopize_avatar_deploy.download_templates import (
-    REQUIRED_DOCKER_FILES,
-    REQUIRED_TEMPLATE_FILES,
+    GitHubTemplateProvider,
     LocalTemplateProvider,
+    TemplateProvider,
     download_templates,
+    verify_required_files,
 )
 from octopize_avatar_deploy.input_gatherer import (
     ConsoleInputGatherer,
@@ -49,6 +50,7 @@ from octopize_avatar_deploy.steps import (
     DeploymentStep,
     EmailStep,
     LoggingStep,
+    NginxTlsStep,
     RequiredConfigStep,
     StorageStep,
     TelemetryStep,
@@ -75,6 +77,7 @@ class DeploymentConfigurator:
     # Default step classes (can be overridden in tests)
     DEFAULT_STEP_CLASSES: list[type[DeploymentStep]] = [
         RequiredConfigStep,
+        NginxTlsStep,
         DatabaseStep,
         AuthentikStep,
         AuthentikBlueprintStep,
@@ -189,7 +192,6 @@ class DeploymentConfigurator:
 
             output_path = self.output_dir / output_name
             output_path.parent.mkdir(parents=True, exist_ok=True)
-            # Ensure trailing newline for pre-commit end-of-file-fixer
             content = rendered if rendered.endswith("\n") else rendered + "\n"
             output_path.write_text(content)
 
@@ -425,6 +427,8 @@ class DeploymentRunner:
         self.output_dir = Path(output_dir)
         self.template_from = template_from
         self.verbose = verbose
+        self.template_provider: TemplateProvider
+        self.template_source: Path | None = None
 
         # Use Rich implementations if in interactive terminal, otherwise Console
         if printer is None:
@@ -454,6 +458,15 @@ class DeploymentRunner:
         # Templates are always stored in output_dir/.avatar-templates
         self.templates_dir = self.output_dir / ".avatar-templates"
 
+        self.template_provider = self._init_template_provider()
+
+    def _init_template_provider(self) -> TemplateProvider:
+        if self.template_from == "github":
+            return GitHubTemplateProvider(branch="main", verbose=self.verbose)
+
+        self.template_source = Path(self.template_from)
+        return LocalTemplateProvider(source_dir=str(self.template_source), verbose=self.verbose)
+
     def ensure_templates(self) -> bool:
         """
         Ensure templates are available by downloading from GitHub or copying from local path.
@@ -461,38 +474,32 @@ class DeploymentRunner:
         Returns:
             True if templates are available, False otherwise
         """
-        # Handle 'github' - download from repository
-        if self.template_from == "github":
-            if self.verbose:
-                self.printer.print("Downloading deployment templates from GitHub...")
-
-            success = download_templates(
-                output_dir=self.templates_dir,
-                force=False,  # Use cached if available
-                branch="main",
-                verbose=self.verbose,
+        if self.template_source and not self.template_source.exists():
+            self.printer.print_error(
+                f"Template source directory not found: {self.template_source}"
             )
-
-            if not success:
-                self.printer.print_error("Failed to download templates from GitHub")
-                return False
-
-            return self._verify_templates()
-
-        # Handle local path - copy templates from specified directory
-        template_source = Path(self.template_from)
-        if not template_source.exists():
-            self.printer.print_error(f"Template source directory not found: {template_source}")
             return False
 
-        if self.verbose:
-            self.printer.print(f"Copying templates from {template_source}")
+        if self.template_from == "github":
+            if self.template_provider.check_cached_templates(self.templates_dir):
+                if self.verbose:
+                    self.printer.print(
+                        f"Templates already cached in {self.templates_dir}/"
+                    )
+                return self._verify_templates()
 
-        provider = LocalTemplateProvider(source_dir=str(template_source), verbose=self.verbose)
+            if self.verbose:
+                self.printer.print("Downloading deployment templates from GitHub...")
+        else:
+            if self.template_source and self.verbose:
+                self.printer.print(f"Copying templates from {self.template_source}")
 
-        success = provider.provide_all(self.templates_dir)
+        success = self.template_provider.provide_all(self.templates_dir)
         if not success:
-            self.printer.print_warning("Failed to copy some templates")
+            if self.template_from == "github":
+                self.printer.print_error("Failed to download templates from GitHub")
+            else:
+                self.printer.print_warning("Failed to copy some templates")
             return False
 
         return self._verify_templates()
@@ -509,25 +516,12 @@ class DeploymentRunner:
                 self.printer.print_error(f"Templates directory not found: {self.templates_dir}")
             return False
 
-        # Check for required template files
-        missing_files = []
-        for filename in REQUIRED_TEMPLATE_FILES:
-            if not (self.templates_dir / filename).exists():
-                missing_files.append(filename)
-
-        # Check for required docker files
-        for filename in REQUIRED_DOCKER_FILES:
-            if not (self.templates_dir / filename).exists():
-                missing_files.append(filename)
-
-        if missing_files:
-            if self.verbose:
-                self.printer.print_error(
-                    f"Missing required template files: {', '.join(missing_files)}"
-                )
+        is_valid, error_message, total_files = verify_required_files(self.templates_dir)
+        if not is_valid:
+            if self.verbose and error_message:
+                self.printer.print_error(error_message)
             return False
 
-        total_files = len(REQUIRED_TEMPLATE_FILES) + len(REQUIRED_DOCKER_FILES)
         if self.verbose:
             self.printer.print_success(f"Found all {total_files} required template files")
 

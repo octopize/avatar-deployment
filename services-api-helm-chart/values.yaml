@@ -78,7 +78,7 @@ web:
     apiPublicPort: ""
     apiInternalHost: "http://avatar-api"
     apiInternalPort: 8000
-    webClientUrl: "https://avatar.yourcompany.com"
+    webClientUrl: "https://avatar.yourcompany.com/web"
     ssoEnabled: "false"
     ssoUrl: "https://avatar.yourcompany.com/sso/"
     envName: "prod"
@@ -93,7 +93,7 @@ api:
 
   # This Url is the customer facing url for the web client
   # It will typically be used to format emails.
-  webClientUrl: https://avatar.yourcompany.com
+  webClientUrl: https://avatar.yourcompany.com/web
 
   daskSchedulerUrl: "dask-scheduler:8786"
 

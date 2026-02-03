@@ -3,6 +3,8 @@ responses:
   - "https://avatar.internal.com"  # Base URL
   - "admin@internal.com"          # Admin email
   - "smtp.internal.com"           # SMTP host
+  - ""                             # NGINX_SSL_CERTIFICATE_PATH (default)
+  - ""                             # NGINX_SSL_CERTIFICATE_KEY_PATH (default)
   - "587"                         # SMTP port
   - "noreply@internal.com"        # From address
   - "user"                        # SMTP username
