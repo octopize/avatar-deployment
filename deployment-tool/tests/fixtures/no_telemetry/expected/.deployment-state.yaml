@@ -12,8 +12,8 @@ steps:
   step_9_logging: completed
 config:
   PUBLIC_URL: avatar.internal.com
-  ENV_NAME: admin@internal.com
-  ORGANIZATION_NAME: smtp.internal.com
+  ENV_NAME: development
+  ORGANIZATION_NAME: InternalCorp
   AVATAR_API_VERSION: 2.47.0
   AVATAR_WEB_VERSION: 0.52.0
   AVATAR_PDFGENERATOR_VERSION: 0.2.3
@@ -26,14 +26,21 @@ config:
   DB_ADMIN_USER: avatar_dba
   AUTHENTIK_DATABASE_NAME: authentik
   AUTHENTIK_DATABASE_USER: authentik
+  AUTHENTIK_BOOTSTRAP_EMAIL: admin@internal.com
   BLUEPRINT_DOMAIN: avatar.internal.com
-  BLUEPRINT_CLIENT_ID: 33374f5120956bdc40329958ae93743fbad32eb47e15ee4981ced9febb6d03ef
-  BLUEPRINT_CLIENT_SECRET: 85ff44ba75a3893d54760cff58dfa5db21b98c062b67c9c763a43257e95024d1
+  BLUEPRINT_CLIENT_ID: 6591139cc6124277bd73129231939d7919de648731a1cf82638ffe5e6ee32504
+  BLUEPRINT_CLIENT_SECRET: 69a010175bf5e3b561b4e3222f809e91b0907c66eadd85d7536c49546401eb8a
   BLUEPRINT_API_REDIRECT_URI: https://avatar.internal.com/api/login/sso/auth
   BLUEPRINT_SELF_SERVICE_LICENSE: demo
-  MAIL_PROVIDER: '587'
+  MAIL_PROVIDER: smtp
+  SMTP_HOST: smtp.internal.com
+  SMTP_PORT: '587'
+  SMTP_USE_TLS: 'true'
+  SMTP_START_TLS: 'false'
+  SMTP_VERIFY: 'true'
+  SMTP_SENDER_EMAIL: noreply@internal.com
   USE_EMAIL_AUTHENTICATION: 'true'
-  ADMIN_EMAILS: noreply@internal.com
+  ADMIN_EMAILS: admin@internal.com
   IS_SENTRY_ENABLED: 'false'
   TELEMETRY_S3_ENDPOINT_URL: ''
   TELEMETRY_S3_REGION: ''

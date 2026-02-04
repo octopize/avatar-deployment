@@ -1,20 +1,16 @@
 # Cloud storage deployment scenario
 responses:
-  - "https://avatar.cloud.example.com"  # Base URL
-  - "admin@cloud.example.com"          # Admin email
-  - "smtp.cloud.com"                   # SMTP host
+  - "https://avatar.cloud.example.com"  # PUBLIC_URL
+  - "production"                       # ENV_NAME
+  - "CloudCorp"                        # ORGANIZATION_NAME
   - ""                                  # NGINX_SSL_CERTIFICATE_PATH (default)
   - ""                                  # NGINX_SSL_CERTIFICATE_KEY_PATH (default)
-  - "587"                              # SMTP port
-  - "noreply@cloud.example.com"        # From address
-  - "user"                             # SMTP username
-  - "pass"                             # SMTP password
-  - "postgres.cloud.local"             # DB host
-  - "avatar"                           # DB name
-  - "avatar_user"                      # DB user
-  - "scaleway"                         # Storage backend
-  - "s3.nl-ams.scw.cloud"              # Storage endpoint
-  - "avatar-prod-bucket"               # Bucket name
-  - "90d"                              # Dataset expiration
-  - true                                # Enable telemetry
-  - "production"                       # Environment name
+  - "admin@cloud.example.com"          # AUTHENTIK_BOOTSTRAP_EMAIL
+  - "smtp"                             # MAIL_PROVIDER
+  - "smtp.cloud.com"                   # SMTP_HOST
+  - "587"                              # SMTP_PORT
+  - "noreply@cloud.example.com"        # SMTP_SENDER_EMAIL
+  - ""                                 # SMTP password (empty/skip)
+  - "admin@cloud.example.com"          # ADMIN_EMAILS
+  - true                                # Enable Sentry?
+  - true                                # Enable usage telemetry?

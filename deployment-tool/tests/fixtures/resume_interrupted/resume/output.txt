@@ -3,7 +3,7 @@
 Deployment Configuration Status
 ============================================================
 
-8/10 steps completed
+7/10 steps completed
 
   ✓ Step 0 Required Config: completed
   ✓ Step 1 Nginx Tls: completed
@@ -12,11 +12,11 @@ Deployment Configuration Status
   ✓ Step 4 Authentik-Blueprint: completed
   ✓ Step 5 Storage: completed
   ✓ Step 6 Email: completed
-  ✓ Step 7 User: completed
-  ◐ Step 8 Telemetry: in-progress
+  ◐ Step 7 User: in-progress
+  ○ Step 8 Telemetry: not-started
   ○ Step 9 Logging: not-started
 
-→ Next step: Step 8 Telemetry
+→ Next step: Step 7 User
 
 ============================================================
 
@@ -44,7 +44,7 @@ Executing configuration steps...
 
 --- Configure email provider (AWS SES or SMTP) and credentials [SKIPPED - already completed] ---
 
---- Configure user authentication settings [SKIPPED - already completed] ---
+--- Configure user authentication settings ---
 
 --- Configure telemetry and monitoring (Sentry, usage analytics) ---
 
@@ -62,7 +62,7 @@ Generating Configuration Files
 
 ✓ Configuration files generated successfully!
 
-Writing 2 secrets to .secrets/ directory...
+Writing 3 secrets to .secrets/ directory...
 ✓ Secrets written successfully
 
 ============================================================

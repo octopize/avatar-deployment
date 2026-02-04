@@ -12,8 +12,8 @@ steps:
   step_9_logging: completed
 config:
   PUBLIC_URL: avatar.cloud.example.com
-  ENV_NAME: admin@cloud.example.com
-  ORGANIZATION_NAME: smtp.cloud.com
+  ENV_NAME: production
+  ORGANIZATION_NAME: CloudCorp
   AVATAR_API_VERSION: 2.47.0
   AVATAR_WEB_VERSION: 0.52.0
   AVATAR_PDFGENERATOR_VERSION: 0.2.3
@@ -26,17 +26,24 @@ config:
   DB_ADMIN_USER: avatar_dba
   AUTHENTIK_DATABASE_NAME: authentik
   AUTHENTIK_DATABASE_USER: authentik
+  AUTHENTIK_BOOTSTRAP_EMAIL: admin@cloud.example.com
   BLUEPRINT_DOMAIN: avatar.cloud.example.com
-  BLUEPRINT_CLIENT_ID: 2d94ae8e4db73af5917409b0840d02a93cdb8eb71f91a048584782d53554a1ed
-  BLUEPRINT_CLIENT_SECRET: a50c2d3b2769f9380c7e9fcbf9ac2c4a5806946b349d540630e726efdbd34638
+  BLUEPRINT_CLIENT_ID: 1acb4132f25cd8ec4221a0649b9fd4e1565e2784c225314084ab1ac8d8994004
+  BLUEPRINT_CLIENT_SECRET: dc910d49f46284dfe60da459c9e0644ea7be8e67aca96a871c16b8904cfd283f
   BLUEPRINT_API_REDIRECT_URI: https://avatar.cloud.example.com/api/login/sso/auth
   BLUEPRINT_SELF_SERVICE_LICENSE: demo
-  MAIL_PROVIDER: '587'
+  MAIL_PROVIDER: smtp
+  SMTP_HOST: smtp.cloud.com
+  SMTP_PORT: '587'
+  SMTP_USE_TLS: 'true'
+  SMTP_START_TLS: 'false'
+  SMTP_VERIFY: 'true'
+  SMTP_SENDER_EMAIL: noreply@cloud.example.com
   USE_EMAIL_AUTHENTICATION: 'true'
-  ADMIN_EMAILS: noreply@cloud.example.com
-  IS_SENTRY_ENABLED: 'false'
-  TELEMETRY_S3_ENDPOINT_URL: ''
-  TELEMETRY_S3_REGION: ''
+  ADMIN_EMAILS: admin@cloud.example.com
+  IS_SENTRY_ENABLED: 'true'
+  TELEMETRY_S3_ENDPOINT_URL: https://s3.fr-par.scw.cloud
+  TELEMETRY_S3_REGION: fr-par
   USE_CONSOLE_LOGGING: 'false'
   LOG_LEVEL: INFO
 step_data: {}

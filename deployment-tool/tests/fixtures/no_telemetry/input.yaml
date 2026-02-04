@@ -1,20 +1,16 @@
 # No telemetry deployment scenario
 responses:
-  - "https://avatar.internal.com"  # Base URL
-  - "admin@internal.com"          # Admin email
-  - "smtp.internal.com"           # SMTP host
+  - "https://avatar.internal.com"  # PUBLIC_URL
+  - "development"                  # ENV_NAME
+  - "InternalCorp"                 # ORGANIZATION_NAME
   - ""                             # NGINX_SSL_CERTIFICATE_PATH (default)
   - ""                             # NGINX_SSL_CERTIFICATE_KEY_PATH (default)
-  - "587"                         # SMTP port
-  - "noreply@internal.com"        # From address
-  - "user"                        # SMTP username
-  - "pass"                        # SMTP password
-  - false                          # Disable telemetry
-  - "postgres.internal.local"     # DB host
-  - "avatar"                      # DB name
-  - "avatar_user"                 # DB user
-  - "seaweedfs"                   # Storage backend
-  - "s3.internal.local:8333"      # Storage endpoint
-  - "avatar-dev-bucket"           # Bucket name
-  - "7d"                          # Dataset expiration
-  - "development"                 # Environment name
+  - "admin@internal.com"          # AUTHENTIK_BOOTSTRAP_EMAIL
+  - "smtp"                         # MAIL_PROVIDER
+  - "smtp.internal.com"           # SMTP_HOST
+  - "587"                         # SMTP_PORT
+  - "noreply@internal.com"        # SMTP_SENDER_EMAIL
+  - ""                             # SMTP password (empty/skip)
+  - "admin@internal.com"          # ADMIN_EMAILS
+  - false                          # Enable Sentry? (disabled)
+  - false                          # Enable usage telemetry? (disabled)

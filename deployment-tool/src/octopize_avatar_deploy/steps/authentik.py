@@ -31,6 +31,19 @@ class AuthentikStep(DeploymentStep):
         config["AUTHENTIK_DATABASE_NAME"] = authentik_db_name
         config["AUTHENTIK_DATABASE_USER"] = authentik_db_user
 
+        # Bootstrap configuration for automated install (skip OOBE)
+        # Default email for akadmin user
+        if "AUTHENTIK_BOOTSTRAP_EMAIL" in self.config:
+            authentik_bootstrap_email = self.config["AUTHENTIK_BOOTSTRAP_EMAIL"]
+        elif self.interactive:
+            authentik_bootstrap_email = self.prompt(
+                "Enter email address for Authentik admin user (akadmin)",
+                default="admin@example.com",
+            )
+        else:
+            authentik_bootstrap_email = "admin@example.com"
+        config["AUTHENTIK_BOOTSTRAP_EMAIL"] = authentik_bootstrap_email
+
         # Update self.config so generate_secrets() can access these values
         self.config.update(config)
 
@@ -43,4 +56,8 @@ class AuthentikStep(DeploymentStep):
             "authentik_database_user": self.config["AUTHENTIK_DATABASE_USER"],
             "authentik_database_password": secrets.token_hex(),
             "authentik_secret_key": secrets.token_hex(),
+            # Bootstrap credentials for automated install
+            "authentik_bootstrap_password": secrets.token_urlsafe(32),
+            "authentik_bootstrap_token": secrets.token_urlsafe(32),
+            "authentik_bootstrap_email": self.config["AUTHENTIK_BOOTSTRAP_EMAIL"],
         }
