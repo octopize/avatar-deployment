@@ -138,10 +138,17 @@ See [docker/deploying-on-single-instance.md](docker/deploying-on-single-instance
 
 ---
 
-## Specialized Agent: Authentik Email Templates
+## Specialized Agents
+
+### Authentik Email Templates
 
 **Trigger**: Working with authentication emails in `common/authentik-templates/`  
 **Skill Reference**: [.claude/skills/authentik-email-templates/SKILL.md](.claude/skills/authentik-email-templates/SKILL.md)
+
+### Deployment Tool Steps
+
+**Trigger**: Adding new configuration steps to the deployment tool  
+**Skill Reference**: [.claude/skills/deployment-tool-steps/SKILL.md](.claude/skills/deployment-tool-steps/SKILL.md)
 
 ### Key Constraints
 
@@ -208,13 +215,25 @@ When adding or modifying tests for the deployment tool, **always consult QUICK_R
 │   ├── docker-compose.yml             ← Service definitions
 │   └── authentik/custom-templates/    ← Synced from common/ (DO NOT EDIT)
 ├── deployment-tool/                   ← Deployment configuration tool
-│   └── tests/                         ← Test suite with fixtures
-│       └── QUICK_REFERENCE.md         ← Testing guide (READ THIS FIRST)
+│   ├── src/octopize_avatar_deploy/    ← Source code
+│   │   ├── steps/                     ← Deployment steps (add new steps here)
+│   │   ├── configure.py               ← Main configurator (DEFAULT_STEP_CLASSES)
+│   │   └── defaults.yaml              ← Default configuration values
+│   ├── tests/                         ← Test suite with fixtures
+│   │   ├── steps/                     ← Unit tests for steps
+│   │   ├── integration/               ← Integration tests
+│   │   └── QUICK_REFERENCE.md         ← Testing guide (READ THIS FIRST)
+│   └── .avatar-templates/             ← Template files
+│       ├── .env.template              ← Environment variables template
+│       └── docker-compose.yml         ← Docker compose template
 ├── justfile & helm.just               ← Primary build tool (Helm operations)
 ├── scripts/                           ← Validation and utility scripts
 │   ├── sync-templates.py              ← Template sync script (rsync or copy)
 │   ├── validate-authentik-blueprint.py ← Blueprint template validator
 │   ├── check-version-bump.py          ← Version bump verification
 │   └── update-image-versions.py       ← Image version updater
-└── skills/                            ← Agent skill definitions
+├── .claude/skills/                    ← Agent skill definitions
+│   ├── authentik-email-templates/     ← Email template creation skill
+│   └── deployment-tool-steps/         ← Deployment step creation skill
+└── AGENTS.md                          ← This file (agent configuration guide)
 ```

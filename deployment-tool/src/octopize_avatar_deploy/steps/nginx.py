@@ -17,9 +17,7 @@ class NginxTlsStep(DeploymentStep):
         config: dict[str, Any] = {}
 
         defaults = self.defaults.get("nginx", {})
-        default_cert_path = defaults.get(
-            "ssl_certificate_path", "./tls/server.fullchain.crt"
-        )
+        default_cert_path = defaults.get("ssl_certificate_path", "./tls/server.fullchain.crt")
         default_key_path = defaults.get(
             "ssl_certificate_key_path", "./tls/private/server.decrypted.key"
         )
@@ -30,6 +28,7 @@ class NginxTlsStep(DeploymentStep):
             cert_path = self.prompt(
                 "Path to TLS certificate (full chain)",
                 default=default_cert_path,
+                key="nginx_tls.ssl_certificate_path",
             )
         else:
             cert_path = default_cert_path
@@ -40,6 +39,7 @@ class NginxTlsStep(DeploymentStep):
             key_path = self.prompt(
                 "Path to TLS private key (decrypted)",
                 default=default_key_path,
+                key="nginx_tls.ssl_certificate_key_path",
             )
         else:
             key_path = default_key_path

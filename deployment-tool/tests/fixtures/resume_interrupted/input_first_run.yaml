@@ -1,10 +1,8 @@
-# First run - partial completion (interrupted after email step)
 responses:
-  - "https://avatar.example.com"   # PUBLIC_URL
-  - "production"                   # ENV_NAME
-  - "MyCompany"                    # ORGANIZATION_NAME
-  - "smtp"                         # MAIL_PROVIDER
-  - "smtp.example.com"            # SMTP_HOST
-  - "587"                          # SMTP_PORT
-  - "noreply@example.com"         # SMTP_SENDER_EMAIL
-  # Interrupted here - remaining prompts not answered
+  required_config.public_url: https://avatar.example.com
+  required_config.env_name: production
+  required_config.organization_name: MyCompany
+  nginx_tls.ssl_certificate_path: smtp
+  nginx_tls.ssl_certificate_key_path: smtp.example.com
+  authentik.bootstrap_email: '587'
+  email.mail_provider: noreply@example.com

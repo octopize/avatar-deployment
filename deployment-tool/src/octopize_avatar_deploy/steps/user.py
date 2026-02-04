@@ -60,6 +60,7 @@ class UserStep(DeploymentStep):
                     "Admin email addresses (comma-separated)",
                     default="",
                     validate=validate_comma_separated_emails,
+                    key="user.admin_emails",
                 )
                 config["ADMIN_EMAILS"] = admin_emails
             else:

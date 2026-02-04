@@ -26,10 +26,7 @@ class TestNginxTlsStep:
         result = step.collect_config()
 
         assert result["NGINX_SSL_CERTIFICATE_PATH"] == "./tls/server.fullchain.crt"
-        assert (
-            result["NGINX_SSL_CERTIFICATE_KEY_PATH"]
-            == "./tls/private/server.decrypted.key"
-        )
+        assert result["NGINX_SSL_CERTIFICATE_KEY_PATH"] == "./tls/private/server.decrypted.key"
 
     def test_collect_config_overrides_defaults(self, tmp_path, defaults):
         """Test that provided values override defaults."""

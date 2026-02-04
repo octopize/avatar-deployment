@@ -20,6 +20,7 @@ class TelemetryStep(DeploymentStep):
             self.prompt_yes_no(
                 "Enable Sentry error monitoring?",
                 default=self.defaults["application"]["sentry_enabled"] == "true",
+                key="telemetry.enable_sentry",
             )
             if self.interactive
             else self.defaults["application"]["sentry_enabled"] == "true"
@@ -31,6 +32,7 @@ class TelemetryStep(DeploymentStep):
             self.prompt_yes_no(
                 "Enable usage telemetry?",
                 default=self.defaults["telemetry"]["enabled"],
+                key="telemetry.enable_telemetry",
             )
             if self.interactive
             else self.defaults["telemetry"]["enabled"]

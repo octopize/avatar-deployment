@@ -39,6 +39,7 @@ class AuthentikStep(DeploymentStep):
             authentik_bootstrap_email = self.prompt(
                 "Enter email address for Authentik admin user (akadmin)",
                 default="admin@example.com",
+                key="authentik.bootstrap_email",
             )
         else:
             authentik_bootstrap_email = "admin@example.com"

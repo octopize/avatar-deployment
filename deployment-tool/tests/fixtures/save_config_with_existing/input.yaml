@@ -1,20 +1,12 @@
-# Responses to override some values when loading existing config
 responses:
-  - "https://modified.com"  # New base URL
-  - "admin@modified.com"  # New admin email
-  - "smtp.test.com"
-  - ""  # NGINX_SSL_CERTIFICATE_PATH (default)
-  - ""  # NGINX_SSL_CERTIFICATE_KEY_PATH (default)
-  - "587"
-  - "noreply@test.com"
-  - "user"
-  - "pass"
-  - "postgres.local"
-  - "avatar"
-  - "avatar_user"
-  - "seaweedfs"
-  - "s3.local:8333"
-  - "avatar-bucket"
-  - "30d"
-  - true
-  - "production"
+  nginx_tls.ssl_certificate_path: ''
+  nginx_tls.ssl_certificate_key_path: ''
+  authentik.bootstrap_email: admin@existing.com
+  email.mail_provider: smtp
+  email.smtp_host: smtp.existing.com
+  email.smtp_port: '587'
+  email.smtp_sender_email: noreply@existing.com
+  email.smtp_password: ''
+  user.admin_emails: admin@existing.com
+  telemetry.enable_sentry: true
+  telemetry.enable_telemetry: true

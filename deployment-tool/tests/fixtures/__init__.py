@@ -25,7 +25,7 @@ class FixtureManager:
         """
         self.fixtures_dir = Path(fixtures_dir)
 
-    def load_input_fixture(self, name: str) -> list[str | bool]:
+    def load_input_fixture(self, name: str) -> dict[str, str | bool]:
         """
         Load input fixture file containing test responses.
 
@@ -33,7 +33,8 @@ class FixtureManager:
             name: Name of the fixture (scenario subdirectory)
 
         Returns:
-            List of responses (strings or booleans)
+            Dictionary mapping prompt keys to responses
+            e.g., {"email.smtp_password": "", "telemetry.enable_sentry": true}
 
         Raises:
             FileNotFoundError: If fixture file doesn't exist
@@ -52,7 +53,19 @@ class FixtureManager:
                 f"Invalid fixture format: {fixture_path}. Expected dict with 'responses' key"
             )
 
-        return data["responses"]
+        responses = data["responses"]
+
+        # Validate that responses is a dict (new format)
+        if not isinstance(responses, dict):
+            raise ValueError(
+                f"Invalid fixture format: {fixture_path}. "
+                "'responses' must be a dict mapping keys to values, "
+                f"not {type(responses).__name__}. "
+                "The list-based format is no longer supported. "
+                "Use key-based format: responses: {{step.key: value}}"
+            )
+
+        return responses
 
     def get_config_fixture_path(self, name: str) -> Path | None:
         """

@@ -21,7 +21,10 @@ class RequiredConfigStep(DeploymentStep):
         if "PUBLIC_URL" in self.config:
             public_url = self.config["PUBLIC_URL"]
         elif self.interactive:
-            public_url = self.prompt("Public URL (domain name, e.g., avatar.example.com)")
+            public_url = self.prompt(
+                "Public URL (domain name, e.g., avatar.example.com)",
+                key="required_config.public_url",
+            )
         else:
             public_url = ""
 
@@ -34,7 +37,9 @@ class RequiredConfigStep(DeploymentStep):
         if "ENV_NAME" in self.config:
             config["ENV_NAME"] = self.config["ENV_NAME"]
         elif self.interactive:
-            config["ENV_NAME"] = self.prompt("Environment name (e.g., mycompany-prod)")
+            config["ENV_NAME"] = self.prompt(
+                "Environment name (e.g., mycompany-prod)", key="required_config.env_name"
+            )
         else:
             config["ENV_NAME"] = ""
 
@@ -43,7 +48,9 @@ class RequiredConfigStep(DeploymentStep):
             config["ORGANIZATION_NAME"] = self.config["ORGANIZATION_NAME"]
         elif self.interactive:
             while True:
-                org_name = self.prompt("Organization name (e.g., MyCompany)")
+                org_name = self.prompt(
+                    "Organization name (e.g., MyCompany)", key="required_config.organization_name"
+                )
                 if org_name.strip():
                     config["ORGANIZATION_NAME"] = org_name
                     break

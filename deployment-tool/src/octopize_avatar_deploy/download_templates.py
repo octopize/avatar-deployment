@@ -152,10 +152,7 @@ class TemplateProvider(ABC):
 
             if not provided:
                 success = False
-                print(
-                    f"⚠ Warning: Failed to provide {entry['path']} "
-                    f"({entry['category']})"
-                )
+                print(f"⚠ Warning: Failed to provide {entry['path']} ({entry['category']})")
 
         if self.verbose:
             if success:

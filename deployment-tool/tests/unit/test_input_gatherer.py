@@ -103,74 +103,86 @@ class TestMockInputGatherer:
 
     def test_prompt_returns_mocked_response(self):
         """Test prompt returns pre-configured response."""
-        gatherer = MockInputGatherer(["mocked_value"])
-        result = gatherer.prompt("Enter value")
+        gatherer = MockInputGatherer({"test.value": "mocked_value"})
+        result = gatherer.prompt("Enter value", key="test.value")
         assert result == "mocked_value"
 
     def test_prompt_uses_default_for_empty_response(self):
         """Test prompt uses default for empty mocked response."""
-        gatherer = MockInputGatherer([""])
-        result = gatherer.prompt("Enter value", default="default_value")
+        gatherer = MockInputGatherer({"test.value": ""})
+        result = gatherer.prompt("Enter value", default="default_value", key="test.value")
         assert result == "default_value"
 
     def test_prompt_yes_no_returns_boolean(self):
         """Test yes/no prompt returns boolean response."""
-        gatherer = MockInputGatherer([True, False])
-        assert gatherer.prompt_yes_no("First?") is True
-        assert gatherer.prompt_yes_no("Second?") is False
+        gatherer = MockInputGatherer({"test.first": True, "test.second": False})
+        assert gatherer.prompt_yes_no("First?", key="test.first") is True
+        assert gatherer.prompt_yes_no("Second?", key="test.second") is False
 
     def test_prompt_yes_no_converts_string_to_bool(self):
         """Test yes/no prompt converts string responses to boolean."""
-        gatherer = MockInputGatherer(["y", "yes", "n", "no"])
-        assert gatherer.prompt_yes_no("First?") is True
-        assert gatherer.prompt_yes_no("Second?") is True
-        assert gatherer.prompt_yes_no("Third?") is False
-        assert gatherer.prompt_yes_no("Fourth?") is False
+        gatherer = MockInputGatherer({"q1": "y", "q2": "yes", "q3": "n", "q4": "no"})
+        assert gatherer.prompt_yes_no("First?", key="q1") is True
+        assert gatherer.prompt_yes_no("Second?", key="q2") is True
+        assert gatherer.prompt_yes_no("Third?", key="q3") is False
+        assert gatherer.prompt_yes_no("Fourth?", key="q4") is False
 
     def test_prompt_choice_by_number(self):
         """Test choice prompt accepts numeric choice."""
-        gatherer = MockInputGatherer(["2"])
+        gatherer = MockInputGatherer({"test.choice": "2"})
         choices = ["option1", "option2", "option3"]
-        result = gatherer.prompt_choice("Select", choices)
+        result = gatherer.prompt_choice("Select", choices, key="test.choice")
         assert result == "option2"
 
     def test_prompt_choice_by_name(self):
         """Test choice prompt accepts choice name directly."""
-        gatherer = MockInputGatherer(["option3"])
+        gatherer = MockInputGatherer({"test.choice": "option3"})
         choices = ["option1", "option2", "option3"]
-        result = gatherer.prompt_choice("Select", choices)
+        result = gatherer.prompt_choice("Select", choices, key="test.choice")
         assert result == "option3"
 
     def test_prompt_choice_uses_default_for_empty(self):
         """Test choice prompt uses default for empty response."""
-        gatherer = MockInputGatherer([""])
+        gatherer = MockInputGatherer({"test.choice": ""})
         choices = ["option1", "option2", "option3"]
-        result = gatherer.prompt_choice("Select", choices, default="option2")
+        result = gatherer.prompt_choice("Select", choices, default="option2", key="test.choice")
         assert result == "option2"
 
-    def test_multiple_prompts_in_sequence(self):
-        """Test multiple prompts consume responses in order."""
-        gatherer = MockInputGatherer(["first", "second", True, "3"])
-        assert gatherer.prompt("Q1") == "first"
-        assert gatherer.prompt("Q2") == "second"
-        assert gatherer.prompt_yes_no("Q3") is True
-        assert gatherer.prompt_choice("Q4", ["a", "b", "c"]) == "c"
+    def test_multiple_prompts_with_different_keys(self):
+        """Test multiple prompts with different keys."""
+        gatherer = MockInputGatherer({"q1": "first", "q2": "second", "q3": True, "q4": "3"})
+        assert gatherer.prompt("Q1", key="q1") == "first"
+        assert gatherer.prompt("Q2", key="q2") == "second"
+        assert gatherer.prompt_yes_no("Q3", key="q3") is True
+        assert gatherer.prompt_choice("Q4", ["a", "b", "c"], key="q4") == "c"
 
-    def test_runs_out_of_responses(self):
-        """Test error when running out of pre-configured responses."""
-        gatherer = MockInputGatherer(["only_one"])
-        gatherer.prompt("Q1")
-        with pytest.raises(ValueError, match="ran out of responses"):
-            gatherer.prompt("Q2")
+    def test_missing_key_raises_error(self):
+        """Test error when key not found in responses."""
+        gatherer = MockInputGatherer({"existing.key": "value"})
+        with pytest.raises(KeyError, match="No response configured for key 'missing.key'"):
+            gatherer.prompt("Q1", key="missing.key")
+
+    def test_no_key_raises_error(self):
+        """Test error when no key provided."""
+        gatherer = MockInputGatherer({"test.key": "value"})
+        with pytest.raises(ValueError, match="requires a 'key' parameter"):
+            gatherer.prompt("Q1")
+
+    def test_duplicate_key_raises_error(self):
+        """Test error when same key is used twice."""
+        gatherer = MockInputGatherer({"test.key": "value"})
+        gatherer.prompt("Q1", key="test.key")
+        with pytest.raises(ValueError, match="Key 'test.key' has already been used"):
+            gatherer.prompt("Q2", key="test.key")
 
     def test_prompt_raises_on_bool_response(self):
         """Test prompt raises TypeError when receiving bool instead of string."""
-        gatherer = MockInputGatherer([True])
-        with pytest.raises(TypeError, match="Expected string response, got bool"):
-            gatherer.prompt("Q1")
+        gatherer = MockInputGatherer({"test.key": True})
+        with pytest.raises(TypeError, match="Expected string response.*got bool"):
+            gatherer.prompt("Q1", key="test.key")
 
     def test_prompt_choice_raises_on_bool_response(self):
         """Test prompt_choice raises TypeError when receiving bool."""
-        gatherer = MockInputGatherer([True])
-        with pytest.raises(TypeError, match="Expected string response, got bool"):
-            gatherer.prompt_choice("Q1", ["a", "b"])
+        gatherer = MockInputGatherer({"test.key": True})
+        with pytest.raises(TypeError, match="Expected string response.*got bool"):
+            gatherer.prompt_choice("Q1", ["a", "b"], key="test.key")

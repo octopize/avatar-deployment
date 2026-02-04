@@ -27,18 +27,18 @@ class TestCLITestHarness:
     def test_harness_basic(self):
         """Test basic harness creation and context manager."""
         harness = CLITestHarness(
-            responses=["test1", "test2"],
+            responses={"test.1": "test1", "test.2": "test2"},
             args=["--help"],
             silent=True,
         )
-        assert harness.responses == ["test1", "test2"]
+        assert harness.responses == {"test.1": "test1", "test.2": "test2"}
         assert harness.args == ["--help"]
         assert harness.silent is True
         assert harness.log_file is None
 
     def test_harness_context_manager_sets_env(self):
         """Test that context manager sets up environment correctly."""
-        responses = ["response1", True, "response2"]
+        responses = {"test.1": "response1", "test.2": "response2"}
 
         with CLITestHarness(responses=responses, silent=True):
             # Check environment variables are set
@@ -58,7 +58,7 @@ class TestCLITestHarness:
     def test_serialize_deserialize_responses(self):
         """Test response serialization/deserialization."""
         # Test with mixed types
-        original = ["text1", True, False, "text2", "normal text"]
+        original = {"test.1": "text1", "test.2": True, "test.3": False, "test.4": "text2"}
 
         serialized = CLITestHarness.serialize_responses(original)
         deserialized = CLITestHarness.deserialize_responses(serialized)
@@ -66,13 +66,13 @@ class TestCLITestHarness:
         assert deserialized == original
 
     def test_serialize_empty_responses(self):
-        """Test serialization of empty response list."""
-        original = []
+        """Test serialization of empty response dict."""
+        original = {}
         serialized = CLITestHarness.serialize_responses(original)
         deserialized = CLITestHarness.deserialize_responses(serialized)
 
-        assert deserialized == []
-        assert serialized == ""
+        assert deserialized == {}
+        assert serialized == "{}"
 
     def test_get_test_input_gatherer_no_test_mode(self):
         """Test that get_test_input_gatherer returns None when not in test mode."""
@@ -87,15 +87,15 @@ class TestCLITestHarness:
         Test that get_test_input_gatherer returns MockInputGatherer
         with responses.
         """
-        responses = ["test1", "test2", True]
+        responses = {"test.1": "test1", "test.2": "test2", "test.3": True}
 
         with CLITestHarness(responses=responses):
             gatherer = get_test_input_gatherer()
             assert isinstance(gatherer, MockInputGatherer)
             # Verify responses are available
-            assert gatherer.prompt("Prompt") == "test1"
-            assert gatherer.prompt("Prompt") == "test2"
-            assert gatherer.prompt_yes_no("Prompt") is True
+            assert gatherer.prompt("Prompt", key="test.1") == "test1"
+            assert gatherer.prompt("Prompt", key="test.2") == "test2"
+            assert gatherer.prompt_yes_no("Prompt", key="test.3") is True
 
     def test_get_test_printer_silent_mode(self):
         """Test that get_test_printer returns SilentPrinter in silent mode."""
@@ -233,7 +233,7 @@ class TestEnvironmentCleanup:
         os.environ["AVATAR_DEPLOY_TEST_MODE"] = "original"
         original_value = os.environ.get("AVATAR_DEPLOY_TEST_MODE")
 
-        with CLITestHarness(responses=["test"], silent=True):
+        with CLITestHarness(responses={"test": "test"}, silent=True):
             # In context, value should be "1"
             assert os.environ.get("AVATAR_DEPLOY_TEST_MODE") == "1"
 
@@ -249,7 +249,7 @@ class TestEnvironmentCleanup:
         original_value = os.environ.get("AVATAR_DEPLOY_TEST_MODE")
 
         try:
-            with CLITestHarness(responses=["test"], silent=True):
+            with CLITestHarness(responses={"test": "test"}, silent=True):
                 assert os.environ.get("AVATAR_DEPLOY_TEST_MODE") == "1"
                 raise ValueError("Test exception")
         except ValueError:
@@ -267,7 +267,7 @@ class TestEnvironmentCleanup:
         os.environ.pop("AVATAR_DEPLOY_TEST_MODE", None)
         os.environ.pop("AVATAR_DEPLOY_TEST_SILENT", None)
 
-        with CLITestHarness(responses=["test"], silent=True):
+        with CLITestHarness(responses={"test": "test"}, silent=True):
             # Variables should be set in context
             assert os.environ.get("AVATAR_DEPLOY_TEST_MODE") == "1"
             assert os.environ.get("AVATAR_DEPLOY_TEST_SILENT") == "1"

@@ -291,7 +291,7 @@ class DeploymentConfigurator:
                 self.state.print_status(self.printer)
                 self.printer.print_header("")
                 response = self.input_gatherer.prompt_yes_no(
-                    "Resume from where you left off?", default=True
+                    "Resume from where you left off?", default=True, key="resume.continue"
                 )
                 if not response:
                     self.printer.print("Starting fresh configuration...")
@@ -475,17 +475,13 @@ class DeploymentRunner:
             True if templates are available, False otherwise
         """
         if self.template_source and not self.template_source.exists():
-            self.printer.print_error(
-                f"Template source directory not found: {self.template_source}"
-            )
+            self.printer.print_error(f"Template source directory not found: {self.template_source}")
             return False
 
         if self.template_from == "github":
             if self.template_provider.check_cached_templates(self.templates_dir):
                 if self.verbose:
-                    self.printer.print(
-                        f"Templates already cached in {self.templates_dir}/"
-                    )
+                    self.printer.print(f"Templates already cached in {self.templates_dir}/")
                 return self._verify_templates()
 
             if self.verbose:

@@ -22,7 +22,7 @@ class EmailStep(DeploymentStep):
         default_provider = self.defaults["email"]["provider"]
         provider = self.config.get(
             "MAIL_PROVIDER",
-            self.prompt("Mail provider (aws or smtp)", default_provider)
+            self.prompt("Mail provider (aws or smtp)", default_provider, key="email.mail_provider")
             if self.interactive
             else default_provider,
         ).lower()
@@ -35,13 +35,13 @@ class EmailStep(DeploymentStep):
 
             config["SMTP_HOST"] = self.config.get(
                 "SMTP_HOST",
-                self.prompt("SMTP host", smtp_defaults["host"])
+                self.prompt("SMTP host", smtp_defaults["host"], key="email.smtp_host")
                 if self.interactive
                 else smtp_defaults["host"],
             )
             config["SMTP_PORT"] = self.config.get(
                 "SMTP_PORT",
-                self.prompt("SMTP port", str(smtp_defaults["port"]))
+                self.prompt("SMTP port", str(smtp_defaults["port"]), key="email.smtp_port")
                 if self.interactive
                 else str(smtp_defaults["port"]),
             )
@@ -50,7 +50,11 @@ class EmailStep(DeploymentStep):
             config["SMTP_VERIFY"] = self.config.get("SMTP_VERIFY", smtp_defaults["verify"])
             config["SMTP_SENDER_EMAIL"] = self.config.get(
                 "SMTP_SENDER_EMAIL",
-                self.prompt("SMTP sender email", smtp_defaults["sender_email"])
+                self.prompt(
+                    "SMTP sender email",
+                    smtp_defaults["sender_email"],
+                    key="email.smtp_sender_email",
+                )
                 if self.interactive
                 else smtp_defaults["sender_email"],
             )
@@ -73,7 +77,7 @@ class EmailStep(DeploymentStep):
         if self.config["MAIL_PROVIDER"] == "smtp":
             if self.interactive:
                 smtp_password = self.input_gatherer.prompt(
-                    "SMTP password (press Enter to skip)", default=""
+                    "SMTP password (press Enter to skip)", default="", key="email.smtp_password"
                 )
                 if smtp_password:
                     secrets_dict["smtp_password"] = smtp_password

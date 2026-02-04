@@ -30,6 +30,7 @@ class InputGatherer(Protocol):
         message: str,
         default: str | None = None,
         validate: Callable[[str], tuple[bool, str]] | None = None,
+        key: str | None = None,
     ) -> str:
         """
         Prompt user for input with optional default value and validation.
@@ -38,26 +39,30 @@ class InputGatherer(Protocol):
             message: The prompt message
             default: Default value to use if user presses Enter (None = required field)
             validate: Optional validation function that returns (is_valid, error_message)
+            key: Unique key for this prompt (e.g., "email.smtp_password") - used in testing
 
         Returns:
             User's input or default value
         """
         ...
 
-    def prompt_yes_no(self, message: str, default: bool = True) -> bool:
+    def prompt_yes_no(self, message: str, default: bool = True, key: str | None = None) -> bool:
         """
         Prompt user for yes/no input.
 
         Args:
             message: The prompt message
             default: Default value if user presses Enter
+            key: Unique key for this prompt (e.g., "telemetry.enable_sentry") - used in testing
 
         Returns:
             True for yes, False for no
         """
         ...
 
-    def prompt_choice(self, message: str, choices: list[str], default: str | None = None) -> str:
+    def prompt_choice(
+        self, message: str, choices: list[str], default: str | None = None, key: str | None = None
+    ) -> str:
         """
         Prompt user to choose from list of options.
 
@@ -65,6 +70,7 @@ class InputGatherer(Protocol):
             message: The prompt message
             choices: List of valid choices
             default: Default choice if user presses Enter
+            key: Unique key for this prompt (e.g., "email.mail_provider") - used in testing
 
         Returns:
             Selected choice
@@ -84,6 +90,7 @@ class ConsoleInputGatherer:
         message: str,
         default: str | None = None,
         validate: Callable[[str], tuple[bool, str]] | None = None,
+        key: str | None = None,
     ) -> str:
         """Prompt user for input with optional default value and validation."""
         # Debug logging
@@ -91,6 +98,8 @@ class ConsoleInputGatherer:
             debug_msg = f"[PROMPT] {message}"
             if default is not None:
                 debug_msg += f" (default: {default!r})"
+            if key is not None:
+                debug_msg += f" [key: {key}]"
             print(debug_msg, file=sys.stderr)
 
         while True:
@@ -116,7 +125,7 @@ class ConsoleInputGatherer:
 
             return value
 
-    def prompt_yes_no(self, message: str, default: bool = True) -> bool:
+    def prompt_yes_no(self, message: str, default: bool = True, key: str | None = None) -> bool:
         """Prompt user for yes/no input."""
         default_str = "Y/n" if default else "y/N"
         response = input(f"{message} [{default_str}]: ").strip().lower()
@@ -126,7 +135,9 @@ class ConsoleInputGatherer:
 
         return response in ["y", "yes", "true", "1"]
 
-    def prompt_choice(self, message: str, choices: list[str], default: str | None = None) -> str:
+    def prompt_choice(
+        self, message: str, choices: list[str], default: str | None = None, key: str | None = None
+    ) -> str:
         """Prompt user to choose from list of options."""
         print(f"\n{message}")
         for i, choice in enumerate(choices, 1):
@@ -153,56 +164,69 @@ class MockInputGatherer:
     """
     Mock input gatherer for testing.
 
-    Returns pre-configured responses in sequence. Useful for testing
+    Returns pre-configured responses based on keys. Useful for testing
     interactive flows without manual input.
     """
 
-    def __init__(self, responses: list[str | bool]):
+    def __init__(self, responses: dict[str, str | bool]):
         """
         Initialize mock input gatherer.
 
         Args:
-            responses: List of pre-configured responses to return in sequence
+            responses: Dictionary mapping prompt keys to responses
+                      e.g., {"email.smtp_password": "", "telemetry.enable_sentry": true}
         """
         self.responses = responses
-        self.current_index = 0
+        self.used_keys: set[str] = set()
 
-    def _get_next_response(self) -> str | bool:
-        """Get next response from the queue."""
-        if self.current_index >= len(self.responses):
+    def _get_response(self, key: str | None, default: str | bool | None = None) -> str | bool:
+        """Get response for the given key."""
+        if key is None:
             raise ValueError(
-                f"MockInputGatherer ran out of responses (asked {self.current_index + 1} times)"
+                "MockInputGatherer requires a 'key' parameter for all prompts. "
+                "Please update the prompt call to include a unique key."
             )
-        response = self.responses[self.current_index]
-        self.current_index += 1
-        return response
+
+        if key in self.used_keys:
+            raise ValueError(
+                f"MockInputGatherer: Key '{key}' has already been used. "
+                "Each key should only be prompted once per test run."
+            )
+
+        self.used_keys.add(key)
+
+        if key not in self.responses:
+            raise KeyError(
+                f"MockInputGatherer: No response configured for key '{key}'. "
+                f"Available keys: {sorted(self.responses.keys())}"
+            )
+
+        return self.responses[key]
 
     def prompt(
         self,
         message: str,
         default: str | None = None,
         validate: Callable[[str], tuple[bool, str]] | None = None,
+        key: str | None = None,
     ) -> str:
-        """Return next mocked response."""
+        """Return mocked response for the given key."""
         # Debug logging with response preview
         if os.environ.get("AVATAR_DEPLOY_DEBUG_PROMPTS") == "1":
             response_preview = (
-                self.responses[self.current_index]
-                if self.current_index < len(self.responses)
-                else f"<default: {default!r}>"
+                self.responses.get(key, f"<default: {default!r}>") if key else "<no key>"
             )
             print(
-                f"[PROMPT #{self.current_index + 1}] {message} => {response_preview!r}",
+                f"[PROMPT] {message} [key: {key}] => {response_preview!r}",
                 file=sys.stderr,
             )
 
-        response = self._get_next_response()
+        response = self._get_response(key, default)
 
         if isinstance(response, bool):
             raise TypeError(
-                "Expected string response, got bool: True"
-                if response
-                else "Expected string response, got bool: False"
+                f"Expected string response for key '{key}', got bool: {response}. "
+                "Use prompt_yes_no() for boolean prompts."
             )
 
         # Use default if response is empty string and default is provided
@@ -216,19 +240,24 @@ class MockInputGatherer:
 
         return value
 
-    def prompt_yes_no(self, message: str, default: bool = True) -> bool:
-        """Return next mocked boolean response."""
-        response = self._get_next_response()
+    def prompt_yes_no(self, message: str, default: bool = True, key: str | None = None) -> bool:
+        """Return mocked boolean response for the given key."""
+        response = self._get_response(key, default)
         if isinstance(response, str):
             # Convert string to boolean if needed
             return response.lower() in ["y", "yes", "true", "1"]
         return response
 
-    def prompt_choice(self, message: str, choices: list[str], default: str | None = None) -> str:
-        """Return next mocked choice response."""
-        response = self._get_next_response()
+    def prompt_choice(
+        self, message: str, choices: list[str], default: str | None = None, key: str | None = None
+    ) -> str:
+        """Return mocked choice response for the given key."""
+        response = self._get_response(key, default)
         if isinstance(response, bool):
-            raise TypeError(f"Expected string response, got bool: {response}")
+            raise TypeError(
+                f"Expected string response for key '{key}', got bool: {response}. "
+                "Choices must be strings."
+            )
 
         # If response is empty and default is provided, return default
         if not response and default:
@@ -265,6 +294,7 @@ class RichInputGatherer:
         message: str,
         default: str | None = None,
         validate: Callable[[str], tuple[bool, str]] | None = None,
+        key: str | None = None,
     ) -> str:
         """Prompt user for input with optional default value and validation."""
         while True:
@@ -291,11 +321,13 @@ class RichInputGatherer:
 
             return result
 
-    def prompt_yes_no(self, message: str, default: bool = True) -> bool:
+    def prompt_yes_no(self, message: str, default: bool = True, key: str | None = None) -> bool:
         """Prompt user for yes/no input."""
         return Confirm.ask(f"[cyan]{message}[/cyan]", default=default)
 
-    def prompt_choice(self, message: str, choices: list[str], default: str | None = None) -> str:
+    def prompt_choice(
+        self, message: str, choices: list[str], default: str | None = None, key: str | None = None
+    ) -> str:
         """Prompt user to choose from list of options."""
         self.console.print(f"\n[cyan]{message}[/cyan]")
         for i, choice in enumerate(choices, 1):

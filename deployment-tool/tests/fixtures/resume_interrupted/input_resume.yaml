@@ -1,7 +1,6 @@
-# Resume run - continuing from where we left off
 responses:
-  - true                           # Resume from where you left off? YES
-  - ""                             # SMTP password (empty/skip) - continuing from email step
-  - "admin@example.com"            # ADMIN_EMAILS (string prompt for email auth)
-  - true                           # Enable Sentry?
-  - true                           # Enable usage telemetry?
+  resume.continue: true
+  email.smtp_password: ''
+  user.admin_emails: admin@example.com
+  telemetry.enable_sentry: true
+  telemetry.enable_telemetry: true

@@ -27,7 +27,7 @@ class CLITestHarness:
 
     def __init__(
         self,
-        responses: list[str | bool],
+        responses: dict[str, str | bool],
         args: list[str] | None = None,
         silent: bool = False,
         log_file: Path | str | None = None,
@@ -36,7 +36,8 @@ class CLITestHarness:
         Initialize CLI test harness.
 
         Args:
-            responses: List of pre-configured responses for MockInputGatherer
+            responses: Dictionary mapping prompt keys to responses
+                      e.g., {"email.smtp_password": "", "telemetry.enable_sentry": true}
             args: Command-line arguments to pass (default: [])
             silent: Whether to suppress output completely (default: False)
             log_file: Optional path to log file for capturing output
@@ -115,36 +116,21 @@ class CLITestHarness:
             return 1
 
     @staticmethod
-    def serialize_responses(responses: list[str | bool]) -> str:
-        """Serialize responses to string format."""
-        serialized = []
-        for r in responses:
-            if isinstance(r, bool):
-                serialized.append("__BOOL_TRUE__" if r else "__BOOL_FALSE__")
-            else:
-                # Escape delimiter
-                serialized.append(str(r).replace("|||", "\\|||"))
-        return "|||".join(serialized)
+    def serialize_responses(responses: dict[str, str | bool]) -> str:
+        """Serialize responses dict to string format using JSON."""
+        import json
+
+        return json.dumps(responses)
 
     @staticmethod
-    def deserialize_responses(serialized: str) -> list[str | bool]:
-        """Deserialize responses from string format."""
+    def deserialize_responses(serialized: str) -> dict[str, str | bool]:
+        """Deserialize responses from JSON string format."""
+        import json
+
         if not serialized:
-            return []
+            return {}
 
-        responses: list[str | bool] = []
-        for r in serialized.split("|||"):
-            # Unescape delimiter
-            r = r.replace("\\|||", "|||")
-
-            # Convert bool markers back to bool
-            if r == "__BOOL_TRUE__":
-                responses.append(True)
-            elif r == "__BOOL_FALSE__":
-                responses.append(False)
-            else:
-                responses.append(r)
-        return responses
+        return json.loads(serialized)
 
 
 def get_test_input_gatherer():
@@ -184,7 +170,7 @@ def get_test_printer():
 
 # Convenience function for quick testing
 def run_cli_test(
-    responses: list[str | bool],
+    responses: dict[str, str | bool],
     args: list[str] | None = None,
     silent: bool = False,
     log_file: Path | str | None = None,
@@ -193,7 +179,7 @@ def run_cli_test(
     Convenience function to run a CLI test.
 
     Args:
-        responses: Pre-configured responses
+        responses: Dictionary mapping prompt keys to responses
         args: Command-line arguments
         silent: Whether to suppress output completely
         log_file: Optional path to log file (overrides silent)
@@ -204,7 +190,7 @@ def run_cli_test(
     Example:
         >>> # Test with file logging
         >>> exit_code = run_cli_test(
-        ...     responses=["https://api.example.com", False, False],
+        ...     responses={"required_config.public_url": "api.example.com"},
         ...     args=["--output-dir", "/tmp/test"],
         ...     log_file="/tmp/test/deployment.log"
         ... )

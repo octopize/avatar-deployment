@@ -129,6 +129,7 @@ class DeploymentStep(ABC):
         message: str,
         default: str | None = None,
         validate: "Callable[[str], tuple[bool, str]] | None" = None,
+        key: str | None = None,
     ) -> str:
         """
         Prompt user for input with optional default value and validation.
@@ -137,26 +138,30 @@ class DeploymentStep(ABC):
             message: The prompt message
             default: Default value to use if user presses Enter (None = required field)
             validate: Optional validation function that returns (is_valid, error_message)
+            key: Unique key for this prompt (e.g., "email.smtp_password") - used in testing
 
         Returns:
             User's input or default value
         """
-        return self.input_gatherer.prompt(message, default, validate)
+        return self.input_gatherer.prompt(message, default, validate, key)
 
-    def prompt_yes_no(self, message: str, default: bool = True) -> bool:
+    def prompt_yes_no(self, message: str, default: bool = True, key: str | None = None) -> bool:
         """
         Prompt user for yes/no input.
 
         Args:
             message: The prompt message
             default: Default value if user presses Enter
+            key: Unique key for this prompt (e.g., "telemetry.enable_sentry") - used in testing
 
         Returns:
             True for yes, False for no
         """
-        return self.input_gatherer.prompt_yes_no(message, default)
+        return self.input_gatherer.prompt_yes_no(message, default, key)
 
-    def prompt_choice(self, message: str, choices: list, default: str | None = None) -> str:
+    def prompt_choice(
+        self, message: str, choices: list, default: str | None = None, key: str | None = None
+    ) -> str:
         """
         Prompt user to choose from list of options.
 
@@ -164,11 +169,12 @@ class DeploymentStep(ABC):
             message: The prompt message
             choices: List of valid choices
             default: Default choice if user presses Enter
+            key: Unique key for this prompt (e.g., "email.mail_provider") - used in testing
 
         Returns:
             Selected choice
         """
-        return self.input_gatherer.prompt_choice(message, choices, default)
+        return self.input_gatherer.prompt_choice(message, choices, default, key)
 
     def get_config_value(self, key: str, default: Any = None) -> Any:
         ret = self.config.get(key, default)
