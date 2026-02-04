@@ -198,20 +198,47 @@ class BlueprintConverter:
         with open(path, "r") as f:
             return yaml.safe_load(f)
 
-    def save_blueprint(self, blueprint: Dict, path: Path):
-        """Save YAML blueprint file with custom YAML tags and organized sections."""
+    def save_blueprint(self, blueprint: Dict, path: Path, jinja2: bool = False):
+        """Save YAML blueprint file with custom YAML tags and organized sections.
+
+        Args:
+            blueprint: Blueprint data structure
+            path: Output file path
+            jinja2: If True, convert placeholders to Jinja2 format and update header
+        """
         self.log(f"Saving converted blueprint to {path}")
 
         # Convert marker dicts to tag objects
         blueprint_with_tags = self._convert_markers_to_tags(blueprint)
+
+        # Convert to Jinja2 format if requested
+        if jinja2:
+            blueprint_with_tags = self._convert_to_jinja2_placeholders(blueprint_with_tags)
 
         # Remove empty context if it exists at top level
         if "context" in blueprint_with_tags and not blueprint_with_tags["context"]:
             del blueprint_with_tags["context"]
 
         with open(path, "w") as f:
-            # Write header comment
-            header = """\
+            # Write header comment (different for Jinja2 vs standard)
+            if jinja2:
+                header = """\
+# yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
+---
+# Octopize Avatar - Authentik Blueprint Template
+# This blueprint configures SSO authentication for the Avatar API platform
+# including custom flows, stages, policies, and email templates
+#
+# Required Placeholders (fill before import):
+#   {{ BLUEPRINT_DOMAIN }}                - Base domain (e.g., staging.octopize.tech)
+#   {{ BLUEPRINT_CLIENT_ID }}             - OAuth2 Client ID
+#   {{ BLUEPRINT_CLIENT_SECRET }}         - OAuth2 Client Secret
+#   {{ BLUEPRINT_API_REDIRECT_URI }}      - Full redirect URI for API (e.g., https://{{ BLUEPRINT_DOMAIN }}/api/login/sso/auth)
+#   {{ BLUEPRINT_SELF_SERVICE_LICENSE }}  - License type for self-service signups (e.g., demo, trial, full)
+
+"""
+            else:
+                header = """\
 # yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
 ---
 # Octopize Avatar - Authentik Blueprint Template
@@ -1017,6 +1044,42 @@ class BlueprintConverter:
         # Return with full sub-header names
         return [(f"FLOW STAGE BINDINGS - {flow_name}", entries) for flow_name, entries in sorted(flow_groups.items())]
 
+    def _convert_to_jinja2_placeholders(self, obj):
+        """Convert [[PLACEHOLDER]] format to {{ BLUEPRINT_PLACEHOLDER }} Jinja2 format.
+
+        Args:
+            obj: Any YAML structure (dict, list, string, etc.)
+
+        Returns:
+            The same structure with placeholders converted to Jinja2 format
+        """
+        if isinstance(obj, str):
+            # Replace [[PLACEHOLDER]] with {{ BLUEPRINT_PLACEHOLDER }}
+            import re
+            return re.sub(r'\[\[([A-Z_]+)\]\]', r'{{ BLUEPRINT_\1 }}', obj)
+        elif isinstance(obj, dict):
+            return {k: self._convert_to_jinja2_placeholders(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self._convert_to_jinja2_placeholders(item) for item in obj]
+        elif isinstance(obj, (FindTag, ContextTag, FormatTag)):
+            # Handle custom tag objects - convert their internal data
+            if isinstance(obj, FindTag):
+                return FindTag(
+                    self._convert_to_jinja2_placeholders(obj.model),
+                    self._convert_to_jinja2_placeholders(obj.identifiers)
+                )
+            elif isinstance(obj, ContextTag):
+                return ContextTag(
+                    self._convert_to_jinja2_placeholders(obj.name),
+                    self._convert_to_jinja2_placeholders(obj.default)
+                )
+            elif isinstance(obj, FormatTag):
+                return FormatTag(
+                    self._convert_to_jinja2_placeholders(obj.template),
+                    self._convert_to_jinja2_placeholders(obj.args)
+                )
+        return obj
+
     def clean_metadata(self, metadata: Dict) -> Dict:
         """Clean up metadata - remove generated labels and set proper name."""
         cleaned = {}
@@ -1037,8 +1100,16 @@ class BlueprintConverter:
 
         return cleaned
 
-    def convert_blueprint(self, blueprint: Dict) -> Dict:
-        """Convert entire blueprint from PK to !Find references."""
+    def convert_blueprint(self, blueprint: Dict, jinja2: bool = False) -> Dict:
+        """Convert entire blueprint from PK to !Find references.
+
+        Args:
+            blueprint: Input blueprint data
+            jinja2: If True, prepare for Jinja2 template output (placeholder conversion happens in save)
+
+        Returns:
+            Converted blueprint
+        """
         self.log("Starting blueprint conversion")
 
         # Build PK index first
@@ -1145,6 +1216,12 @@ def main():
         action="store_true",
         help="Enable verbose logging",
     )
+    parser.add_argument(
+        "--jinja2",
+        "-j",
+        action="store_true",
+        help="Generate Jinja2 template format (converts [[PLACEHOLDER]] to {{ BLUEPRINT_PLACEHOLDER }})",
+    )
 
     args = parser.parse_args()
 
@@ -1153,15 +1230,24 @@ def main():
         print(f"❌ Input file not found: {args.input}", file=sys.stderr)
         sys.exit(1)
 
+    # If jinja2 mode is enabled, ensure output has .j2 suffix
+    output_path = args.output
+    if args.jinja2 and not str(output_path).endswith('.j2'):
+        output_path = Path(str(output_path) + '.j2')
+        print(f"ℹ️  Adding .j2 suffix for Jinja2 template: {output_path}")
+
     # Convert blueprint
     converter = BlueprintConverter(verbose=args.verbose)
 
     try:
         blueprint = converter.load_blueprint(args.input)
-        converted = converter.convert_blueprint(blueprint)
-        converter.save_blueprint(converted, args.output)
+        converted = converter.convert_blueprint(blueprint, jinja2=args.jinja2)
+        converter.save_blueprint(converted, output_path, jinja2=args.jinja2)
 
-        print(f"\n✅ Conversion complete: {args.output}")
+        if args.jinja2:
+            print(f"\n✅ Jinja2 template conversion complete: {output_path}")
+        else:
+            print(f"\n✅ Conversion complete: {output_path}")
         print(f"   Processed {len(converted['entries'])} entries")
 
     except Exception as e:
@@ -1178,7 +1264,7 @@ def main():
             print(f"\n⚠️  Validator not found: {validator_path}", file=sys.stderr)
             sys.exit(1)
 
-        if not validate_blueprint(args.output, validator_path):
+        if not validate_blueprint(output_path, validator_path):
             sys.exit(1)
 
 
