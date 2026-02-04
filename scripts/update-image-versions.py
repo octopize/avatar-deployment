@@ -31,6 +31,7 @@ import os
 import re
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -45,6 +46,8 @@ DEFAULTS_PATH = REPO_ROOT / "deployment-tool" / "src" / "octopize_avatar_deploy"
 # 1Password item name for Quay API key
 ONEPASSWORD_QUAY_ITEM = "Quay API Key for avatar-deployment/update-image-versions.py"
 
+# Timestamp file to track last check (once per day)
+TIMESTAMP_FILE = Path("/tmp/avatar-deployment-image-versions-last-check")
 
 
 # Image configurations: registry, org/repo, version pattern
@@ -82,6 +85,43 @@ def parse_semver(version: str) -> tuple[int, ...]:
     # Handle authentik's year.minor.patch format
     parts = version.split(".")
     return tuple(int(p) for p in parts)
+
+
+def should_skip_check(verbose: bool = False) -> bool:
+    """Check if we should skip the update check based on timestamp file.
+
+    Returns True if a check was already performed today, False otherwise.
+    """
+    if not TIMESTAMP_FILE.exists():
+        return False
+
+    try:
+        # Read the timestamp from the file
+        timestamp_str = TIMESTAMP_FILE.read_text().strip()
+        last_check = datetime.fromisoformat(timestamp_str)
+        today = datetime.now().date()
+
+        if last_check.date() == today:
+            if verbose:
+                print(f"✓ Image versions already checked today ({last_check.strftime('%Y-%m-%d %H:%M:%S')})")
+                print(f"  Skipping check (remove {TIMESTAMP_FILE} to force)")
+            return True
+    except (ValueError, OSError) as e:
+        if verbose:
+            print(f"Warning: Could not read timestamp file: {e}", file=sys.stderr)
+
+    return False
+
+
+def update_timestamp(verbose: bool = False) -> None:
+    """Update the timestamp file with current time."""
+    try:
+        TIMESTAMP_FILE.write_text(datetime.now().isoformat())
+        if verbose:
+            print(f"✓ Updated timestamp file: {TIMESTAMP_FILE}")
+    except OSError as e:
+        if verbose:
+            print(f"Warning: Could not update timestamp file: {e}", file=sys.stderr)
 
 
 def get_token_from_1password(item_name: str, verbose: bool = False) -> Optional[str]:
@@ -355,8 +395,20 @@ def main():
         action="store_true",
         help="Show detailed information"
     )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Force check even if already checked today"
+    )
 
     args = parser.parse_args()
+
+    # Skip if already checked today (unless --force is used)
+    if not args.force and should_skip_check(args.verbose):
+        sys.exit(0)
+
+    # Mark that we're checking NOW (before the actual check to prevent parallel runs)
+    update_timestamp(args.verbose)
 
     # Set up authentication tokens
     # Try 1Password first if QUAY_TOKEN not already set

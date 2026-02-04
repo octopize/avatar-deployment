@@ -35,15 +35,57 @@ This script runs automatically when files in `common/` are modified to ensure te
 
 ---
 
-## validate-authentik-blueprint.py
+## convert-blueprint-to-find.py
 
-Validates the Authentik blueprint template to ensure it follows best practices and can be successfully deployed.
+Converts Authentik blueprint exports from primary key (PK) references to declarative `!Find` lookups, making blueprints portable and versionable.
 
 ### Usage
 
 ```bash
-# Run all validations
+# Basic conversion
+python scripts/convert-blueprint-to-find.py input.yaml output.yaml
+
+# With validation
+python scripts/convert-blueprint-to-find.py input.yaml output.yaml --validate
+
+# With verbose logging
+python scripts/convert-blueprint-to-find.py input.yaml output.yaml --validate --verbose
+```
+
+### Example
+
+```bash
+# Export from Authentik and convert
+python scripts/convert-blueprint-to-find.py \
+  docker/authentik/blueprints/staging-export.yaml \
+  docker/templates/authentik/octopize-avatar-blueprint.yaml \
+  --validate --verbose
+```
+
+### What It Does
+
+- Removes `pk:` and `managed:` fields
+- Converts UUID references to `!Find` lookups
+- Builds semantic identifiers (e.g., by `name`, `slug`)
+- Recursively converts nested references
+- Filters out user entries and non-Octopize groups
+
+See [CONVERT_BLUEPRINT_README.md](CONVERT_BLUEPRINT_README.md) for detailed documentation.
+
+---
+
+## validate-authentik-blueprint.py
+
+Validates Authentik blueprint templates to ensure they follow best practices and can be successfully deployed.
+
+### Usage
+
+```bash
+# Validate default blueprint
 python scripts/validate-authentik-blueprint.py
+
+# Validate specific blueprint
+python scripts/validate-authentik-blueprint.py path/to/blueprint.yaml
 ```
 
 ### Pre-commit Hook

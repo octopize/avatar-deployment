@@ -4,6 +4,7 @@
 # Authentik blueprint files use custom tags like !Find, !KeyOf, !Context
 docker/templates/authentik/octopize-avatar-blueprint.yaml
 docker/templates/authentik/octopize-avatar-blueprint.yaml.j2
+docker/templates/authentik/octopize-avatar-blueprint-from-staging.yaml
 deployment-tool/tests/fixtures/
 
 # Helm templates use Go template syntax
