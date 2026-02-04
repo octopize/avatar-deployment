@@ -419,15 +419,7 @@ entries:
     model: authentik_policies_expression.expressionpolicy
     state: present
   - attrs:
-      expression: "from authentik.core.models import Group\n\n# Get the email from the prompt data collected in the first stage\n\
-        email = context.get(\"prompt_data\", {}).get(\"email\")\n\nif email:\n    # Get or create a group with the same suffix\
-        \ as the email\n    group, created = Group.objects.get_or_create(name=f\"self_service-{email}\")\n    \n    # Update\
-        \ the attributes for the group\n    # We use a dictionary update to ensure we don't overwrite other existing attributes\n\
-        \    if not group.attributes:\n        group.attributes = {}\n        \n    group.attributes[\"license\"] = \"{{ BLUEPRINT_SELF_SERVICE_LICENSE\
-        \ }}\"\n    group.save()\n    \n    # Assign the group object to the flow context\n    # Authentik expects a list of\
-        \ Group objects in the ['groups'] key\n    context[\"flow_plan\"].context[\"groups\"] = [group]\n    \n    if created:\n\
-        \        ak_logger.info(f\"Created new personal group with demo license for user: {email}\")\n    else:\n        ak_logger.info(f\"\
-        Updated existing group attributes for user: {email}\")\n\nreturn True"
+      expression: "from authentik.core.models import Group\n\n# Get the email from the prompt data collected in the first stage\nemail = context.get(\"prompt_data\", {}).get(\"email\")\n\nif email:\n    # Get or create a group with the same suffix as the email\n    group, created = Group.objects.get_or_create(name=f\"self_service-{email}\")\n    \n    # Update the attributes for the group\n    # We use a dictionary update to ensure we don't overwrite other existing attributes\n    if not group.attributes:\n        group.attributes = {}\n        \n    group.attributes[\"license\"] = \"{{ BLUEPRINT_SELF_SERVICE_LICENSE }}\"\n    group.save()\n    \n    # Assign the group object to the flow context\n    # Authentik expects a list of Group objects in the ['groups'] key\n    context[\"flow_plan\"].context[\"groups\"] = [group]\n    \n    if created:\n        ak_logger.info(f\"Created new personal group with demo license for user: {email}\")\n    else:\n        ak_logger.info(f\"Updated existing group attributes for user: {email}\")\n\nreturn True"
       name: avatar-self-service-per-user-organization-creation
     identifiers:
       name: avatar-self-service-per-user-organization-creation
@@ -458,14 +450,12 @@ entries:
       enabled: true
       order: 10
       policy: !Find [authentik_policies_expression.expressionpolicy, [name, avatar-self-service-per-user-organization-creation]]
-      target: !Find [authentik_flows.flowstagebinding, [target, !Find [authentik_flows.flow, [slug, avatar-self-service-signup-flow]],
-          stage, !Find [authentik_stages_user_write.userwritestage, [name, avatar-self-service-userinfo-write]], order, 40]]
+      target: !Find [authentik_flows.flowstagebinding, [target, !Find [authentik_flows.flow, [slug, avatar-self-service-signup-flow]], stage, !Find [authentik_stages_user_write.userwritestage, [name, avatar-self-service-userinfo-write]], order, 40]]
       timeout: 30
     identifiers:
       order: 10
       policy: !Find [authentik_policies_expression.expressionpolicy, [name, avatar-self-service-per-user-organization-creation]]
-      target: !Find [authentik_flows.flowstagebinding, [target, !Find [authentik_flows.flow, [slug, avatar-self-service-signup-flow]],
-          stage, !Find [authentik_stages_user_write.userwritestage, [name, avatar-self-service-userinfo-write]], order, 40]]
+      target: !Find [authentik_flows.flowstagebinding, [target, !Find [authentik_flows.flow, [slug, avatar-self-service-signup-flow]], stage, !Find [authentik_stages_user_write.userwritestage, [name, avatar-self-service-userinfo-write]], order, 40]]
     model: authentik_policies.policybinding
     state: present
   - attrs:
@@ -473,14 +463,12 @@ entries:
       failure_result: true
       order: 5
       policy: !Find [authentik_policies_expression.expressionpolicy, [name, check-email-exists-silently]]
-      target: !Find [authentik_flows.flowstagebinding, [target, !Find [authentik_flows.flow, [slug, avatar-self-service-signup-flow]],
-          stage, !Find [authentik_stages_user_write.userwritestage, [name, avatar-self-service-userinfo-write]], order, 20]]
+      target: !Find [authentik_flows.flowstagebinding, [target, !Find [authentik_flows.flow, [slug, avatar-self-service-signup-flow]], stage, !Find [authentik_stages_user_write.userwritestage, [name, avatar-self-service-userinfo-write]], order, 20]]
       timeout: 30
     identifiers:
       order: 5
       policy: !Find [authentik_policies_expression.expressionpolicy, [name, check-email-exists-silently]]
-      target: !Find [authentik_flows.flowstagebinding, [target, !Find [authentik_flows.flow, [slug, avatar-self-service-signup-flow]],
-          stage, !Find [authentik_stages_user_write.userwritestage, [name, avatar-self-service-userinfo-write]], order, 20]]
+      target: !Find [authentik_flows.flowstagebinding, [target, !Find [authentik_flows.flow, [slug, avatar-self-service-signup-flow]], stage, !Find [authentik_stages_user_write.userwritestage, [name, avatar-self-service-userinfo-write]], order, 20]]
     model: authentik_policies.policybinding
     state: present
 
@@ -523,8 +511,7 @@ entries:
 # ============================================================
   - attrs:
       description: Grab license from the user group
-      expression: "license = request.user.group_attributes().get('license', None)\n\nif license:\n  return { 'license' : license\
-        \ }"
+      expression: "license = request.user.group_attributes().get('license', None)\n\nif license:\n  return { 'license' : license }"
       name: GrabLicense
       scope_name: profile
     identifiers:

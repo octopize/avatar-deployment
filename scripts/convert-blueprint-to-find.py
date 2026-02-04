@@ -276,7 +276,7 @@ class BlueprintConverter:
                     default_flow_style=False,
                     sort_keys=True,
                     allow_unicode=True,
-                    width=120,
+                    width=999999,
                     Dumper=yaml.Dumper,
                 )
 
@@ -306,7 +306,7 @@ class BlueprintConverter:
                                 default_flow_style=False,
                                 sort_keys=True,
                                 allow_unicode=True,
-                                width=120,
+                                width=999999,
                                 Dumper=yaml.Dumper,
                             )
                             # Remove the leading "- " from first line and indent rest
@@ -324,7 +324,7 @@ class BlueprintConverter:
                             default_flow_style=False,
                             sort_keys=True,
                             allow_unicode=True,
-                            width=120,
+                            width=999999,
                             Dumper=yaml.Dumper,
                         )
                         # Remove the leading "- " from first line and indent rest
