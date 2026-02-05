@@ -1,6 +1,6 @@
 Copying templates from /home/tom/Documents/dev/octopize/avatar-deployment/docker/templates
 ✓ Found all 14 required template files
-✓ Template version is compatible with script version 2.9.0
+✓ Template version is compatible with script version 2.10.0
 
 ============================================================
 Avatar Deployment Configuration
@@ -41,7 +41,7 @@ Generating Configuration Files
 
 ✓ Configuration files generated successfully!
 
-Writing 23 secrets to .secrets/ directory...
+Writing 20 secrets to .secrets/ directory...
 ✓ Secrets written successfully
 
 ============================================================

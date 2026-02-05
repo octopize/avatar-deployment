@@ -45,6 +45,10 @@ class AuthentikStep(DeploymentStep):
             authentik_bootstrap_email = "admin@example.com"
         config["AUTHENTIK_BOOTSTRAP_EMAIL"] = authentik_bootstrap_email
 
+        # Generate bootstrap credentials (these go in .env, not as secrets)
+        config["AUTHENTIK_BOOTSTRAP_PASSWORD"] = secrets.token_urlsafe(32)
+        config["AUTHENTIK_BOOTSTRAP_TOKEN"] = secrets.token_urlsafe(32)
+
         # Update self.config so generate_secrets() can access these values
         self.config.update(config)
 
@@ -57,8 +61,4 @@ class AuthentikStep(DeploymentStep):
             "authentik_database_user": self.config["AUTHENTIK_DATABASE_USER"],
             "authentik_database_password": secrets.token_hex(),
             "authentik_secret_key": secrets.token_hex(),
-            # Bootstrap credentials for automated install
-            "authentik_bootstrap_password": secrets.token_urlsafe(32),
-            "authentik_bootstrap_token": secrets.token_urlsafe(32),
-            "authentik_bootstrap_email": self.config["AUTHENTIK_BOOTSTRAP_EMAIL"],
         }

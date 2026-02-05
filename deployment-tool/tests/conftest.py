@@ -242,93 +242,53 @@ def _compare_directories(actual_dir: Path, expected_dir: Path) -> bool:
         ]:
             import re
 
-            # Normalize random OAuth2 client ID to a placeholder
-            actual_content = re.sub(
-                r"BLUEPRINT_CLIENT_ID: [0-9a-f]+",
-                "BLUEPRINT_CLIENT_ID: RANDOM_ID",
-                actual_content,
-            )
-            expected_content = re.sub(
-                r"BLUEPRINT_CLIENT_ID: [0-9a-f]+",
-                "BLUEPRINT_CLIENT_ID: RANDOM_ID",
-                expected_content,
-            )
-            # Normalize 64-char hex client IDs in blueprint (for OAuth provider)
-            actual_content = re.sub(
-                r'client_id: "[0-9a-f]{64}"',
-                'client_id: "RANDOM_CLIENT_ID"',
-                actual_content,
-            )
-            expected_content = re.sub(
-                r'client_id: "[0-9a-f]{64}"',
-                'client_id: "RANDOM_CLIENT_ID"',
-                expected_content,
-            )
+            def normalize_both(pattern: str, replacement: str) -> None:
+                """Apply regex substitution to both actual and expected content."""
+                nonlocal actual_content, expected_content
+                actual_content = re.sub(pattern, replacement, actual_content)
+                expected_content = re.sub(pattern, replacement, expected_content)
+
+            # Normalize random OAuth2 client ID/secret patterns
+            normalize_both(r"BLUEPRINT_CLIENT_ID: [0-9a-f]+", "BLUEPRINT_CLIENT_ID: RANDOM_ID")
+            normalize_both(r"BLUEPRINT_CLIENT_SECRET: [0-9a-f]+", "BLUEPRINT_CLIENT_SECRET: RANDOM_SECRET")
+
+            # Normalize 64-char hex client IDs/secrets in blueprint (OAuth provider)
+            # Support both single and double quotes
+            normalize_both(r"client_id: '[0-9a-f]{64}'", "client_id: 'RANDOM_CLIENT_ID'")
+            normalize_both(r'client_id: "[0-9a-f]{64}"', 'client_id: "RANDOM_CLIENT_ID"')
+            normalize_both(r"client_secret: '[0-9a-f]{64}'", "client_secret: 'RANDOM_CLIENT_SECRET'")
+            normalize_both(r'client_secret: "[0-9a-f]{64}"', 'client_secret: "RANDOM_CLIENT_SECRET"')
+
             # Normalize 64-char hex in comments (blueprint template header)
-            actual_content = re.sub(
+            normalize_both(
                 r"#   [0-9a-f]{64}             - OAuth2 Client ID",
                 "#   RANDOM_CLIENT_ID             - OAuth2 Client ID",
-                actual_content,
             )
-            expected_content = re.sub(
-                r"#   [0-9a-f]{64}             - OAuth2 Client ID",
-                "#   RANDOM_CLIENT_ID             - OAuth2 Client ID",
-                expected_content,
-            )
-            # Normalize random OAuth2 client secret to a placeholder
-            actual_content = re.sub(
-                r"BLUEPRINT_CLIENT_SECRET: [0-9a-f]+",
-                "BLUEPRINT_CLIENT_SECRET: RANDOM_SECRET",
-                actual_content,
-            )
-            expected_content = re.sub(
-                r"BLUEPRINT_CLIENT_SECRET: [0-9a-f]+",
-                "BLUEPRINT_CLIENT_SECRET: RANDOM_SECRET",
-                expected_content,
-            )
-            # Normalize 64-char hex client secrets in blueprint (for OAuth provider)
-            actual_content = re.sub(
-                r'client_secret: "[0-9a-f]{64}"',
-                'client_secret: "RANDOM_CLIENT_SECRET"',
-                actual_content,
-            )
-            expected_content = re.sub(
-                r'client_secret: "[0-9a-f]{64}"',
-                'client_secret: "RANDOM_CLIENT_SECRET"',
-                expected_content,
-            )
-            # Normalize 64-char hex in comments (blueprint template header)
-            actual_content = re.sub(
+            normalize_both(
                 r"#   [0-9a-f]{64}         - OAuth2 Client Secret",
                 "#   RANDOM_CLIENT_SECRET         - OAuth2 Client Secret",
-                actual_content,
             )
-            expected_content = re.sub(
-                r"#   [0-9a-f]{64}         - OAuth2 Client Secret",
-                "#   RANDOM_CLIENT_SECRET         - OAuth2 Client Secret",
-                expected_content,
+
+            # Normalize SSO credentials in .env file
+            normalize_both(r"SSO_CLIENT_ID=[0-9a-f]{64}", "SSO_CLIENT_ID=RANDOM_CLIENT_ID")
+            normalize_both(r"SSO_CLIENT_SECRET=[0-9a-f]{64}", "SSO_CLIENT_SECRET=RANDOM_CLIENT_SECRET")
+
+            # Normalize Authentik bootstrap credentials (base64-urlsafe format: [A-Za-z0-9_-]{43})
+            normalize_both(
+                r"AUTHENTIK_BOOTSTRAP_PASSWORD=[A-Za-z0-9_-]{43}",
+                "AUTHENTIK_BOOTSTRAP_PASSWORD=RANDOM_PASSWORD",
             )
-            # Normalize SSO_CLIENT_ID in .env file
-            actual_content = re.sub(
-                r"SSO_CLIENT_ID=[0-9a-f]{64}",
-                "SSO_CLIENT_ID=RANDOM_CLIENT_ID",
-                actual_content,
+            normalize_both(
+                r"AUTHENTIK_BOOTSTRAP_PASSWORD: [A-Za-z0-9_-]{43}",
+                "AUTHENTIK_BOOTSTRAP_PASSWORD: RANDOM_PASSWORD",
             )
-            expected_content = re.sub(
-                r"SSO_CLIENT_ID=[0-9a-f]{64}",
-                "SSO_CLIENT_ID=RANDOM_CLIENT_ID",
-                expected_content,
+            normalize_both(
+                r"AUTHENTIK_BOOTSTRAP_TOKEN=[A-Za-z0-9_-]{43}",
+                "AUTHENTIK_BOOTSTRAP_TOKEN=RANDOM_TOKEN",
             )
-            # Normalize SSO_CLIENT_SECRET in .env file
-            actual_content = re.sub(
-                r"SSO_CLIENT_SECRET=[0-9a-f]{64}",
-                "SSO_CLIENT_SECRET=RANDOM_CLIENT_SECRET",
-                actual_content,
-            )
-            expected_content = re.sub(
-                r"SSO_CLIENT_SECRET=[0-9a-f]{64}",
-                "SSO_CLIENT_SECRET=RANDOM_CLIENT_SECRET",
-                expected_content,
+            normalize_both(
+                r"AUTHENTIK_BOOTSTRAP_TOKEN: [A-Za-z0-9_-]{43}",
+                "AUTHENTIK_BOOTSTRAP_TOKEN: RANDOM_TOKEN",
             )
 
         if actual_content != expected_content:

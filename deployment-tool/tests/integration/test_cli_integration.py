@@ -11,6 +11,8 @@ import os
 import sys
 import tempfile
 from pathlib import Path
+import uuid
+import re
 
 import pytest
 import yaml
@@ -122,10 +124,9 @@ class TestCLIDeploymentScenarios:
         # Verify actual values are present (from basic_deployment input)
         assert "avatar.example.com" in blueprint_content  # BLUEPRINT_DOMAIN
         # Client ID and secret are random, just verify they're present as hex strings
-        import re
 
-        assert re.search(r'client_id: "[0-9a-f]{64}"', blueprint_content)
-        assert re.search(r'client_secret: "[0-9a-f]{64}"', blueprint_content)
+        assert re.search(r"client_id: '[0-9a-f]{64}'", blueprint_content)
+        assert re.search(r"client_secret: '[0-9a-f]{64}'", blueprint_content)
         assert (
             "https://avatar.example.com/api/login/sso/auth" in blueprint_content
         )  # BLUEPRINT_API_REDIRECT_URI
@@ -543,8 +544,6 @@ class TestNonInteractiveModeCompleteness:
             responses = fixture_manager.load_input_fixture("basic_deployment")
 
             # Use a unique directory name to avoid conflicts between test runs
-            import uuid
-
             unique_dir = f"relative-{uuid.uuid4().hex[:8]}"
 
             harness = CLITestHarness(
