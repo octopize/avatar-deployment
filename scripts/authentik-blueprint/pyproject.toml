@@ -1,0 +1,29 @@
+[project]
+name = "authentik-blueprint"
+version = "0.1.0"
+description = "Convert Authentik blueprint exports from PK references to declarative !Find lookups"
+readme = "README.md"
+authors = [
+    { name = "Tom Crasset", email = "25140344+tcrasset@users.noreply.github.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "pyyaml>=6.0",
+]
+
+[project.scripts]
+authentik-blueprint = "authentik_blueprint.cli:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.27,<0.10.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]

@@ -1,0 +1,181 @@
+# yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
+---
+# Octopize Avatar - Authentik Blueprint Template
+# Converted from staging export - automated conversion
+#
+# PLACEHOLDERS (replace before deployment):
+#   [[DOMAIN]]                - Base domain for the deployment (e.g., avatar.example.com)
+#   [[CLIENT_ID]]             - OAuth2 client ID for the Avatar API provider
+#   [[CLIENT_SECRET]]         - OAuth2 client secret for the Avatar API provider
+#   [[API_REDIRECT_URI]]      - OAuth2 redirect URI for the Avatar API (e.g., https://avatar.example.com/api/login/sso/auth)
+#   [[SELF_SERVICE_LICENSE]]  - License type for self-service user groups (e.g., "demo", "trial", "full")
+#
+# CONTEXT VARIABLES (can be overridden at deployment):
+#   app_name                  - Application name (default: "Avatar API")
+#   domain                    - Deployment domain (uses [[DOMAIN]] placeholder by default)
+#   license_type              - Default license type for groups (default: "full")
+
+context:
+  app_name: Avatar API
+  domain: '[[DOMAIN]]'
+  license_type: full
+metadata:
+  name: octopize-avatar-sso-configuration
+version: 1
+entries:
+
+# ============================================================
+# GROUPS
+# ============================================================
+  - attrs:
+      attributes:
+        license: !Context 'license_type'
+      is_superuser: true
+      name: Octopize - Admins
+    id: octopize---admins
+    identifiers:
+      name: Octopize - Admins
+    model: authentik_core.group
+    state: present
+
+# ============================================================
+# FLOWS
+# ============================================================
+  - attrs:
+      authentication: none
+      compatibility_mode: true
+      denied_action: message_continue
+      designation: authentication
+      layout: stacked
+      name: avatar-authentication-flow
+      policy_engine_mode: any
+      slug: avatar-authentication-flow
+      title: Avatar authentication
+    id: avatar-authentication-flow
+    identifiers:
+      slug: avatar-authentication-flow
+    model: authentik_flows.flow
+    state: present
+
+# ============================================================
+# POLICIES
+# ============================================================
+  - attrs:
+      amount_digits: 0
+      amount_lowercase: 0
+      amount_symbols: 0
+      amount_uppercase: 0
+      check_static_rules: true
+      error_message: Password must be at least 12 characters long.
+      hibp_allowed_count: 0
+      length_min: 12
+      name: avatar-password-length-policy
+      password_field: password
+      symbol_charset: '!"#$%&''()*+,-./:;<=>?@[]^_`{|}~'
+      zxcvbn_score_threshold: 2
+    id: avatar-password-length-policy
+    identifiers:
+      name: avatar-password-length-policy
+    model: authentik_policies_password.passwordpolicy
+    state: present
+
+# ============================================================
+# STAGES
+# ============================================================
+  - attrs:
+      case_insensitive_matching: true
+      enrollment_flow: c21e4ccf-6dde-4cc7-b0c4-6cd85c394734
+      name: avatar-authentication-stage
+      pretend_user_exists: true
+      recovery_flow: 60d3f40a-bee9-4394-828e-dc2b5da2cdf9
+      show_matched_user: true
+      user_fields:
+      - username
+      - email
+    id: avatar-authentication-stage
+    identifiers:
+      name: avatar-authentication-stage
+    model: authentik_stages_identification.identificationstage
+    state: present
+  - attrs:
+      allow_show_password: true
+      backends:
+      - authentik.core.auth.InbuiltBackend
+      - authentik.core.auth.TokenBackend
+      - authentik.sources.ldap.auth.LDAPBackend
+      - authentik.sources.kerberos.auth.KerberosBackend
+      configure_flow: d0d3fed4-adaa-476f-ba2e-b7343404e51c
+      failed_attempts_before_cancel: 5
+      name: avatar-password-stage
+    id: avatar-password-stage
+    identifiers:
+      name: avatar-password-stage
+    model: authentik_stages_password.passwordstage
+    state: present
+
+# ============================================================
+# FLOW STAGE BINDINGS
+# ============================================================
+
+  # ========================================
+  # FLOW STAGE BINDINGS - Authentication Flow
+  # ========================================
+  - attrs:
+      invalid_response_action: retry
+      order: 10
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: !KeyOf 'avatar-authentication-stage'
+      target: !KeyOf 'avatar-authentication-flow'
+    id: avatar-authentication-flow-bind-avatar-authentication-stage-order-10
+    identifiers:
+      order: 10
+      stage: !KeyOf 'avatar-authentication-stage'
+      target: !KeyOf 'avatar-authentication-flow'
+    model: authentik_flows.flowstagebinding
+    state: present
+  - attrs:
+      invalid_response_action: retry
+      order: 20
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: !KeyOf 'avatar-password-stage'
+      target: !KeyOf 'avatar-authentication-flow'
+    id: avatar-authentication-flow-bind-avatar-password-stage-order-20
+    identifiers:
+      order: 20
+      stage: !KeyOf 'avatar-password-stage'
+      target: !KeyOf 'avatar-authentication-flow'
+    model: authentik_flows.flowstagebinding
+    state: present
+  - attrs:
+      invalid_response_action: retry
+      order: 30
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: !Find [authentik_stages_user_login.userloginstage, [name, default-authentication-login]]
+      target: !KeyOf 'avatar-authentication-flow'
+    id: avatar-authentication-flow-bind-default-authentication-login-order-30
+    identifiers:
+      order: 30
+      stage: !Find [authentik_stages_user_login.userloginstage, [name, default-authentication-login]]
+      target: !KeyOf 'avatar-authentication-flow'
+    model: authentik_flows.flowstagebinding
+    state: present
+
+# ============================================================
+# POLICY BINDINGS
+# ============================================================
+  - attrs:
+      enabled: true
+      order: 0
+      policy: !KeyOf 'avatar-password-length-policy'
+      target: !KeyOf 'avatar-password-stage'
+      timeout: 30
+    id: avatar-password-length-policy-bind-avatar-password-stage-order-0
+    identifiers:
+      order: 0
+      policy: !KeyOf 'avatar-password-length-policy'
+      target: !KeyOf 'avatar-password-stage'
+    model: authentik_policies.policybinding
+    state: present

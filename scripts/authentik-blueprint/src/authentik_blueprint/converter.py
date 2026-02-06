@@ -15,13 +15,12 @@ Note:
     expected and safe to keep as they're part of the identifier string, not FK references.
 """
 
-import argparse
-import os
 import re
-import sys
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
+
 import yaml
 
 
@@ -34,6 +33,14 @@ class FindTag(yaml.YAMLObject):
     def __init__(self, model, identifiers):
         self.model = model
         self.identifiers = identifiers
+
+    def __eq__(self, other):
+        if not isinstance(other, FindTag):
+            return False
+        return self.model == other.model and self.identifiers == other.identifiers
+
+    def __repr__(self):
+        return f"FindTag({self.model!r}, {self.identifiers!r})"
 
     @classmethod
     def from_yaml(cls, loader, node):
@@ -58,17 +65,33 @@ class ContextTag(yaml.YAMLObject):
         self.name = name
         self.default = default
 
+    def __eq__(self, other):
+        if not isinstance(other, ContextTag):
+            return False
+        return self.name == other.name and self.default == other.default
+
+    def __repr__(self):
+        return f"ContextTag({self.name!r}, {self.default!r})"
+
     @classmethod
     def from_yaml(cls, loader, node):
-        values = loader.construct_sequence(node)
-        return cls(values[0], values[1] if len(values) > 1 else None)
+        # Handle both scalar (reference without default) and sequence (with default)
+        if isinstance(node, yaml.ScalarNode):
+            name = loader.construct_scalar(node)
+            return cls(name, None)
+        else:
+            values = loader.construct_sequence(node)
+            return cls(values[0], values[1] if len(values) > 1 else None)
 
     @classmethod
     def to_yaml(cls, dumper, data):
-        values = [data.name]
-        if data.default is not None:
-            values.append(data.default)
-        return dumper.represent_sequence(cls.yaml_tag, values, flow_style=True)
+        # If no default, use scalar notation: !Context key
+        # If default exists, use sequence notation: !Context [key, default]
+        if data.default is None:
+            return dumper.represent_scalar(cls.yaml_tag, data.name)
+        else:
+            values = [data.name, data.default]
+            return dumper.represent_sequence(cls.yaml_tag, values, flow_style=True)
 
 
 class FormatTag(yaml.YAMLObject):
@@ -79,6 +102,14 @@ class FormatTag(yaml.YAMLObject):
     def __init__(self, template, args):
         self.template = template
         self.args = args
+
+    def __eq__(self, other):
+        if not isinstance(other, FormatTag):
+            return False
+        return self.template == other.template and self.args == other.args
+
+    def __repr__(self):
+        return f"FormatTag({self.template!r}, {self.args!r})"
 
     @classmethod
     def from_yaml(cls, loader, node):
@@ -92,10 +123,60 @@ class FormatTag(yaml.YAMLObject):
         return dumper.represent_sequence(cls.yaml_tag, values, flow_style=True)
 
 
-# Register the custom tags with PyYAML
-yaml.add_representer(FindTag, FindTag.to_yaml)
-yaml.add_representer(ContextTag, ContextTag.to_yaml)
-yaml.add_representer(FormatTag, FormatTag.to_yaml)
+class KeyOfTag(yaml.YAMLObject):
+    """Represents a !KeyOf reference in the blueprint.
+
+    !KeyOf references objects defined earlier in the same blueprint by their id field.
+    This is more reliable than !Find for objects created within the same blueprint,
+    as it resolves during apply time using the entry's created instance.
+    """
+    yaml_tag = "!KeyOf"
+    yaml_loader = yaml.SafeLoader
+
+    def __init__(self, id_ref):
+        self.id_ref = id_ref
+
+    def __eq__(self, other):
+        if not isinstance(other, KeyOfTag):
+            return False
+        return self.id_ref == other.id_ref
+
+    def __repr__(self):
+        return f"KeyOfTag({self.id_ref!r})"
+
+    @classmethod
+    def from_yaml(cls, loader, node):
+        return cls(loader.construct_scalar(node))
+
+    @classmethod
+    def to_yaml(cls, dumper, data):
+        return dumper.represent_scalar(cls.yaml_tag, data.id_ref)
+
+
+# Custom Dumper that uses literal block style (|) for multi-line strings.
+# This is critical for preserving newlines in Python expressions (e.g. ExpressionPolicy).
+# Without this, yaml.Dumper uses quoted scalars which fold newlines into spaces.
+class LiteralBlockDumper(yaml.Dumper):
+    pass
+
+
+def _literal_str_representer(dumper, data):
+    """Use literal block style (|) for strings containing newlines."""
+    if "\n" in data:
+        # Strip trailing whitespace from each line to keep YAML clean
+        cleaned = "\n".join(line.rstrip() for line in data.split("\n"))
+        return dumper.represent_scalar("tag:yaml.org,2002:str", cleaned, style="|")
+    return dumper.represent_scalar("tag:yaml.org,2002:str", data)
+
+
+LiteralBlockDumper.add_representer(str, _literal_str_representer)
+
+# Register the custom tags with PyYAML (on both default Dumper and our custom one)
+for dumper_cls in (yaml.Dumper, LiteralBlockDumper):
+    dumper_cls.add_representer(FindTag, FindTag.to_yaml)
+    dumper_cls.add_representer(ContextTag, ContextTag.to_yaml)
+    dumper_cls.add_representer(FormatTag, FormatTag.to_yaml)
+    dumper_cls.add_representer(KeyOfTag, KeyOfTag.to_yaml)
 
 
 class BlueprintConverter:
@@ -103,10 +184,27 @@ class BlueprintConverter:
 
     # Entry grouping configuration: defines section order and organization
     # Format: (section_name, model_patterns, requires_sub_grouping)
+    # ORDER IS CRITICAL: Dependencies must come before dependents
+    # 1. Groups (no dependencies)
+    # 2. Flows (no dependencies)
+    # 3. Prompts (no dependencies)
+    # 4. Policies (no dependencies)
+    # 5. Stages (reference prompts, policies, flows)
+    # 6. Flow Stage Bindings (reference flows, stages)
+    # 7. Policy Bindings (reference policies, flow stage bindings)
+    # 8. Scope Mappings (no dependencies)
+    # 9. OAuth Provider (references flows, scope mappings)
+    # 10. Application (references provider)
+    # 11. Brand (references application, flows)
     ENTRY_GROUPS = [
         ("GROUPS", ["authentik_core.group"], False),
         ("FLOWS", ["authentik_flows.flow"], False),
-        ("FLOW STAGE BINDINGS", ["authentik_flows.flowstagebinding"], True),
+        ("PROMPTS", ["authentik_stages_prompt.prompt"], False),
+        ("POLICIES", [
+            "authentik_policies_expression.expressionpolicy",
+            "authentik_policies_password.passwordpolicy",
+            "authentik_policies_event_matcher.eventmatcherpolicy",
+        ], False),
         ("STAGES", [
             "authentik_stages_email.emailstage",
             "authentik_stages_identification.identificationstage",
@@ -118,15 +216,10 @@ class BlueprintConverter:
             "authentik_stages_consent.consentstage",
             "authentik_stages_dummy.dummystage",
         ], False),
-        ("PROMPTS", ["authentik_stages_prompt.prompt"], False),
-        ("POLICIES", [
-            "authentik_policies_expression.expressionpolicy",
-            "authentik_policies_password.passwordpolicy",
-            "authentik_policies_event_matcher.eventmatcherpolicy",
-        ], False),
+        ("FLOW STAGE BINDINGS", ["authentik_flows.flowstagebinding"], True),
         ("POLICY BINDINGS", ["authentik_policies.policybinding"], False),
-        ("OAUTH PROVIDER", ["authentik_providers_oauth2.oauth2provider"], False),
         ("SCOPE MAPPINGS", ["authentik_providers_oauth2.scopemapping"], False),
+        ("OAUTH PROVIDER", ["authentik_providers_oauth2.oauth2provider"], False),
         ("APPLICATION", ["authentik_core.application"], False),
         ("BRAND", ["authentik_brands.brand"], False),
     ]
@@ -152,7 +245,7 @@ class BlueprintConverter:
         "authentik_policies.policybinding": ["target", "policy", "order"],
         "authentik_flows.flowstagebinding": ["target", "stage", "order"],
         "authentik_providers_oauth2.oauth2provider": ["name"],
-        "authentik_providers_oauth2.scopemapping": ["scope_name"],
+        "authentik_providers_oauth2.scopemapping": ["name"],
         "authentik_core.application": ["slug"],
         "authentik_brands.brand": ["domain"],
         "authentik_crypto.certificatekeypair": ["name"],
@@ -169,6 +262,16 @@ class BlueprintConverter:
         "authentik_rbac.role": ["name"],
     }
 
+    # Models where 'managed' field should be preferred for !Find lookups
+    # when available (non-null). This prevents identifier collisions when
+    # custom objects share field values with built-in managed objects.
+    # Example: GrabLicense (custom, scope_name=profile) vs default OpenID 'profile'
+    # (managed, scope_name=profile) — both have scope_name=profile but must be
+    # distinguished in !Find lookups.
+    MANAGED_IDENTIFIER_MODELS = {
+        "authentik_providers_oauth2.scopemapping",
+    }
+
     # Fields that should never be in the output
     FORBIDDEN_FIELDS = {"pk", "managed"}
 
@@ -176,6 +279,22 @@ class BlueprintConverter:
     UUID_PATTERN = re.compile(
         r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b",
         re.IGNORECASE,
+    )
+
+    # Default Authentik object name prefixes - these exist in DB and should use !Find
+    DEFAULT_OBJECT_PREFIXES = (
+        "default-",
+        "authentik-",
+        "authentik default",
+    )
+
+    # Stages with these prefixes come from OPTIONAL authentik example blueprints
+    # (e.g. blueprints/example/flows-recovery-email-verification.yaml) that have
+    # label `instantiate: "false"` — they are NOT auto-loaded and NOT guaranteed
+    # to exist in every deployment.  We must include them as blueprint entries
+    # and reference them via !KeyOf, not !Find.
+    REQUIRED_DEFAULT_STAGE_PREFIXES = (
+        "default-recovery-",
     )
 
     def __init__(self, verbose: bool = False):
@@ -186,11 +305,107 @@ class BlueprintConverter:
         self.model_entries: Dict[str, List[Dict]] = {}
         # Track PKs of entries that should be kept (custom flows + their dependencies)
         self.required_pks: Set[str] = set()
+        # Track PKs of custom entries (defined in this blueprint, not default Authentik objects)
+        # These will use !KeyOf references
+        self.custom_entry_pks: Set[str] = set()
+        # Maps pk -> generated id (for !KeyOf references)
+        self.pk_to_id: Dict[str, str] = {}
 
     def log(self, message: str):
         """Print verbose logging."""
         if self.verbose:
             print(f"[INFO] {message}", file=sys.stderr)
+
+    def is_default_object(self, entry: Dict) -> bool:
+        """Check if an entry represents a default Authentik object.
+
+        Default objects already exist in Authentik's database and should be
+        referenced via !Find. Custom objects are created by this blueprint
+        and should be referenced via !KeyOf.
+        """
+        attrs = entry.get("attrs", {})
+        name = attrs.get("name", "")
+        slug = attrs.get("slug", "")
+
+        # Check name/slug for default prefixes
+        for prefix in self.DEFAULT_OBJECT_PREFIXES:
+            if name.lower().startswith(prefix) or slug.lower().startswith(prefix):
+                # Some "default-*" stages are from optional (non-auto-loaded)
+                # blueprints and must be treated as custom objects.
+                if any(
+                    name.lower().startswith(p) or slug.lower().startswith(p)
+                    for p in self.REQUIRED_DEFAULT_STAGE_PREFIXES
+                ):
+                    return False
+                return True
+
+        # Specific default objects by name
+        default_names = {
+            "initial-setup",
+            "Change your password",
+            "stage-default-oobe-password",
+        }
+        if name in default_names or slug in default_names:
+            return True
+
+        return False
+
+    def _resolve_pk_to_name(self, pk: str) -> Optional[str]:
+        """Resolve a PK to a human-readable name (slug or name) from the index."""
+        entry = self.pk_to_entry.get(str(pk))
+        if not entry:
+            return None
+        attrs = entry.get("attrs", {})
+        # Prefer slug, then name, then field_key
+        for field in ("slug", "name", "field_key"):
+            value = attrs.get(field)
+            if value and isinstance(value, str):
+                return value.lower().replace(" ", "-")
+        return None
+
+    def generate_entry_id(self, entry: Dict) -> str:
+        """Generate a unique id for an entry based on its model and identifiers.
+
+        The id is used for !KeyOf references within the blueprint.
+
+        For most models: uses slug or name directly.
+        For binding models (flowstagebinding, policybinding): generates a
+        composite descriptive id from the referenced objects, e.g.
+        ``flow-slug-bind-stage-name-order-10``.
+        """
+        model = entry.get("model", "")
+        attrs = entry.get("attrs", {})
+
+        # Special handling for binding models: build composite descriptive ids
+        if model == "authentik_flows.flowstagebinding":
+            target_name = self._resolve_pk_to_name(attrs.get("target", "")) or "unknown-flow"
+            stage_name = self._resolve_pk_to_name(attrs.get("stage", "")) or "unknown-stage"
+            order = attrs.get("order", 0)
+            return f"{target_name}-bind-{stage_name}-order-{order}"
+
+        if model == "authentik_policies.policybinding":
+            target_pk = attrs.get("target", "")
+            target_name = self._resolve_pk_to_name(target_pk) or "unknown-target"
+            # Target might be a flowstagebinding (which has no name/slug);
+            # in that case, use the id we already generated for it
+            if target_name == "unknown-target" and str(target_pk) in self.pk_to_id:
+                target_name = self.pk_to_id[str(target_pk)]
+            policy_name = self._resolve_pk_to_name(attrs.get("policy", "")) or "unknown-policy"
+            order = attrs.get("order", 0)
+            return f"{policy_name}-bind-{target_name}-order-{order}"
+
+        # Standard models: use identifier fields (slug, name, etc.)
+        id_fields = self.IDENTIFIER_FIELDS.get(model, ["name"])
+
+        for field in id_fields:
+            if field in attrs:
+                value = attrs[field]
+                if isinstance(value, str) and not self.UUID_PATTERN.match(value):
+                    return value.lower().replace(" ", "-")
+
+        # Fallback: use model + first 8 chars of pk (should rarely happen)
+        pk = entry.get("identifiers", {}).get("pk", "unknown")
+        return f"{model.split('.')[-1]}-{pk[:8]}"
 
     def load_blueprint(self, path: Path) -> Dict:
         """Load YAML blueprint file."""
@@ -277,7 +492,7 @@ class BlueprintConverter:
                     sort_keys=True,
                     allow_unicode=True,
                     width=999999,
-                    Dumper=yaml.Dumper,
+                    Dumper=LiteralBlockDumper,
                 )
 
             # Group entries by section
@@ -307,15 +522,18 @@ class BlueprintConverter:
                                 sort_keys=True,
                                 allow_unicode=True,
                                 width=999999,
-                                Dumper=yaml.Dumper,
+                                Dumper=LiteralBlockDumper,
                             )
                             # Remove the leading "- " from first line and indent rest
-                            lines = entry_yaml.split("\n")
+                            # Preserve empty lines (needed for literal block scalars)
+                            lines = entry_yaml.rstrip("\n").split("\n")
                             if lines:
                                 f.write(f"  - {lines[0][2:]}\n")  # First line: "  - " + content
                                 for line in lines[1:]:
-                                    if line:  # Skip empty lines
+                                    if line:  # Indent non-empty lines
                                         f.write(f"  {line}\n")
+                                    else:  # Preserve empty lines (literal blocks)
+                                        f.write("\n")
                 else:
                     # Write entries normally (no sub-grouping)
                     for entry in section_entries:
@@ -325,18 +543,21 @@ class BlueprintConverter:
                             sort_keys=True,
                             allow_unicode=True,
                             width=999999,
-                            Dumper=yaml.Dumper,
+                            Dumper=LiteralBlockDumper,
                         )
                         # Remove the leading "- " from first line and indent rest
-                        lines = entry_yaml.split("\n")
+                        # Preserve empty lines (needed for literal block scalars)
+                        lines = entry_yaml.rstrip("\n").split("\n")
                         if lines:
                             f.write(f"  - {lines[0][2:]}\n")  # First line: "  - " + content
                             for line in lines[1:]:
-                                if line:  # Skip empty lines
+                                if line:  # Indent non-empty lines
                                     f.write(f"  {line}\n")
+                                else:  # Preserve empty lines (literal blocks)
+                                    f.write("\n")
 
     def _convert_markers_to_tags(self, obj):
-        """Convert __FIND__, __CONTEXT__, and __FORMAT__ marker dicts to tag objects."""
+        """Convert __FIND__, __KEYOF__, __CONTEXT__, and __FORMAT__ marker dicts to tag objects."""
         if isinstance(obj, dict):
             if "__FIND__" in obj and len(obj) == 1:
                 data = obj["__FIND__"]
@@ -344,9 +565,15 @@ class BlueprintConverter:
                     # Recursively convert nested markers in the identifiers list
                     converted_identifiers = self._convert_markers_to_tags(data[1])
                     return FindTag(data[0], converted_identifiers)
+            if "__KEYOF__" in obj and len(obj) == 1:
+                id_ref = obj["__KEYOF__"]
+                return KeyOfTag(id_ref)
             if "__CONTEXT__" in obj and len(obj) == 1:
                 data = obj["__CONTEXT__"]
-                if isinstance(data, list) and len(data) >= 1:
+                # Handle both string format (reference without default) and list format (with default)
+                if isinstance(data, str):
+                    return ContextTag(data, None)
+                elif isinstance(data, list) and len(data) >= 1:
                     name = data[0]
                     default = data[1] if len(data) > 1 else None
                     return ContextTag(name, default)
@@ -363,26 +590,58 @@ class BlueprintConverter:
         return obj
 
     def build_pk_index(self, blueprint: Dict):
-        """Build index of all entries by their primary key."""
+        """Build index of all entries by their primary key.
+
+        Also identifies custom entries (those that will be created by this blueprint)
+        and generates IDs for !KeyOf references.
+
+        Uses two passes:
+        1. Index all entries by PK so cross-references can be resolved.
+        2. Generate descriptive IDs for custom entries (bindings need pass 1 complete).
+        """
         self.log("Building primary key index")
+
+        # Pass 1: Index ALL entries by PK
+        custom_entries: list[tuple[str, Dict]] = []
         for entry in blueprint.get("entries", []):
             identifiers = entry.get("identifiers", {})
             model = entry.get("model")
+            attrs = entry.get("attrs", {})
 
-            # Index by PK if present
             if "pk" in identifiers:
-                pk = identifiers["pk"]
-                self.pk_to_entry[str(pk)] = {
+                pk = str(identifiers["pk"])
+                self.pk_to_entry[pk] = {
                     "model": model,
                     "identifiers": identifiers,
-                    "attrs": entry.get("attrs", {}),
+                    "attrs": attrs,
                 }
                 self.log(f"  Indexed {model} with pk={pk}")
+
+                # Check if this is a custom entry (will be defined in the blueprint)
+                name = attrs.get("name", "")
+                slug = attrs.get("slug", "")
+
+                is_custom = (
+                    name.startswith("avatar-") or
+                    slug.startswith("avatar-") or
+                    name.startswith("Octopize") or
+                    (not self.is_default_object(entry) and not self.should_skip_entry(entry))
+                )
+
+                if is_custom:
+                    self.custom_entry_pks.add(pk)
+                    custom_entries.append((pk, entry))
 
             # Also index by model type
             if model not in self.model_entries:
                 self.model_entries[model] = []
             self.model_entries[model].append(entry)
+
+        # Pass 2: Generate IDs for custom entries (all PKs now indexed)
+        for pk, entry in custom_entries:
+            entry_id = self.generate_entry_id(entry)
+            self.pk_to_id[pk] = entry_id
+            self.log(f"    Custom entry {pk}, generated id: {entry_id}")
 
     def collect_dependencies(self, pk: str, depth: int = 0) -> None:
         """Recursively collect all dependencies of an entry by PK."""
@@ -480,6 +739,18 @@ class BlueprintConverter:
         attrs = entry["attrs"]
         identifiers = {}
 
+        # For certain models, prefer 'managed' field when available (non-null)
+        # This prevents collisions with custom objects that share the same
+        # identifier values (e.g. GrabLicense and default profile both have
+        # scope_name=profile, but managed uniquely identifies the default one)
+        if model in self.MANAGED_IDENTIFIER_MODELS:
+            managed_value = attrs.get("managed")
+            if managed_value is not None:
+                identifiers["managed"] = managed_value
+                id_list = ["managed", managed_value]
+                self.log(f"  Using managed identifier for {model}: {managed_value}")
+                return {"model": model, "identifiers": id_list}
+
         for field in id_fields:
             if field in attrs:
                 value = attrs[field]
@@ -501,7 +772,11 @@ class BlueprintConverter:
         return {"model": model, "identifiers": id_list}
 
     def convert_value(self, value, field_path: str = "") -> Any:
-        """Convert a value, replacing PK references with !Find lookups."""
+        """Convert a value, replacing PK references with !KeyOf or !Find lookups.
+
+        Uses !KeyOf for custom entries (defined in this blueprint) and !Find for
+        default Authentik objects (already exist in the database).
+        """
         # Fields that should never be converted (they are always simple values)
         NEVER_CONVERT_FIELDS = {
             "order", "port", "timeout", "amount_digits", "amount_lowercase",
@@ -515,7 +790,15 @@ class BlueprintConverter:
 
         # Handle UUID strings (potential FK references)
         if isinstance(value, str) and self.UUID_PATTERN.match(value):
-            # Try to resolve as PK
+            pk = str(value)
+
+            # Check if this is a custom entry (use !KeyOf) or default (use !Find)
+            if pk in self.custom_entry_pks and pk in self.pk_to_id:
+                entry_id = self.pk_to_id[pk]
+                self.log(f"  Converted PK {pk} -> !KeyOf {entry_id}")
+                return {"__KEYOF__": entry_id}
+
+            # Try to resolve as PK for !Find lookup
             lookup = self.get_identifier_for_pk(value)
             if lookup:
                 model = lookup["model"]
@@ -529,6 +812,14 @@ class BlueprintConverter:
         # Handle integer PKs (common in older exports or certain relationships)
         # BUT: skip fields that are known to be simple integers (like order, port, etc.)
         elif isinstance(value, int) and field_name not in NEVER_CONVERT_FIELDS:
+            pk = str(value)
+
+            # Check if this is a custom entry (use !KeyOf) or default (use !Find)
+            if pk in self.custom_entry_pks and pk in self.pk_to_id:
+                entry_id = self.pk_to_id[pk]
+                self.log(f"  Converted integer PK {pk} -> !KeyOf {entry_id}")
+                return {"__KEYOF__": entry_id}
+
             # Try to resolve as PK
             lookup = self.get_identifier_for_pk(str(value))
             if lookup:
@@ -555,7 +846,7 @@ class BlueprintConverter:
         if "attributes" in attrs and isinstance(attrs["attributes"], dict):
             if "license" in attrs["attributes"]:
                 # Replace hardcoded license value with context reference
-                attrs["attributes"]["license"] = {"__CONTEXT__": ["license_type"]}
+                attrs["attributes"]["license"] = {"__CONTEXT__": "license_type"}
 
         # Remove users field (shouldn't be in templates)
         if "users" in attrs:
@@ -568,12 +859,12 @@ class BlueprintConverter:
         # Replace hardcoded meta_launch_url with Format using domain context
         if "meta_launch_url" in attrs:
             attrs["meta_launch_url"] = {
-                "__FORMAT__": ["https://%s/web", {"__CONTEXT__": ["domain"]}]
+                "__FORMAT__": ["https://%s/web", {"__CONTEXT__": "domain"}]
             }
 
         # Replace hardcoded name with context
         if "name" in attrs and attrs["name"] in ["avatar-api", "Avatar API"]:
-            attrs["name"] = {"__CONTEXT__": ["app_name"]}
+            attrs["name"] = {"__CONTEXT__": "app_name"}
 
         # Provider will be handled by convert_value (UUID/int -> !Find)
         # but we need to ensure it references the right provider
@@ -593,7 +884,7 @@ class BlueprintConverter:
         # Replace provider name with Format using context
         if "name" in attrs and ("Provider for" in attrs["name"] or attrs["name"] in ["Provider for avatar-api", "Provider for Avatar API"]):
             attrs["name"] = {
-                "__FORMAT__": ["Provider for %s", {"__CONTEXT__": ["app_name"]}]
+                "__FORMAT__": ["Provider for %s", {"__CONTEXT__": "app_name"}]
             }
 
         # Replace redirect URIs with template placeholders
@@ -622,13 +913,32 @@ class BlueprintConverter:
         if "domain" in attrs and isinstance(attrs["domain"], str):
             # Only replace if it's a concrete domain (not already using context)
             if not attrs["domain"].startswith("!"):
-                attrs["domain"] = {"__CONTEXT__": ["domain"]}
+                attrs["domain"] = {"__CONTEXT__": "domain"}
 
         return attrs
 
+    def transform_email_stage_attrs(self, attrs: Dict) -> Dict:
+        """Transform email stage attributes - remap custom template paths.
+
+        The staging export may use 'custom/' prefix for email templates, but
+        the docker-compose deployment mounts templates under 'email/' (via
+        ./authentik/custom-templates:/templates/email:ro). Remap so the
+        blueprint matches the deployment mount point.
+        """
+        if "template" in attrs and isinstance(attrs["template"], str):
+            template = attrs["template"]
+            if template.startswith("custom/"):
+                attrs["template"] = "email/" + template[len("custom/"):]
+                self.log(f"Remapped email template: {template} -> {attrs['template']}")
+        return attrs
+
     def clean_entry(self, entry: Dict) -> Dict:
-        """Remove forbidden fields and convert references."""
+        """Remove forbidden fields and convert references.
+
+        Also adds 'id' field to custom entries for !KeyOf references.
+        """
         model = entry.get("model", "")
+        pk = str(entry.get("identifiers", {}).get("pk", ""))
 
         # First pass: convert and transform attrs
         original_attrs = entry.get("attrs", {})
@@ -645,12 +955,18 @@ class BlueprintConverter:
             converted_attrs = self.transform_expression_policy_attrs(converted_attrs)
         elif model == "authentik_brands.brand":
             converted_attrs = self.transform_brand_attrs(converted_attrs)
+        elif model == "authentik_stages_email.emailstage":
+            converted_attrs = self.transform_email_stage_attrs(converted_attrs)
 
         # Remove forbidden fields from attrs recursively
         cleaned_attrs = self._remove_forbidden_fields(converted_attrs)
 
         # Second pass: build identifiers from transformed attrs
         cleaned = {}
+
+        # Add 'id' field if this is a custom entry (for !KeyOf references)
+        if pk and pk in self.pk_to_id:
+            cleaned["id"] = self.pk_to_id[pk]
 
         for key, value in entry.items():
             if key == "identifiers":
@@ -853,6 +1169,11 @@ class BlueprintConverter:
         if model in stage_models:
             # Skip default/built-in stages (default ones will be resolved via !Find)
             if name.lower().startswith(("default-", "authentik")):
+                # default-recovery-* stages come from an optional example blueprint
+                # (not auto-loaded) — keep them so they're created by our blueprint
+                if any(name.lower().startswith(p) for p in self.REQUIRED_DEFAULT_STAGE_PREFIXES):
+                    self.log(f"  Keeping non-auto-loaded default stage: {name}")
+                    return False
                 self.log(f"  Skipping default stage: {name or '(unnamed)'}")
                 return True
 
@@ -910,11 +1231,20 @@ class BlueprintConverter:
         return False
 
     def generate_context(self) -> Dict:
-        """Generate the context section with dynamic variables."""
+        """Generate the context section with dynamic variables.
+
+        IMPORTANT: Context values must be plain values (strings), NOT !Context
+        self-references. The context block defines defaults that can be overridden
+        when creating a blueprint instance. Using !Context tags here would create
+        circular self-references (e.g. domain: !Context [domain, ...] looks up
+        'domain' in this same context dict, finding itself → infinite recursion).
+
+        Entries in the blueprint reference these via !Context 'key_name'.
+        """
         return {
-            "app_name": {"__CONTEXT__": ["app_name", "Avatar API"]},
-            "domain": {"__CONTEXT__": ["domain", "[[DOMAIN]]"]},
-            "license_type": {"__CONTEXT__": ["license_type", "full"]},
+            "app_name": "Avatar API",
+            "domain": "[[DOMAIN]]",
+            "license_type": "full",
         }
 
     def _create_section_header(self, title: str, sub_header: bool = False) -> str:
@@ -1008,8 +1338,12 @@ class BlueprintConverter:
             attrs = binding.get("attrs", {})
             target = attrs.get("target")
 
-            # Extract flow name from target (could be FindTag object, UUID string, int, or !Find marker dict)
-            if isinstance(target, FindTag):
+            # Extract flow name from target (could be KeyOfTag, FindTag, UUID string, int, or marker dict)
+            if isinstance(target, KeyOfTag):
+                # Extract from KeyOfTag - the id_ref is the flow's id (e.g., "avatar-authentication-flow")
+                id_ref = target.id_ref
+                flow_name = " ".join(word.capitalize() for word in id_ref.replace("avatar-", "").replace("-", " ").split())
+            elif isinstance(target, FindTag):
                 # Extract from FindTag object
                 identifiers = target.identifiers
                 if isinstance(identifiers, list) and len(identifiers) >= 2:
@@ -1018,6 +1352,10 @@ class BlueprintConverter:
                     flow_name = " ".join(word.capitalize() for word in slug.replace("avatar-", "").replace("-", " ").split())
                 else:
                     flow_name = "Unknown Flow"
+            elif isinstance(target, dict) and "__KEYOF__" in target:
+                # Extract from !KeyOf marker dict
+                id_ref = target["__KEYOF__"]
+                flow_name = " ".join(word.capitalize() for word in id_ref.replace("avatar-", "").replace("-", " ").split())
             elif isinstance(target, dict) and "__FIND__" in target:
                 # Extract from !Find marker dict (shouldn't happen after tag conversion, but handle it)
                 find_data = target["__FIND__"]
@@ -1061,7 +1399,7 @@ class BlueprintConverter:
             return {k: self._convert_to_jinja2_placeholders(v) for k, v in obj.items()}
         elif isinstance(obj, list):
             return [self._convert_to_jinja2_placeholders(item) for item in obj]
-        elif isinstance(obj, (FindTag, ContextTag, FormatTag)):
+        elif isinstance(obj, (FindTag, ContextTag, FormatTag, KeyOfTag)):
             # Handle custom tag objects - convert their internal data
             if isinstance(obj, FindTag):
                 return FindTag(
@@ -1077,6 +1415,10 @@ class BlueprintConverter:
                 return FormatTag(
                     self._convert_to_jinja2_placeholders(obj.template),
                     self._convert_to_jinja2_placeholders(obj.args)
+                )
+            elif isinstance(obj, KeyOfTag):
+                return KeyOfTag(
+                    self._convert_to_jinja2_placeholders(obj.id_ref)
                 )
         return obj
 
@@ -1188,86 +1530,12 @@ def validate_blueprint(output_path: Path, script_path: Path) -> bool:
             print(result.stderr, file=sys.stderr)
 
         if result.returncode == 0:
-            print(f"\n✅ Validation PASSED")
+            print("\n✅ Validation PASSED")
             return True
         else:
-            print(f"\n❌ Validation FAILED")
+            print("\n❌ Validation FAILED")
             return False
 
     except Exception as e:
         print(f"❌ Validation failed with error: {e}", file=sys.stderr)
         return False
-
-
-def main():
-    parser = argparse.ArgumentParser(
-        description="Convert Authentik blueprint from PK references to !Find lookups"
-    )
-    parser.add_argument("input", type=Path, help="Input blueprint YAML file (with PKs)")
-    parser.add_argument("output", type=Path, help="Output blueprint YAML file (with !Find)")
-    parser.add_argument(
-        "--validate",
-        action="store_true",
-        help="Run validation script on output",
-    )
-    parser.add_argument(
-        "--verbose",
-        "-v",
-        action="store_true",
-        help="Enable verbose logging",
-    )
-    parser.add_argument(
-        "--jinja2",
-        "-j",
-        action="store_true",
-        help="Generate Jinja2 template format (converts [[PLACEHOLDER]] to {{ BLUEPRINT_PLACEHOLDER }})",
-    )
-
-    args = parser.parse_args()
-
-    # Validate inputs
-    if not args.input.exists():
-        print(f"❌ Input file not found: {args.input}", file=sys.stderr)
-        sys.exit(1)
-
-    # If jinja2 mode is enabled, ensure output has .j2 suffix
-    output_path = args.output
-    if args.jinja2 and not str(output_path).endswith('.j2'):
-        output_path = Path(str(output_path) + '.j2')
-        print(f"ℹ️  Adding .j2 suffix for Jinja2 template: {output_path}")
-
-    # Convert blueprint
-    converter = BlueprintConverter(verbose=args.verbose)
-
-    try:
-        blueprint = converter.load_blueprint(args.input)
-        converted = converter.convert_blueprint(blueprint, jinja2=args.jinja2)
-        converter.save_blueprint(converted, output_path, jinja2=args.jinja2)
-
-        if args.jinja2:
-            print(f"\n✅ Jinja2 template conversion complete: {output_path}")
-        else:
-            print(f"\n✅ Conversion complete: {output_path}")
-        print(f"   Processed {len(converted['entries'])} entries")
-
-    except Exception as e:
-        print(f"❌ Conversion failed: {e}", file=sys.stderr)
-        if args.verbose:
-            import traceback
-            traceback.print_exc()
-        sys.exit(1)
-
-    # Optionally validate
-    if args.validate:
-        validator_path = Path(__file__).parent / "validate-authentik-blueprint.py"
-        if not validator_path.exists():
-            print(f"\n⚠️  Validator not found: {validator_path}", file=sys.stderr)
-            sys.exit(1)
-
-        if not validate_blueprint(output_path, validator_path):
-            sys.exit(1)
-
-
-if __name__ == "__main__":
-    import os
-    main()

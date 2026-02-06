@@ -1,0 +1,178 @@
+# yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
+# Minimal sample blueprint for testing the converter.
+# Contains representative entries covering all key conversion scenarios:
+#   - Custom group (Octopize - Admins) → should get !KeyOf id
+#   - Custom flow (avatar-authentication-flow) → should get !KeyOf id
+#   - Custom stage (avatar-authentication-stage) → should get !KeyOf id, refs custom flow via !KeyOf
+#   - Default stage (default-authentication-login) → should get !Find references
+#   - Custom password policy (avatar-password-length-policy) → should get !KeyOf id
+#   - Flow stage binding referencing custom flow + custom stage → both !KeyOf
+#   - Flow stage binding referencing custom flow + default stage → !KeyOf + !Find
+#   - Policy binding referencing custom policy + custom stage → both !KeyOf
+context: {}
+entries:
+  # --- GROUPS ---
+  - attrs:
+      attributes:
+        license: unlimited
+      is_superuser: true
+      name: Octopize - Admins
+      users:
+        - 8
+    conditions: []
+    identifiers:
+      pk: 6d0022d8-87b9-4d60-9245-104c9ff77ffa
+    model: authentik_core.group
+    permissions: []
+    state: present
+
+  # --- FLOWS ---
+  - attrs:
+      authentication: none
+      compatibility_mode: true
+      denied_action: message_continue
+      designation: authentication
+      layout: stacked
+      name: avatar-authentication-flow
+      policy_engine_mode: any
+      slug: avatar-authentication-flow
+      title: Avatar authentication
+    conditions: []
+    identifiers:
+      pk: 2ef39c04-6cb2-4895-9a27-144d9b12f71c
+    model: authentik_flows.flow
+    permissions: []
+    state: present
+
+  # --- PROMPTS (none in this sample) ---
+
+  # --- POLICIES ---
+  - attrs:
+      amount_digits: 0
+      amount_lowercase: 0
+      amount_symbols: 0
+      amount_uppercase: 0
+      check_static_rules: true
+      error_message: Password must be at least 12 characters long.
+      hibp_allowed_count: 0
+      length_min: 12
+      name: avatar-password-length-policy
+      password_field: password
+      symbol_charset: '!"#$%&''()*+,-./:;<=>?@[]^_`{|}~'
+      zxcvbn_score_threshold: 2
+    conditions: []
+    identifiers:
+      pk: a45d6164-d822-473e-972f-c743f1bf430b
+    model: authentik_policies_password.passwordpolicy
+    permissions: []
+    state: present
+
+  # --- STAGES ---
+  - attrs:
+      case_insensitive_matching: true
+      enrollment_flow: c21e4ccf-6dde-4cc7-b0c4-6cd85c394734
+      name: avatar-authentication-stage
+      pretend_user_exists: true
+      recovery_flow: 60d3f40a-bee9-4394-828e-dc2b5da2cdf9
+      show_matched_user: true
+      user_fields:
+        - username
+        - email
+    conditions: []
+    identifiers:
+      pk: eca4add8-ed54-44b5-9340-c67ea6ab30a6
+    model: authentik_stages_identification.identificationstage
+    permissions: []
+    state: present
+  - attrs:
+      geoip_binding: no_binding
+      name: default-authentication-login
+      network_binding: no_binding
+      remember_device: days=30
+      remember_me_offset: seconds=0
+      session_duration: seconds=0
+    conditions: []
+    identifiers:
+      pk: 56a46447-11a6-47c8-91ea-782b085c01ce
+    model: authentik_stages_user_login.userloginstage
+    permissions: []
+    state: present
+  - attrs:
+      allow_show_password: true
+      backends:
+        - authentik.core.auth.InbuiltBackend
+        - authentik.core.auth.TokenBackend
+        - authentik.sources.ldap.auth.LDAPBackend
+        - authentik.sources.kerberos.auth.KerberosBackend
+      configure_flow: d0d3fed4-adaa-476f-ba2e-b7343404e51c
+      failed_attempts_before_cancel: 5
+      name: avatar-password-stage
+    conditions: []
+    identifiers:
+      pk: c05ed854-7b9b-41bd-ac70-2c9154a2f111
+    model: authentik_stages_password.passwordstage
+    permissions: []
+    state: present
+
+  # --- FLOW STAGE BINDINGS ---
+  # Binding: avatar-authentication-stage → avatar-authentication-flow (both custom → !KeyOf + !KeyOf)
+  - attrs:
+      invalid_response_action: retry
+      order: 10
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: eca4add8-ed54-44b5-9340-c67ea6ab30a6
+      target: 2ef39c04-6cb2-4895-9a27-144d9b12f71c
+    conditions: []
+    identifiers:
+      pk: afd4a9c6-90bf-4528-86a8-4f281d4f080f
+    model: authentik_flows.flowstagebinding
+    permissions: []
+    state: present
+  # Binding: avatar-password-stage → avatar-authentication-flow (both custom → !KeyOf + !KeyOf)
+  - attrs:
+      invalid_response_action: retry
+      order: 20
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: c05ed854-7b9b-41bd-ac70-2c9154a2f111
+      target: 2ef39c04-6cb2-4895-9a27-144d9b12f71c
+    conditions: []
+    identifiers:
+      pk: 7f096ba2-97cc-4bf5-a85f-e6804803afdc
+    model: authentik_flows.flowstagebinding
+    permissions: []
+    state: present
+  # Binding: default-authentication-login → avatar-authentication-flow (default stage → !Find, custom flow → !KeyOf)
+  - attrs:
+      invalid_response_action: retry
+      order: 30
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: 56a46447-11a6-47c8-91ea-782b085c01ce
+      target: 2ef39c04-6cb2-4895-9a27-144d9b12f71c
+    conditions: []
+    identifiers:
+      pk: 39b564e2-5eff-4c6d-9c11-d6752095f484
+    model: authentik_flows.flowstagebinding
+    permissions: []
+    state: present
+
+  # --- POLICY BINDINGS ---
+  # Binding: avatar-password-length-policy → avatar-password-stage (both custom → !KeyOf + !KeyOf)
+  - attrs:
+      enabled: true
+      order: 0
+      policy: a45d6164-d822-473e-972f-c743f1bf430b
+      target: c05ed854-7b9b-41bd-ac70-2c9154a2f111
+      timeout: 30
+    conditions: []
+    identifiers:
+      pk: 909810e1-53e7-49e3-8832-acb6f06297d8
+    model: authentik_policies.policybinding
+    permissions: []
+    state: present
+metadata:
+  labels: {}
+  name: test-sample-blueprint
+version: 1

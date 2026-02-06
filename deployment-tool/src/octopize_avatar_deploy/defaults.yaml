@@ -1,6 +1,6 @@
 version: 1.0.0
 images:
-  api: 2.47.0
+  api: 2.49.0
   web: 0.52.0
   pdfgenerator: 0.2.3
   seaweedfs: 0.4.0
