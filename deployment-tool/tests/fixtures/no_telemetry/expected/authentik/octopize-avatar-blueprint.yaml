@@ -6,15 +6,15 @@
 #
 # Required Placeholders (fill before import):
 #   avatar.internal.com                - Base domain (e.g., staging.octopize.tech)
-#   81a2e49de874abd0cfa0dcf35ee49a0137cf28e2ebd80bfddd6ee0ca9919d830             - OAuth2 Client ID
-#   a8296ec6472a92e0ffc643b7d38bf3720b31d689763c3537e12588e21330c44a         - OAuth2 Client Secret
+#   f0fb8b9cb643869b1e3214afa64d69879d79207bbc940e6ccc1ad958e0b0745a             - OAuth2 Client ID
+#   e3dffdc3649757944b039e86c05c9b3d4c9feb7ed123f13bd568b1da5aae6fd6         - OAuth2 Client Secret
 #   https://avatar.internal.com/api/login/sso/auth      - Full redirect URI for API (e.g., https://avatar.internal.com/api/login/sso/auth)
 #   demo  - License type for self-service signups (e.g., demo, trial, full)
 
 context:
-  app_name: !Context [app_name, Avatar API]
-  domain: !Context [domain, 'avatar.internal.com']
-  license_type: !Context [license_type, full]
+  app_name: Avatar API
+  domain: 'avatar.internal.com'
+  license_type: full
 metadata:
   name: octopize-avatar-sso-configuration
 version: 1
@@ -25,17 +25,19 @@ entries:
 # ============================================================
   - attrs:
       attributes:
-        license: !Context [license_type]
+        license: !Context 'license_type'
       is_superuser: true
       name: Octopize - Admins
+    id: octopize---admins
     identifiers:
       name: Octopize - Admins
     model: authentik_core.group
     state: present
   - attrs:
       attributes:
-        license: !Context [license_type]
+        license: !Context 'license_type'
       name: Octopize - Users
+    id: octopize---users
     identifiers:
       name: Octopize - Users
     model: authentik_core.group
@@ -54,6 +56,7 @@ entries:
       policy_engine_mode: any
       slug: avatar-self-service-signup-flow
       title: Self-service signup for Avatar
+    id: avatar-self-service-signup-flow
     identifiers:
       slug: avatar-self-service-signup-flow
     model: authentik_flows.flow
@@ -68,6 +71,7 @@ entries:
       policy_engine_mode: any
       slug: avatar-recovery-flow
       title: Reset your password
+    id: avatar-recovery-flow
     identifiers:
       slug: avatar-recovery-flow
     model: authentik_flows.flow
@@ -82,298 +86,10 @@ entries:
       policy_engine_mode: any
       slug: avatar-authentication-flow
       title: Avatar authentication
+    id: avatar-authentication-flow
     identifiers:
       slug: avatar-authentication-flow
     model: authentik_flows.flow
-    state: present
-
-# ============================================================
-# FLOW STAGE BINDINGS
-# ============================================================
-
-  # ========================================
-  # FLOW STAGE BINDINGS - Authentication Flow
-  # ========================================
-  - attrs:
-      invalid_response_action: retry
-      order: 10
-      policy_engine_mode: any
-      re_evaluate_policies: true
-      stage: !Find [authentik_stages_identification.identificationstage, [name, avatar-authentication-stage]]
-      target: !Find [authentik_flows.flow, [slug, avatar-authentication-flow]]
-    identifiers:
-      order: 10
-      stage: !Find [authentik_stages_identification.identificationstage, [name, avatar-authentication-stage]]
-      target: !Find [authentik_flows.flow, [slug, avatar-authentication-flow]]
-    model: authentik_flows.flowstagebinding
-    state: present
-  - attrs:
-      invalid_response_action: retry
-      order: 20
-      policy_engine_mode: any
-      re_evaluate_policies: true
-      stage: !Find [authentik_stages_password.passwordstage, [name, avatar-password-stage]]
-      target: !Find [authentik_flows.flow, [slug, avatar-authentication-flow]]
-    identifiers:
-      order: 20
-      stage: !Find [authentik_stages_password.passwordstage, [name, avatar-password-stage]]
-      target: !Find [authentik_flows.flow, [slug, avatar-authentication-flow]]
-    model: authentik_flows.flowstagebinding
-    state: present
-  - attrs:
-      invalid_response_action: retry
-      order: 30
-      policy_engine_mode: any
-      re_evaluate_policies: true
-      stage: !Find [authentik_stages_user_login.userloginstage, [name, default-authentication-login]]
-      target: !Find [authentik_flows.flow, [slug, avatar-authentication-flow]]
-    identifiers:
-      order: 30
-      stage: !Find [authentik_stages_user_login.userloginstage, [name, default-authentication-login]]
-      target: !Find [authentik_flows.flow, [slug, avatar-authentication-flow]]
-    model: authentik_flows.flowstagebinding
-    state: present
-
-  # ========================================
-  # FLOW STAGE BINDINGS - Recovery Flow
-  # ========================================
-  - attrs:
-      evaluate_on_plan: true
-      invalid_response_action: retry
-      order: 10
-      policy_engine_mode: any
-      re_evaluate_policies: true
-      stage: !Find [authentik_stages_identification.identificationstage, [name, default-recovery-identification]]
-      target: !Find [authentik_flows.flow, [slug, avatar-recovery-flow]]
-    identifiers:
-      order: 10
-      stage: !Find [authentik_stages_identification.identificationstage, [name, default-recovery-identification]]
-      target: !Find [authentik_flows.flow, [slug, avatar-recovery-flow]]
-    model: authentik_flows.flowstagebinding
-    state: present
-  - attrs:
-      evaluate_on_plan: true
-      invalid_response_action: retry
-      order: 20
-      policy_engine_mode: any
-      re_evaluate_policies: true
-      stage: !Find [authentik_stages_email.emailstage, [name, avatar-recovery-email]]
-      target: !Find [authentik_flows.flow, [slug, avatar-recovery-flow]]
-    identifiers:
-      order: 20
-      stage: !Find [authentik_stages_email.emailstage, [name, avatar-recovery-email]]
-      target: !Find [authentik_flows.flow, [slug, avatar-recovery-flow]]
-    model: authentik_flows.flowstagebinding
-    state: present
-  - attrs:
-      invalid_response_action: retry
-      order: 30
-      policy_engine_mode: any
-      re_evaluate_policies: true
-      stage: !Find [authentik_stages_prompt.promptstage, [name, avatar-signup-password-ask]]
-      target: !Find [authentik_flows.flow, [slug, avatar-recovery-flow]]
-    identifiers:
-      order: 30
-      stage: !Find [authentik_stages_prompt.promptstage, [name, avatar-signup-password-ask]]
-      target: !Find [authentik_flows.flow, [slug, avatar-recovery-flow]]
-    model: authentik_flows.flowstagebinding
-    state: present
-  - attrs:
-      evaluate_on_plan: true
-      invalid_response_action: retry
-      order: 40
-      policy_engine_mode: any
-      stage: !Find [authentik_stages_user_write.userwritestage, [name, default-recovery-user-write]]
-      target: !Find [authentik_flows.flow, [slug, avatar-recovery-flow]]
-    identifiers:
-      order: 40
-      stage: !Find [authentik_stages_user_write.userwritestage, [name, default-recovery-user-write]]
-      target: !Find [authentik_flows.flow, [slug, avatar-recovery-flow]]
-    model: authentik_flows.flowstagebinding
-    state: present
-  - attrs:
-      evaluate_on_plan: true
-      invalid_response_action: retry
-      order: 100
-      policy_engine_mode: any
-      stage: !Find [authentik_stages_user_login.userloginstage, [name, default-recovery-user-login]]
-      target: !Find [authentik_flows.flow, [slug, avatar-recovery-flow]]
-    identifiers:
-      order: 100
-      stage: !Find [authentik_stages_user_login.userloginstage, [name, default-recovery-user-login]]
-      target: !Find [authentik_flows.flow, [slug, avatar-recovery-flow]]
-    model: authentik_flows.flowstagebinding
-    state: present
-
-  # ========================================
-  # FLOW STAGE BINDINGS - Self Service Signup Flow
-  # ========================================
-  - attrs:
-      invalid_response_action: retry
-      order: 10
-      policy_engine_mode: any
-      re_evaluate_policies: true
-      stage: !Find [authentik_stages_prompt.promptstage, [name, default-source-enrollment-prompt]]
-      target: !Find [authentik_flows.flow, [slug, avatar-self-service-signup-flow]]
-    identifiers:
-      order: 10
-      stage: !Find [authentik_stages_prompt.promptstage, [name, default-source-enrollment-prompt]]
-      target: !Find [authentik_flows.flow, [slug, avatar-self-service-signup-flow]]
-    model: authentik_flows.flowstagebinding
-    state: present
-  - attrs:
-      invalid_response_action: retry
-      order: 20
-      policy_engine_mode: all
-      re_evaluate_policies: true
-      stage: !Find [authentik_stages_user_write.userwritestage, [name, avatar-self-service-userinfo-write]]
-      target: !Find [authentik_flows.flow, [slug, avatar-self-service-signup-flow]]
-    identifiers:
-      order: 20
-      stage: !Find [authentik_stages_user_write.userwritestage, [name, avatar-self-service-userinfo-write]]
-      target: !Find [authentik_flows.flow, [slug, avatar-self-service-signup-flow]]
-    model: authentik_flows.flowstagebinding
-    state: present
-  - attrs:
-      invalid_response_action: retry
-      order: 30
-      policy_engine_mode: any
-      re_evaluate_policies: true
-      stage: !Find [authentik_stages_email.emailstage, [name, avatar-email-account-confirmation]]
-      target: !Find [authentik_flows.flow, [slug, avatar-self-service-signup-flow]]
-    identifiers:
-      order: 30
-      stage: !Find [authentik_stages_email.emailstage, [name, avatar-email-account-confirmation]]
-      target: !Find [authentik_flows.flow, [slug, avatar-self-service-signup-flow]]
-    model: authentik_flows.flowstagebinding
-    state: present
-  - attrs:
-      invalid_response_action: retry
-      order: 35
-      policy_engine_mode: any
-      re_evaluate_policies: true
-      stage: !Find [authentik_stages_prompt.promptstage, [name, avatar-signup-password-ask]]
-      target: !Find [authentik_flows.flow, [slug, avatar-self-service-signup-flow]]
-    identifiers:
-      order: 35
-      stage: !Find [authentik_stages_prompt.promptstage, [name, avatar-signup-password-ask]]
-      target: !Find [authentik_flows.flow, [slug, avatar-self-service-signup-flow]]
-    model: authentik_flows.flowstagebinding
-    state: present
-  - attrs:
-      invalid_response_action: retry
-      order: 40
-      policy_engine_mode: all
-      re_evaluate_policies: true
-      stage: !Find [authentik_stages_user_write.userwritestage, [name, avatar-self-service-userinfo-write]]
-      target: !Find [authentik_flows.flow, [slug, avatar-self-service-signup-flow]]
-    identifiers:
-      order: 40
-      stage: !Find [authentik_stages_user_write.userwritestage, [name, avatar-self-service-userinfo-write]]
-      target: !Find [authentik_flows.flow, [slug, avatar-self-service-signup-flow]]
-    model: authentik_flows.flowstagebinding
-    state: present
-
-# ============================================================
-# STAGES
-# ============================================================
-  - attrs:
-      from_address: system@authentik.local
-      host: localhost
-      name: avatar-email-someone-tried-to-register-with-your-mail
-      port: 25
-      recovery_cache_timeout: minutes=5
-      recovery_max_attempts: 5
-      subject: Someone tried to register with your mail
-      template: custom/email_account_exists.html
-      timeout: 10
-      token_expiry: minutes=0
-      use_global_settings: true
-    identifiers:
-      name: avatar-email-someone-tried-to-register-with-your-mail
-    model: authentik_stages_email.emailstage
-    state: present
-  - attrs:
-      activate_user_on_success: true
-      from_address: system@authentik.local
-      host: localhost
-      name: avatar-email-account-confirmation
-      port: 25
-      recovery_cache_timeout: minutes=5
-      recovery_max_attempts: 5
-      subject: Avatar - Account confirmation
-      template: custom/email_account_confirmation.html
-      timeout: 10
-      token_expiry: hours=24
-      use_global_settings: true
-    identifiers:
-      name: avatar-email-account-confirmation
-    model: authentik_stages_email.emailstage
-    state: present
-  - attrs:
-      activate_user_on_success: true
-      from_address: system@authentik.local
-      host: localhost
-      name: avatar-recovery-email
-      port: 25
-      recovery_cache_timeout: minutes=5
-      recovery_max_attempts: 5
-      subject: Avatar - Reset password
-      template: custom/email_password_reset.html
-      timeout: 10
-      token_expiry: minutes=30
-      use_global_settings: true
-    identifiers:
-      name: avatar-recovery-email
-    model: authentik_stages_email.emailstage
-    state: present
-  - attrs:
-      case_insensitive_matching: true
-      enrollment_flow: !Find [authentik_flows.flow, [slug, avatar-self-service-signup-flow]]
-      name: avatar-authentication-stage
-      pretend_user_exists: true
-      recovery_flow: !Find [authentik_flows.flow, [slug, avatar-recovery-flow]]
-      show_matched_user: true
-      user_fields:
-      - username
-      - email
-    identifiers:
-      name: avatar-authentication-stage
-    model: authentik_stages_identification.identificationstage
-    state: present
-  - attrs:
-      allow_show_password: true
-      backends:
-      - authentik.core.auth.InbuiltBackend
-      - authentik.core.auth.TokenBackend
-      - authentik.sources.ldap.auth.LDAPBackend
-      - authentik.sources.kerberos.auth.KerberosBackend
-      configure_flow: !Find [authentik_flows.flow, [slug, default-password-change]]
-      failed_attempts_before_cancel: 5
-      name: avatar-password-stage
-    identifiers:
-      name: avatar-password-stage
-    model: authentik_stages_password.passwordstage
-    state: present
-  - attrs:
-      fields:
-      - !Find [authentik_stages_prompt.prompt, [field_key, password, name, avatar-initial-setup-field-password]]
-      name: avatar-signup-password-ask
-      validation_policies:
-      - !Find [authentik_policies_password.passwordpolicy, [name, avatar-password-length-policy]]
-    identifiers:
-      name: avatar-signup-password-ask
-    model: authentik_stages_prompt.promptstage
-    state: present
-  - attrs:
-      create_users_as_inactive: true
-      name: avatar-self-service-userinfo-write
-      user_creation_mode: create_when_required
-      user_path_template: users/self-service
-      user_type: external
-    identifiers:
-      name: avatar-self-service-userinfo-write
-    model: authentik_stages_user_write.userwritestage
     state: present
 
 # ============================================================
@@ -382,11 +98,40 @@ entries:
   - attrs:
       field_key: password
       label: Password
+      name: default-recovery-field-password
+      order: 0
+      placeholder: Password
+      required: true
+      type: password
+    id: password
+    identifiers:
+      field_key: password
+      name: default-recovery-field-password
+    model: authentik_stages_prompt.prompt
+    state: present
+  - attrs:
+      field_key: password_repeat
+      label: Password (repeat)
+      name: default-recovery-field-password-repeat
+      order: 1
+      placeholder: Password (repeat)
+      required: true
+      type: password
+    id: password_repeat
+    identifiers:
+      field_key: password_repeat
+      name: default-recovery-field-password-repeat
+    model: authentik_stages_prompt.prompt
+    state: present
+  - attrs:
+      field_key: password
+      label: Password
       name: avatar-initial-setup-field-password
       order: 300
       placeholder: Password
       required: true
       type: password
+    id: password
     identifiers:
       field_key: password
       name: avatar-initial-setup-field-password
@@ -397,30 +142,66 @@ entries:
 # POLICIES
 # ============================================================
   - attrs:
-      expression: 'from authentik.core.models import User
+      expression: |-
+        from authentik.core.models import User
+
         email = context.get("prompt_data", {}).get("email")
         user_exists = User.objects.filter(email__iexact=email).exists()
+
         # Store the result in the flow context for the next stages to use
         context["user_already_exists"] = user_exists
-        # Always return True so the attacker doesn''t get an error message
-        return True'
+
+        # Always return True so the attacker doesn't get an error message
+        return True
       name: check-email-exists-silently
+    id: check-email-exists-silently
     identifiers:
       name: check-email-exists-silently
     model: authentik_policies_expression.expressionpolicy
     state: present
   - attrs:
-      expression: '# Check if the ''user_already_exists'' flag was set to False
+      expression: |-
+        # Check if the 'user_already_exists' flag was set to False
         user_exists = context.get("user_already_exists", False)
-        return user_exists'
+
+        return user_exists
       name: policy-user-already-exists
+    id: policy-user-already-exists
     identifiers:
       name: policy-user-already-exists
     model: authentik_policies_expression.expressionpolicy
     state: present
   - attrs:
-      expression: "from authentik.core.models import Group\n\n# Get the email from the prompt data collected in the first stage\nemail = context.get(\"prompt_data\", {}).get(\"email\")\n\nif email:\n    # Get or create a group with the same suffix as the email\n    group, created = Group.objects.get_or_create(name=f\"self_service-{email}\")\n    \n    # Update the attributes for the group\n    # We use a dictionary update to ensure we don't overwrite other existing attributes\n    if not group.attributes:\n        group.attributes = {}\n        \n    group.attributes[\"license\"] = \"demo\"\n    group.save()\n    \n    # Assign the group object to the flow context\n    # Authentik expects a list of Group objects in the ['groups'] key\n    context[\"flow_plan\"].context[\"groups\"] = [group]\n    \n    if created:\n        ak_logger.info(f\"Created new personal group with demo license for user: {email}\")\n    else:\n        ak_logger.info(f\"Updated existing group attributes for user: {email}\")\n\nreturn True"
+      expression: |-
+        from authentik.core.models import Group
+
+        # Get the email from the prompt data collected in the first stage
+        email = context.get("prompt_data", {}).get("email")
+
+        if email:
+            # Get or create a group with the same suffix as the email
+            group, created = Group.objects.get_or_create(name=f"self_service-{email}")
+
+            # Update the attributes for the group
+            # We use a dictionary update to ensure we don't overwrite other existing attributes
+            if not group.attributes:
+                group.attributes = {}
+
+            group.attributes["license"] = "demo"
+            group.save()
+
+            # Assign the group object to the flow context
+            # Authentik expects a list of Group objects in the ['groups'] key
+            context["flow_plan"].context["groups"] = [group]
+
+            if created:
+                ak_logger.info(f"Created new personal group with demo license for user: {email}")
+            else:
+                ak_logger.info(f"Updated existing group attributes for user: {email}")
+
+        return True
       name: avatar-self-service-per-user-organization-creation
+    id: avatar-self-service-per-user-organization-creation
     identifiers:
       name: avatar-self-service-per-user-organization-creation
     model: authentik_policies_expression.expressionpolicy
@@ -438,9 +219,353 @@ entries:
       password_field: password
       symbol_charset: '!\"#$%&''()*+,-./:;<=>?@[]^_`{|}~'
       zxcvbn_score_threshold: 2
+    id: avatar-password-length-policy
     identifiers:
       name: avatar-password-length-policy
     model: authentik_policies_password.passwordpolicy
+    state: present
+
+# ============================================================
+# STAGES
+# ============================================================
+  - attrs:
+      from_address: system@authentik.local
+      host: localhost
+      name: avatar-email-someone-tried-to-register-with-your-mail
+      port: 25
+      recovery_cache_timeout: minutes=5
+      recovery_max_attempts: 5
+      subject: Someone tried to register with your mail
+      template: email/email_account_exists.html
+      timeout: 10
+      token_expiry: minutes=0
+      use_global_settings: true
+    id: avatar-email-someone-tried-to-register-with-your-mail
+    identifiers:
+      name: avatar-email-someone-tried-to-register-with-your-mail
+    model: authentik_stages_email.emailstage
+    state: present
+  - attrs:
+      activate_user_on_success: true
+      from_address: system@authentik.local
+      host: localhost
+      name: avatar-email-account-confirmation
+      port: 25
+      recovery_cache_timeout: minutes=5
+      recovery_max_attempts: 5
+      subject: Avatar - Account confirmation
+      template: email/email_account_confirmation.html
+      timeout: 10
+      token_expiry: hours=24
+      use_global_settings: true
+    id: avatar-email-account-confirmation
+    identifiers:
+      name: avatar-email-account-confirmation
+    model: authentik_stages_email.emailstage
+    state: present
+  - attrs:
+      activate_user_on_success: true
+      from_address: system@authentik.local
+      host: localhost
+      name: avatar-recovery-email
+      port: 25
+      recovery_cache_timeout: minutes=5
+      recovery_max_attempts: 5
+      subject: Avatar - Reset password
+      template: email/email_password_reset.html
+      timeout: 10
+      token_expiry: minutes=30
+      use_global_settings: true
+    id: avatar-recovery-email
+    identifiers:
+      name: avatar-recovery-email
+    model: authentik_stages_email.emailstage
+    state: present
+  - attrs:
+      case_insensitive_matching: true
+      name: default-recovery-identification
+      pretend_user_exists: true
+      show_matched_user: true
+      user_fields:
+      - email
+      - username
+    id: default-recovery-identification
+    identifiers:
+      name: default-recovery-identification
+    model: authentik_stages_identification.identificationstage
+    state: present
+  - attrs:
+      case_insensitive_matching: true
+      enrollment_flow: !KeyOf 'avatar-self-service-signup-flow'
+      name: avatar-authentication-stage
+      pretend_user_exists: true
+      recovery_flow: !KeyOf 'avatar-recovery-flow'
+      show_matched_user: true
+      user_fields:
+      - username
+      - email
+    id: avatar-authentication-stage
+    identifiers:
+      name: avatar-authentication-stage
+    model: authentik_stages_identification.identificationstage
+    state: present
+  - attrs:
+      allow_show_password: true
+      backends:
+      - authentik.core.auth.InbuiltBackend
+      - authentik.core.auth.TokenBackend
+      - authentik.sources.ldap.auth.LDAPBackend
+      - authentik.sources.kerberos.auth.KerberosBackend
+      configure_flow: !Find [authentik_flows.flow, [slug, default-password-change]]
+      failed_attempts_before_cancel: 5
+      name: avatar-password-stage
+    id: avatar-password-stage
+    identifiers:
+      name: avatar-password-stage
+    model: authentik_stages_password.passwordstage
+    state: present
+  - attrs:
+      fields:
+      - !KeyOf 'password'
+      name: avatar-signup-password-ask
+      validation_policies:
+      - !KeyOf 'avatar-password-length-policy'
+    id: avatar-signup-password-ask
+    identifiers:
+      name: avatar-signup-password-ask
+    model: authentik_stages_prompt.promptstage
+    state: present
+  - attrs:
+      geoip_binding: no_binding
+      name: default-recovery-user-login
+      network_binding: no_binding
+      remember_device: days=30
+      remember_me_offset: seconds=0
+      session_duration: seconds=0
+    id: default-recovery-user-login
+    identifiers:
+      name: default-recovery-user-login
+    model: authentik_stages_user_login.userloginstage
+    state: present
+  - attrs:
+      create_users_as_inactive: true
+      name: avatar-self-service-userinfo-write
+      user_creation_mode: create_when_required
+      user_path_template: users/self-service
+      user_type: external
+    id: avatar-self-service-userinfo-write
+    identifiers:
+      name: avatar-self-service-userinfo-write
+    model: authentik_stages_user_write.userwritestage
+    state: present
+  - attrs:
+      name: default-recovery-user-write
+      user_creation_mode: never_create
+      user_type: external
+    id: default-recovery-user-write
+    identifiers:
+      name: default-recovery-user-write
+    model: authentik_stages_user_write.userwritestage
+    state: present
+
+# ============================================================
+# FLOW STAGE BINDINGS
+# ============================================================
+
+  # ========================================
+  # FLOW STAGE BINDINGS - Authentication Flow
+  # ========================================
+  - attrs:
+      invalid_response_action: retry
+      order: 10
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: !KeyOf 'avatar-authentication-stage'
+      target: !KeyOf 'avatar-authentication-flow'
+    id: avatar-authentication-flow-bind-avatar-authentication-stage-order-10
+    identifiers:
+      order: 10
+      stage: !KeyOf 'avatar-authentication-stage'
+      target: !KeyOf 'avatar-authentication-flow'
+    model: authentik_flows.flowstagebinding
+    state: present
+  - attrs:
+      invalid_response_action: retry
+      order: 20
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: !KeyOf 'avatar-password-stage'
+      target: !KeyOf 'avatar-authentication-flow'
+    id: avatar-authentication-flow-bind-avatar-password-stage-order-20
+    identifiers:
+      order: 20
+      stage: !KeyOf 'avatar-password-stage'
+      target: !KeyOf 'avatar-authentication-flow'
+    model: authentik_flows.flowstagebinding
+    state: present
+  - attrs:
+      invalid_response_action: retry
+      order: 30
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: !Find [authentik_stages_user_login.userloginstage, [name, default-authentication-login]]
+      target: !KeyOf 'avatar-authentication-flow'
+    id: avatar-authentication-flow-bind-default-authentication-login-order-30
+    identifiers:
+      order: 30
+      stage: !Find [authentik_stages_user_login.userloginstage, [name, default-authentication-login]]
+      target: !KeyOf 'avatar-authentication-flow'
+    model: authentik_flows.flowstagebinding
+    state: present
+
+  # ========================================
+  # FLOW STAGE BINDINGS - Recovery Flow
+  # ========================================
+  - attrs:
+      evaluate_on_plan: true
+      invalid_response_action: retry
+      order: 10
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: !KeyOf 'default-recovery-identification'
+      target: !KeyOf 'avatar-recovery-flow'
+    id: avatar-recovery-flow-bind-default-recovery-identification-order-10
+    identifiers:
+      order: 10
+      stage: !KeyOf 'default-recovery-identification'
+      target: !KeyOf 'avatar-recovery-flow'
+    model: authentik_flows.flowstagebinding
+    state: present
+  - attrs:
+      evaluate_on_plan: true
+      invalid_response_action: retry
+      order: 20
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: !KeyOf 'avatar-recovery-email'
+      target: !KeyOf 'avatar-recovery-flow'
+    id: avatar-recovery-flow-bind-avatar-recovery-email-order-20
+    identifiers:
+      order: 20
+      stage: !KeyOf 'avatar-recovery-email'
+      target: !KeyOf 'avatar-recovery-flow'
+    model: authentik_flows.flowstagebinding
+    state: present
+  - attrs:
+      invalid_response_action: retry
+      order: 30
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: !KeyOf 'avatar-signup-password-ask'
+      target: !KeyOf 'avatar-recovery-flow'
+    id: avatar-recovery-flow-bind-avatar-signup-password-ask-order-30
+    identifiers:
+      order: 30
+      stage: !KeyOf 'avatar-signup-password-ask'
+      target: !KeyOf 'avatar-recovery-flow'
+    model: authentik_flows.flowstagebinding
+    state: present
+  - attrs:
+      evaluate_on_plan: true
+      invalid_response_action: retry
+      order: 40
+      policy_engine_mode: any
+      stage: !KeyOf 'default-recovery-user-write'
+      target: !KeyOf 'avatar-recovery-flow'
+    id: avatar-recovery-flow-bind-default-recovery-user-write-order-40
+    identifiers:
+      order: 40
+      stage: !KeyOf 'default-recovery-user-write'
+      target: !KeyOf 'avatar-recovery-flow'
+    model: authentik_flows.flowstagebinding
+    state: present
+  - attrs:
+      evaluate_on_plan: true
+      invalid_response_action: retry
+      order: 100
+      policy_engine_mode: any
+      stage: !KeyOf 'default-recovery-user-login'
+      target: !KeyOf 'avatar-recovery-flow'
+    id: avatar-recovery-flow-bind-default-recovery-user-login-order-100
+    identifiers:
+      order: 100
+      stage: !KeyOf 'default-recovery-user-login'
+      target: !KeyOf 'avatar-recovery-flow'
+    model: authentik_flows.flowstagebinding
+    state: present
+
+  # ========================================
+  # FLOW STAGE BINDINGS - Self Service Signup Flow
+  # ========================================
+  - attrs:
+      invalid_response_action: retry
+      order: 10
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: !Find [authentik_stages_prompt.promptstage, [name, default-source-enrollment-prompt]]
+      target: !KeyOf 'avatar-self-service-signup-flow'
+    id: avatar-self-service-signup-flow-bind-default-source-enrollment-prompt-order-10
+    identifiers:
+      order: 10
+      stage: !Find [authentik_stages_prompt.promptstage, [name, default-source-enrollment-prompt]]
+      target: !KeyOf 'avatar-self-service-signup-flow'
+    model: authentik_flows.flowstagebinding
+    state: present
+  - attrs:
+      invalid_response_action: retry
+      order: 20
+      policy_engine_mode: all
+      re_evaluate_policies: true
+      stage: !KeyOf 'avatar-self-service-userinfo-write'
+      target: !KeyOf 'avatar-self-service-signup-flow'
+    id: avatar-self-service-signup-flow-bind-avatar-self-service-userinfo-write-order-20
+    identifiers:
+      order: 20
+      stage: !KeyOf 'avatar-self-service-userinfo-write'
+      target: !KeyOf 'avatar-self-service-signup-flow'
+    model: authentik_flows.flowstagebinding
+    state: present
+  - attrs:
+      invalid_response_action: retry
+      order: 30
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: !KeyOf 'avatar-email-account-confirmation'
+      target: !KeyOf 'avatar-self-service-signup-flow'
+    id: avatar-self-service-signup-flow-bind-avatar-email-account-confirmation-order-30
+    identifiers:
+      order: 30
+      stage: !KeyOf 'avatar-email-account-confirmation'
+      target: !KeyOf 'avatar-self-service-signup-flow'
+    model: authentik_flows.flowstagebinding
+    state: present
+  - attrs:
+      invalid_response_action: retry
+      order: 35
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: !KeyOf 'avatar-signup-password-ask'
+      target: !KeyOf 'avatar-self-service-signup-flow'
+    id: avatar-self-service-signup-flow-bind-avatar-signup-password-ask-order-35
+    identifiers:
+      order: 35
+      stage: !KeyOf 'avatar-signup-password-ask'
+      target: !KeyOf 'avatar-self-service-signup-flow'
+    model: authentik_flows.flowstagebinding
+    state: present
+  - attrs:
+      invalid_response_action: retry
+      order: 40
+      policy_engine_mode: all
+      re_evaluate_policies: true
+      stage: !KeyOf 'avatar-self-service-userinfo-write'
+      target: !KeyOf 'avatar-self-service-signup-flow'
+    id: avatar-self-service-signup-flow-bind-avatar-self-service-userinfo-write-order-40
+    identifiers:
+      order: 40
+      stage: !KeyOf 'avatar-self-service-userinfo-write'
+      target: !KeyOf 'avatar-self-service-signup-flow'
+    model: authentik_flows.flowstagebinding
     state: present
 
 # ============================================================
@@ -449,27 +574,47 @@ entries:
   - attrs:
       enabled: true
       order: 10
-      policy: !Find [authentik_policies_expression.expressionpolicy, [name, avatar-self-service-per-user-organization-creation]]
-      target: !Find [authentik_flows.flowstagebinding, [target, !Find [authentik_flows.flow, [slug, avatar-self-service-signup-flow]], stage, !Find [authentik_stages_user_write.userwritestage, [name, avatar-self-service-userinfo-write]], order, 40]]
+      policy: !KeyOf 'avatar-self-service-per-user-organization-creation'
+      target: !KeyOf 'avatar-self-service-signup-flow-bind-avatar-self-service-userinfo-write-order-40'
       timeout: 30
+    id: avatar-self-service-per-user-organization-creation-bind-avatar-self-service-signup-flow-bind-avatar-self-service-userinfo-write-order-40-order-10
     identifiers:
       order: 10
-      policy: !Find [authentik_policies_expression.expressionpolicy, [name, avatar-self-service-per-user-organization-creation]]
-      target: !Find [authentik_flows.flowstagebinding, [target, !Find [authentik_flows.flow, [slug, avatar-self-service-signup-flow]], stage, !Find [authentik_stages_user_write.userwritestage, [name, avatar-self-service-userinfo-write]], order, 40]]
+      policy: !KeyOf 'avatar-self-service-per-user-organization-creation'
+      target: !KeyOf 'avatar-self-service-signup-flow-bind-avatar-self-service-userinfo-write-order-40'
     model: authentik_policies.policybinding
     state: present
   - attrs:
       enabled: true
       failure_result: true
       order: 5
-      policy: !Find [authentik_policies_expression.expressionpolicy, [name, check-email-exists-silently]]
-      target: !Find [authentik_flows.flowstagebinding, [target, !Find [authentik_flows.flow, [slug, avatar-self-service-signup-flow]], stage, !Find [authentik_stages_user_write.userwritestage, [name, avatar-self-service-userinfo-write]], order, 20]]
+      policy: !KeyOf 'check-email-exists-silently'
+      target: !KeyOf 'avatar-self-service-signup-flow-bind-avatar-self-service-userinfo-write-order-20'
       timeout: 30
+    id: check-email-exists-silently-bind-avatar-self-service-signup-flow-bind-avatar-self-service-userinfo-write-order-20-order-5
     identifiers:
       order: 5
-      policy: !Find [authentik_policies_expression.expressionpolicy, [name, check-email-exists-silently]]
-      target: !Find [authentik_flows.flowstagebinding, [target, !Find [authentik_flows.flow, [slug, avatar-self-service-signup-flow]], stage, !Find [authentik_stages_user_write.userwritestage, [name, avatar-self-service-userinfo-write]], order, 20]]
+      policy: !KeyOf 'check-email-exists-silently'
+      target: !KeyOf 'avatar-self-service-signup-flow-bind-avatar-self-service-userinfo-write-order-20'
     model: authentik_policies.policybinding
+    state: present
+
+# ============================================================
+# SCOPE MAPPINGS
+# ============================================================
+  - attrs:
+      description: Grab license from the user group
+      expression: |-
+        license = request.user.group_attributes().get('license', None)
+
+        if license:
+          return { 'license' : license }
+      name: GrabLicense
+      scope_name: profile
+    id: grablicense
+    identifiers:
+      name: GrabLicense
+    model: authentik_providers_oauth2.scopemapping
     state: present
 
 # ============================================================
@@ -478,21 +623,21 @@ entries:
   - attrs:
       access_code_validity: minutes=1
       access_token_validity: minutes=5
-      authentication_flow: !Find [authentik_flows.flow, [slug, avatar-authentication-flow]]
+      authentication_flow: !KeyOf 'avatar-authentication-flow'
       authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-explicit-consent]]
-      client_id: '81a2e49de874abd0cfa0dcf35ee49a0137cf28e2ebd80bfddd6ee0ca9919d830'
-      client_secret: 'a8296ec6472a92e0ffc643b7d38bf3720b31d689763c3537e12588e21330c44a'
+      client_id: 'f0fb8b9cb643869b1e3214afa64d69879d79207bbc940e6ccc1ad958e0b0745a'
+      client_secret: 'e3dffdc3649757944b039e86c05c9b3d4c9feb7ed123f13bd568b1da5aae6fd6'
       client_type: confidential
       include_claims_in_id_token: true
       invalidation_flow: !Find [authentik_flows.flow, [slug, default-invalidation-flow]]
       issuer_mode: per_provider
       logout_method: backchannel
-      name: !Format [Provider for %s, !Context [app_name]]
+      name: !Format [Provider for %s, !Context 'app_name']
       property_mappings:
-      - !Find [authentik_providers_oauth2.scopemapping, [scope_name, profile]]
+      - !KeyOf 'grablicense'
       - !Find [authentik_providers_oauth2.scopemapping, [scope_name, openid]]
       - !Find [authentik_providers_oauth2.scopemapping, [scope_name, email]]
-      - !Find [authentik_providers_oauth2.scopemapping, [scope_name, profile]]
+      - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
       - !Find [authentik_providers_oauth2.scopemapping, [scope_name, offline_access]]
       redirect_uris:
       - matching_mode: strict
@@ -501,33 +646,22 @@ entries:
       refresh_token_validity: days=30
       signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
       sub_mode: user_uuid
+    id: provider-for-avatar-api
     identifiers:
-      name: !Format [Provider for %s, !Context [app_name]]
+      name: !Format [Provider for %s, !Context 'app_name']
     model: authentik_providers_oauth2.oauth2provider
-    state: present
-
-# ============================================================
-# SCOPE MAPPINGS
-# ============================================================
-  - attrs:
-      description: Grab license from the user group
-      expression: "license = request.user.group_attributes().get('license', None)\n\nif license:\n  return { 'license' : license }"
-      name: GrabLicense
-      scope_name: profile
-    identifiers:
-      scope_name: profile
-    model: authentik_providers_oauth2.scopemapping
     state: present
 
 # ============================================================
 # APPLICATION
 # ============================================================
   - attrs:
-      meta_launch_url: !Format ['https://%s/web', !Context [domain]]
-      name: !Context [app_name]
+      meta_launch_url: !Format ['https://%s/web', !Context 'domain']
+      name: !Context 'app_name'
       policy_engine_mode: any
-      provider: !Find [authentik_providers_oauth2.oauth2provider, [name, Provider for avatar-api]]
+      provider: !KeyOf 'provider-for-avatar-api'
       slug: avatar-api
+    id: avatar-api
     identifiers:
       slug: avatar-api
     model: authentik_core.application
@@ -541,14 +675,15 @@ entries:
       branding_favicon: favicon.ico
       branding_logo: brand_logo.png
       branding_title: Avatar
-      default: true
-      default_application: !Find [authentik_core.application, [slug, avatar-api]]
-      domain: !Context [domain]
-      flow_authentication: !Find [authentik_flows.flow, [slug, avatar-authentication-flow]]
+      default: false
+      default_application: !KeyOf 'avatar-api'
+      domain: !Context 'domain'
+      flow_authentication: !KeyOf 'avatar-authentication-flow'
       flow_invalidation: !Find [authentik_flows.flow, [slug, default-invalidation-flow]]
-      flow_recovery: !Find [authentik_flows.flow, [slug, avatar-recovery-flow]]
+      flow_recovery: !KeyOf 'avatar-recovery-flow'
       flow_user_settings: !Find [authentik_flows.flow, [slug, default-user-settings-flow]]
+    id: octopize.tech
     identifiers:
-      domain: !Context [domain]
+      domain: !Context 'domain'
     model: authentik_brands.brand
     state: present

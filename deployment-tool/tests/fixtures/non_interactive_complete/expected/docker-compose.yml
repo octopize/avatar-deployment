@@ -307,7 +307,7 @@ services:
       AVATAR_STORAGE_ENDPOINT_PUBLIC_URL: ${AVATAR_STORAGE_ENDPOINT_PUBLIC_URL}
       AVATAR_STORAGE_ENDPOINT_INTERNAL_URL: ${AVATAR_STORAGE_ENDPOINT_INTERNAL_URL}
       AVATAR_SSO_URL: ${AVATAR_API_URL}/login/sso
-      AVATAR_SSO_ENABLED: false
+      AVATAR_SSO_ENABLED: true
 
   master:
     image: *seaweedfs-image
@@ -480,6 +480,13 @@ services:
     command: server
     <<: *authentik-environment
 
+    healthcheck:
+      test: ["CMD-SHELL", "ak healthcheck || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+
     volumes:
       # Mount custom email templates (synced from common/authentik-templates)
       - ./authentik/custom-templates:/templates/email:ro
@@ -516,8 +523,9 @@ services:
       # Mount custom email templates (synced from common/authentik-templates)
       - ./authentik/custom-templates:/templates/email:ro
       # Mount custom branding assets (shared source)
-      - ../common/authentik-branding/favicon.ico:/media/public/favicon.ico:ro
-      - ../common/authentik-branding/logo.png:/media/public/brand_logo.png:ro
+      - ./authentik/branding/favicon.ico:/media/public/favicon.ico:ro
+      - ./authentik/branding/logo.png:/media/public/brand_logo.png:ro
+      - ./authentik/octopize-avatar-blueprint.yaml:/blueprints/octopize-avatar-blueprint.yaml:ro
 
     secrets:
       - authentik_database_name
@@ -526,8 +534,8 @@ services:
       - authentik_secret_key
 
     depends_on:
-      authentik_init_db:
-        condition: service_completed_successfully
+      authentik_server:
+        condition: service_healthy
 
 secrets:
   db_admin_user:
@@ -580,6 +588,8 @@ secrets:
     file: ${SECRETS_DIR-.secrets}/authentik_database_password
   authentik_secret_key:
     file: ${SECRETS_DIR-.secrets}/authentik_secret_key
+  authentik_bootstrap_token:
+    file: ${SECRETS_DIR-.secrets}/authentik_bootstrap_token
 
   telemetry_s3_access_key_id:
     file: ${SECRETS_DIR-.secrets}/telemetry_s3_access_key_id
