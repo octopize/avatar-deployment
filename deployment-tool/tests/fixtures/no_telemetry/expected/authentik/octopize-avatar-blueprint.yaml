@@ -6,8 +6,8 @@
 #
 # Required Placeholders (fill before import):
 #   avatar.internal.com                - Base domain (e.g., staging.octopize.tech)
-#   f0fb8b9cb643869b1e3214afa64d69879d79207bbc940e6ccc1ad958e0b0745a             - OAuth2 Client ID
-#   e3dffdc3649757944b039e86c05c9b3d4c9feb7ed123f13bd568b1da5aae6fd6         - OAuth2 Client Secret
+#   2c20ac6debb7a718b72441fee68dbc65c3374116144ac23b18303b07f47397eb             - OAuth2 Client ID
+#   f1ead85b631cc8700abb01fb5a39e0714d6dfeb9ce3a38561ee146c00a208e43         - OAuth2 Client Secret
 #   https://avatar.internal.com/api/login/sso/auth      - Full redirect URI for API (e.g., https://avatar.internal.com/api/login/sso/auth)
 #   demo  - License type for self-service signups (e.g., demo, trial, full)
 
@@ -625,8 +625,8 @@ entries:
       access_token_validity: minutes=5
       authentication_flow: !KeyOf 'avatar-authentication-flow'
       authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-explicit-consent]]
-      client_id: 'f0fb8b9cb643869b1e3214afa64d69879d79207bbc940e6ccc1ad958e0b0745a'
-      client_secret: 'e3dffdc3649757944b039e86c05c9b3d4c9feb7ed123f13bd568b1da5aae6fd6'
+      client_id: '2c20ac6debb7a718b72441fee68dbc65c3374116144ac23b18303b07f47397eb'
+      client_secret: 'f1ead85b631cc8700abb01fb5a39e0714d6dfeb9ce3a38561ee146c00a208e43'
       client_type: confidential
       include_claims_in_id_token: true
       invalidation_flow: !Find [authentik_flows.flow, [slug, default-invalidation-flow]]

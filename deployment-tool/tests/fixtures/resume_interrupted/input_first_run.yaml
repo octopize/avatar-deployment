@@ -2,6 +2,7 @@ responses:
   required_config.public_url: https://avatar.example.com
   required_config.env_name: production
   required_config.organization_name: MyCompany
+  nginx_tls.enabled: true
   nginx_tls.ssl_certificate_path: smtp
   nginx_tls.ssl_certificate_key_path: smtp.example.com
   authentik.bootstrap_email: '587'

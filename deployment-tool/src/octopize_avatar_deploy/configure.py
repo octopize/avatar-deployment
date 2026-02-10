@@ -221,12 +221,8 @@ class DeploymentConfigurator:
             "authentik/octopize-avatar-blueprint.yaml",
         )
 
-        # Copy docker-compose.yml from templates
-        docker_compose_src = self.templates_dir / "docker-compose.yml"
-        docker_compose_dst = self.output_dir / "docker-compose.yml"
-        if docker_compose_src.exists():
-            shutil.copy2(docker_compose_src, docker_compose_dst)
-            self.printer.print_success(f"Generated: {docker_compose_dst}")
+        # Generate docker-compose.yml from template
+        self.render_template("docker-compose.yml.template", "docker-compose.yml")
 
         # Copy authentik custom templates (email templates)
         custom_templates_src = self.templates_dir / "authentik" / "custom-templates"

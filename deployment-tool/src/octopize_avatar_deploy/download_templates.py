@@ -22,7 +22,7 @@ REQUIRED_FILE_MANIFEST: dict[str, dict[str, object]] = {
         "files": [
             ".env.template",
             "nginx.conf.template",
-            "docker-compose.yml",
+            "docker-compose.yml.template",
             ".template-version",
             "authentik/octopize-avatar-blueprint.yaml.j2",
         ],

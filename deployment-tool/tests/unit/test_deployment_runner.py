@@ -116,7 +116,7 @@ class TestDeploymentRunner:
         # Verify templates were copied to the expected location
         assert (temp_output_dir / ".avatar-templates" / ".env.template").exists()
         assert (temp_output_dir / ".avatar-templates" / "nginx.conf.template").exists()
-        assert (temp_output_dir / ".avatar-templates" / "docker-compose.yml").exists()
+        assert (temp_output_dir / ".avatar-templates" / "docker-compose.yml.template").exists()
 
     def test_ensure_templates_local_source_not_found(self, temp_output_dir):
         """Test ensure_templates with non-existent local template source."""

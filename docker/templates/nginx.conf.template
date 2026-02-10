@@ -10,11 +10,16 @@ http {
     ##################
     # HTTPS config
     server {
+        {% if NGINX_TLS_ENABLED %}
         listen               443 ssl;
+        {% else %}
+        listen               {{ NGINX_HTTP_PORT }};
+        {% endif %}
 
         # Use the PUBLIC_URL to set the server name
         server_name          {{ PUBLIC_URL }};
 
+        {% if NGINX_TLS_ENABLED %}
         # Point to the full chain certificate file
         ssl_certificate /etc/nginx/tls/server.fullchain.crt;
 
@@ -26,6 +31,7 @@ http {
         add_header Strict-Transport-Security "max-age=31536000; preload" always;
         add_header X-Content-Type-Options "nosniff" always;
         add_header X-Frame-Options "DENY" always;
+        {% endif %}
 
         # Location can be set to a subpath if desired, see documentation linked below:
         # https://docs.goauthentik.io/docs/install-config/configuration/#authentik_web__path

@@ -32,7 +32,7 @@ Executing configuration steps...
 
 --- Collect required deployment settings (PUBLIC_URL, ENV_NAME, etc.) [SKIPPED - already completed] ---
 
---- Configure Nginx TLS certificate paths [SKIPPED - already completed] ---
+--- Configure Nginx TLS and HTTP settings [SKIPPED - already completed] ---
 
 --- Configure PostgreSQL database credentials [SKIPPED - already completed] ---
 

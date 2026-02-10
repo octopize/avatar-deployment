@@ -57,6 +57,18 @@ ENV_NAME: company-name-prod
 # Application Settings
 # ===========================
 
+# ===========================
+# Nginx / TLS Settings
+# ===========================
+
+# Enable TLS (true/false)
+# Default: true
+# NGINX_TLS_ENABLED: true
+
+# HTTP port used when TLS is disabled
+# Default: 8080
+# NGINX_HTTP_PORT: 8080
+
 
 # Logging configuration
 # Default: INFO

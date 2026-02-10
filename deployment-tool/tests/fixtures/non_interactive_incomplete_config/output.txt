@@ -9,7 +9,7 @@ Executing configuration steps...
 
 --- Collect required deployment settings (PUBLIC_URL, ENV_NAME, etc.) ---
 
---- Configure Nginx TLS certificate paths ---
+--- Configure Nginx TLS and HTTP settings ---
 
 --- Configure PostgreSQL database credentials ---
 

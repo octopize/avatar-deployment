@@ -1,4 +1,5 @@
 responses:
+  nginx_tls.enabled: true
   nginx_tls.ssl_certificate_path: ''
   nginx_tls.ssl_certificate_key_path: ''
   authentik.bootstrap_email: admin@existing.com

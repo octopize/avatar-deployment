@@ -1,5 +1,6 @@
 responses:
   resume.continue: true
+  nginx_tls.enabled: true
   email.smtp_password: ''
   user.admin_emails: admin@example.com
   telemetry.enable_sentry: true

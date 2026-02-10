@@ -2,6 +2,7 @@ responses:
   required_config.public_url: https://avatar.internal.com
   required_config.env_name: development
   required_config.organization_name: InternalCorp
+  nginx_tls.enabled: true
   nginx_tls.ssl_certificate_path: ''
   nginx_tls.ssl_certificate_key_path: ''
   authentik.bootstrap_email: admin@internal.com

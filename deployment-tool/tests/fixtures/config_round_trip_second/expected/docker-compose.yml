@@ -271,7 +271,6 @@ services:
       AVATAR_API_URL: ${AVATAR_API_URL}
     ports:
       - "443:443"
-      - "8080:8080"
     depends_on:
       api:
         condition: service_healthy

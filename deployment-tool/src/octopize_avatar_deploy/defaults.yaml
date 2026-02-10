@@ -24,6 +24,8 @@ application:
   sentry_enabled: 'true'
   email_authentication: 'true'
 nginx:
+  tls_enabled: true
+  http_port: "8080"
   ssl_certificate_path: ./tls/server.fullchain.crt
   ssl_certificate_key_path: ./tls/private/server.decrypted.key
 presets:

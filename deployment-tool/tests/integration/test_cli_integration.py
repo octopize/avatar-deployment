@@ -659,7 +659,7 @@ class TestNonInteractiveModeCompleteness:
         partial_dir.mkdir()
 
         # Create only one template file (incomplete set)
-        (partial_dir / "docker-compose.yml.j2").write_text("# Incomplete template set")
+        (partial_dir / "docker-compose.yml.template").write_text("# Incomplete template set")
 
         responses = fixture_manager.load_input_fixture("basic_deployment")
 
