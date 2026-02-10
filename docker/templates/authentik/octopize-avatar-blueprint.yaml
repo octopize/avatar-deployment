@@ -650,7 +650,7 @@ entries:
       branding_favicon: favicon.ico
       branding_logo: brand_logo.png
       branding_title: Avatar
-      default: true
+      default: false
       default_application: !KeyOf 'avatar-api'
       domain: !Context 'domain'
       flow_authentication: !KeyOf 'avatar-authentication-flow'
