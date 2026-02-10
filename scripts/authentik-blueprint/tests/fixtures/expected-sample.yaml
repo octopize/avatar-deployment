@@ -1,23 +1,26 @@
 # yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
 ---
-# Octopize Avatar - Authentik Blueprint Template
+# Octopize Avatar - Authentik Blueprint
 # Converted from staging export - automated conversion
 #
-# PLACEHOLDERS (replace before deployment):
-#   [[DOMAIN]]                - Base domain for the deployment (e.g., avatar.example.com)
-#   [[CLIENT_ID]]             - OAuth2 client ID for the Avatar API provider
-#   [[CLIENT_SECRET]]         - OAuth2 client secret for the Avatar API provider
-#   [[API_REDIRECT_URI]]      - OAuth2 redirect URI for the Avatar API (e.g., https://avatar.example.com/api/login/sso/auth)
-#   [[SELF_SERVICE_LICENSE]]  - License type for self-service user groups (e.g., "demo", "trial", "full")
+# This blueprint uses !Env tags to resolve deployment-specific values
+# from environment variables at blueprint apply time.
+#
+# Required environment variables:
+#   AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN            - Base domain for the deployment (e.g., avatar.example.com)
+#   AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID         - OAuth2 client ID for the Avatar API provider
+#   AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET     - OAuth2 client secret for the Avatar API provider
+#   AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI  - OAuth2 redirect URI for the Avatar API
+#   AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE - License type for self-service user groups
 #
 # CONTEXT VARIABLES (can be overridden at deployment):
 #   app_name                  - Application name (default: "Avatar API")
-#   domain                    - Deployment domain (uses [[DOMAIN]] placeholder by default)
+#   domain                    - Deployment domain (from AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN env var)
 #   license_type              - Default license type for groups (default: "full")
 
 context:
   app_name: Avatar API
-  domain: '[[DOMAIN]]'
+  domain: !Env AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN
   license_type: full
 metadata:
   name: octopize-avatar-sso-configuration

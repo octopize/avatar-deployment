@@ -90,7 +90,7 @@ class TestCLIDeploymentScenarios:
     def test_blueprint_template_rendering(
         self, temp_deployment_dir, log_file, docker_templates_dir
     ):
-        """Test that the Authentik blueprint template is properly rendered with config values."""
+        """Test that the Authentik blueprint is properly copied with !Env tags intact."""
         responses = fixture_manager.load_input_fixture("basic_deployment")
 
         harness = CLITestHarness(
@@ -109,27 +109,24 @@ class TestCLIDeploymentScenarios:
 
         # Verify blueprint file was generated
         blueprint_file = temp_deployment_dir / "authentik" / "octopize-avatar-blueprint.yaml"
-        assert blueprint_file.exists(), "Blueprint template should be generated"
+        assert blueprint_file.exists(), "Blueprint should be copied to output directory"
 
-        # Read the rendered blueprint
+        # Read the blueprint
         blueprint_content = blueprint_file.read_text()
 
-        # Verify Jinja2 variables were replaced (should not contain {{ }} anymore)
-        assert "{{ BLUEPRINT_DOMAIN }}" not in blueprint_content
-        assert "{{ BLUEPRINT_CLIENT_ID }}" not in blueprint_content
-        assert "{{ BLUEPRINT_CLIENT_SECRET }}" not in blueprint_content
-        assert "{{ BLUEPRINT_API_REDIRECT_URI }}" not in blueprint_content
-        assert "{{ BLUEPRINT_SELF_SERVICE_LICENSE }}" not in blueprint_content
+        # Verify !Env tags are present (not rendered away by Jinja2)
+        # Note: Tags may be with or without quotes (both are valid YAML)
+        assert "!Env" in blueprint_content and "AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN" in blueprint_content
+        assert "AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID" in blueprint_content
+        assert "AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET" in blueprint_content
+        assert "AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI" in blueprint_content
 
-        # Verify actual values are present (from basic_deployment input)
-        assert "avatar.example.com" in blueprint_content  # BLUEPRINT_DOMAIN
-        # Client ID and secret are random, just verify they're present as hex strings
+        # Verify the license setup references the blueprint env variable
+        assert "AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE" in blueprint_content
+        assert "group.attributes" in blueprint_content and "license" in blueprint_content
 
-        assert re.search(r"client_id: '[0-9a-f]{64}'", blueprint_content)
-        assert re.search(r"client_secret: '[0-9a-f]{64}'", blueprint_content)
-        assert (
-            "https://avatar.example.com/api/login/sso/auth" in blueprint_content
-        )  # BLUEPRINT_API_REDIRECT_URI
+        # Verify no Jinja2 placeholders remain
+        assert "{{ BLUEPRINT_" not in blueprint_content
 
 
 class TestCLIErrorHandling:

@@ -8,12 +8,12 @@ metadata:
     {{- include "avatar.labels" . | nindent 4 }}
 data:
   {{- /*
-    Automatically load all .html files from the templates-files/ directory.
+    Automatically load all .html files from the static/emails/ directory.
     This uses .Files.Glob to find all HTML templates and .AsConfig to
     convert them into ConfigMap data entries.
 
     The templates contain Django/authentik syntax (e.g., {{ url }}) which
     will NOT be evaluated by Helm since .Files.Get returns raw file content.
   */ -}}
-  {{- (.Files.Glob "templates-files/*.html").AsConfig | nindent 2 }}
+  {{- (.Files.Glob "static/emails/*.html").AsConfig | nindent 2 }}
 {{- end }}

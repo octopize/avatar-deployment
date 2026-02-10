@@ -27,11 +27,15 @@ This script runs automatically when files in `common/` are modified to ensure te
 
 - **Email templates** (`*.html`):
   - From: `common/authentik-templates/`
-  - To: `services-api-helm-chart/templates-files/` and `docker/authentik/custom-templates/`
+  - To: `services-api-helm-chart/static/emails/` and `docker/authentik/custom-templates/`
 
 - **Branding assets** (favicon.ico, logo.png):
   - From: `common/authentik-branding/`
-  - To: `services-api-helm-chart/branding/` and `docker/authentik/branding/`
+  - To: `services-api-helm-chart/static/branding/` and `docker/authentik/branding/`
+
+- **Blueprint** (octopize-avatar-blueprint.yaml):
+  - From: `common/authentik-blueprint/`
+  - To: `services-api-helm-chart/static/blueprint/` and `docker/templates/authentik/`
 
 ---
 

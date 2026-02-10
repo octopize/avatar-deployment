@@ -213,13 +213,13 @@ class DeploymentConfigurator:
         nginx_dir.mkdir(parents=True, exist_ok=True)
         self.render_template("nginx.conf.template", "nginx/nginx.conf")
 
-        # Generate Authentik blueprint
+        # Generate Authentik blueprint (copy as-is; uses !Env tags resolved at runtime)
         authentik_dir = self.output_dir / "authentik"
         authentik_dir.mkdir(parents=True, exist_ok=True)
-        self.render_template(
-            "authentik/octopize-avatar-blueprint.yaml.j2",
-            "authentik/octopize-avatar-blueprint.yaml",
-        )
+        blueprint_src = self.templates_dir / "authentik" / "octopize-avatar-blueprint.yaml"
+        blueprint_dst = authentik_dir / "octopize-avatar-blueprint.yaml"
+        shutil.copy2(blueprint_src, blueprint_dst)
+        self.printer.print_success(f"Copied: {blueprint_dst}")
 
         # Generate docker-compose.yml from template
         self.render_template("docker-compose.yml.template", "docker-compose.yml")

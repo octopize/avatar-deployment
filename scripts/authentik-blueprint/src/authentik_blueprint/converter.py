@@ -153,6 +153,46 @@ class KeyOfTag(yaml.YAMLObject):
         return dumper.represent_scalar(cls.yaml_tag, data.id_ref)
 
 
+class EnvTag(yaml.YAMLObject):
+    """Represents an !Env lookup in the blueprint.
+
+    !Env resolves to the value of the given environment variable at blueprint
+    apply time. Can optionally include a default value.
+    Syntax: !Env my_env_var  OR  !Env [my_env_var, default_value]
+    """
+    yaml_tag = "!Env"
+    yaml_loader = yaml.SafeLoader
+
+    def __init__(self, var_name, default=None):
+        self.var_name = var_name
+        self.default = default
+
+    def __eq__(self, other):
+        if not isinstance(other, EnvTag):
+            return False
+        return self.var_name == other.var_name and self.default == other.default
+
+    def __repr__(self):
+        return f"EnvTag({self.var_name!r}, {self.default!r})"
+
+    @classmethod
+    def from_yaml(cls, loader, node):
+        if isinstance(node, yaml.ScalarNode):
+            var_name = loader.construct_scalar(node)
+            return cls(var_name, None)
+        else:
+            values = loader.construct_sequence(node)
+            return cls(values[0], values[1] if len(values) > 1 else None)
+
+    @classmethod
+    def to_yaml(cls, dumper, data):
+        if data.default is None:
+            return dumper.represent_scalar(cls.yaml_tag, data.var_name)
+        else:
+            values = [data.var_name, data.default]
+            return dumper.represent_sequence(cls.yaml_tag, values, flow_style=True)
+
+
 # Custom Dumper that uses literal block style (|) for multi-line strings.
 # This is critical for preserving newlines in Python expressions (e.g. ExpressionPolicy).
 # Without this, yaml.Dumper uses quoted scalars which fold newlines into spaces.
@@ -177,6 +217,7 @@ for dumper_cls in (yaml.Dumper, LiteralBlockDumper):
     dumper_cls.add_representer(ContextTag, ContextTag.to_yaml)
     dumper_cls.add_representer(FormatTag, FormatTag.to_yaml)
     dumper_cls.add_representer(KeyOfTag, KeyOfTag.to_yaml)
+    dumper_cls.add_representer(EnvTag, EnvTag.to_yaml)
 
 
 class BlueprintConverter:
@@ -413,63 +454,43 @@ class BlueprintConverter:
         with open(path, "r") as f:
             return yaml.safe_load(f)
 
-    def save_blueprint(self, blueprint: Dict, path: Path, jinja2: bool = False):
+    def save_blueprint(self, blueprint: Dict, path: Path):
         """Save YAML blueprint file with custom YAML tags and organized sections.
+
+        Converts [[PLACEHOLDER]] markers to !Env tags so that authentik resolves
+        values from environment variables at blueprint apply time.
 
         Args:
             blueprint: Blueprint data structure
             path: Output file path
-            jinja2: If True, convert placeholders to Jinja2 format and update header
         """
         self.log(f"Saving converted blueprint to {path}")
 
         # Convert marker dicts to tag objects
         blueprint_with_tags = self._convert_markers_to_tags(blueprint)
 
-        # Convert to Jinja2 format if requested
-        if jinja2:
-            blueprint_with_tags = self._convert_to_jinja2_placeholders(blueprint_with_tags)
+        # Convert [[PLACEHOLDER]] to !Env tags
+        blueprint_with_tags = self._convert_to_env_placeholders(blueprint_with_tags)
 
         # Remove empty context if it exists at top level
         if "context" in blueprint_with_tags and not blueprint_with_tags["context"]:
             del blueprint_with_tags["context"]
 
         with open(path, "w") as f:
-            # Write header comment (different for Jinja2 vs standard)
-            if jinja2:
-                header = """\
+            header = """\
 # yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
 ---
-# Octopize Avatar - Authentik Blueprint Template
+# Octopize Avatar - Authentik Blueprint
 # This blueprint configures SSO authentication for the Avatar API platform
 # including custom flows, stages, policies, and email templates
 #
-# Required Placeholders (fill before import):
-#   {{ BLUEPRINT_DOMAIN }}                - Base domain (e.g., staging.octopize.tech)
-#   {{ BLUEPRINT_CLIENT_ID }}             - OAuth2 Client ID
-#   {{ BLUEPRINT_CLIENT_SECRET }}         - OAuth2 Client Secret
-#   {{ BLUEPRINT_API_REDIRECT_URI }}      - Full redirect URI for API (e.g., https://{{ BLUEPRINT_DOMAIN }}/api/login/sso/auth)
-#   {{ BLUEPRINT_SELF_SERVICE_LICENSE }}  - License type for self-service signups (e.g., demo, trial, full)
-
-"""
-            else:
-                header = """\
-# yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
----
-# Octopize Avatar - Authentik Blueprint Template
-# Converted from staging export - automated conversion
-#
-# PLACEHOLDERS (replace before deployment):
-#   [[DOMAIN]]                - Base domain for the deployment (e.g., avatar.example.com)
-#   [[CLIENT_ID]]             - OAuth2 client ID for the Avatar API provider
-#   [[CLIENT_SECRET]]         - OAuth2 client secret for the Avatar API provider
-#   [[API_REDIRECT_URI]]      - OAuth2 redirect URI for the Avatar API (e.g., https://avatar.example.com/api/login/sso/auth)
-#   [[SELF_SERVICE_LICENSE]]  - License type for self-service user groups (e.g., "demo", "trial", "full")
-#
-# CONTEXT VARIABLES (can be overridden at deployment):
-#   app_name                  - Application name (default: "Avatar API")
-#   domain                    - Deployment domain (uses [[DOMAIN]] placeholder by default)
-#   license_type              - Default license type for groups (default: "full")
+# All deployment-specific values are resolved at apply time via !Env tags.
+# The following environment variables must be set in the authentik deployment:
+#   AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN                - Base domain (e.g., avatar.yourcompany.com)
+#   AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID             - OAuth2 Client ID
+#   AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET         - OAuth2 Client Secret
+#   AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI      - Full redirect URI for API
+#   AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE   - License type for self-service signups
 
 """
             f.write(header)
@@ -557,7 +578,7 @@ class BlueprintConverter:
                                     f.write("\n")
 
     def _convert_markers_to_tags(self, obj):
-        """Convert __FIND__, __KEYOF__, __CONTEXT__, and __FORMAT__ marker dicts to tag objects."""
+        """Convert __FIND__, __KEYOF__, __CONTEXT__, __FORMAT__, and __ENV__ marker dicts to tag objects."""
         if isinstance(obj, dict):
             if "__FIND__" in obj and len(obj) == 1:
                 data = obj["__FIND__"]
@@ -584,6 +605,14 @@ class BlueprintConverter:
                     # Recursively convert nested markers in the args
                     converted_args = [self._convert_markers_to_tags(arg) for arg in data[1:]]
                     return FormatTag(template, converted_args)
+            if "__ENV__" in obj and len(obj) == 1:
+                data = obj["__ENV__"]
+                if isinstance(data, str):
+                    return EnvTag(data, None)
+                elif isinstance(data, list) and len(data) >= 1:
+                    var_name = data[0]
+                    default = data[1] if len(data) > 1 else None
+                    return EnvTag(var_name, default)
             return {k: self._convert_markers_to_tags(v) for k, v in obj.items()}
         elif isinstance(obj, list):
             return [self._convert_markers_to_tags(item) for item in obj]
@@ -1382,43 +1411,91 @@ class BlueprintConverter:
         # Return with full sub-header names
         return [(f"FLOW STAGE BINDINGS - {flow_name}", entries) for flow_name, entries in sorted(flow_groups.items())]
 
-    def _convert_to_jinja2_placeholders(self, obj):
-        """Convert [[PLACEHOLDER]] format to {{ BLUEPRINT_PLACEHOLDER }} Jinja2 format.
+    # Mapping from [[PLACEHOLDER]] names to !Env variable names
+    ENV_PLACEHOLDERS = {
+        "DOMAIN": "AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN",
+        "CLIENT_ID": "AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID",
+        "CLIENT_SECRET": "AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET",
+        "API_REDIRECT_URI": "AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI",
+        "SELF_SERVICE_LICENSE": "AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE",
+    }
+
+    def _convert_to_env_placeholders(self, obj):
+        """Convert [[PLACEHOLDER]] format to !Env tags.
+
+        Replaces [[PLACEHOLDER]] strings with EnvTag markers that will be
+        serialized as !Env AVATAR_AUTHENTIK_BLUEPRINT_<NAME> in the output YAML.
+        This allows authentik to resolve the values from environment variables
+        at blueprint apply time.
 
         Args:
             obj: Any YAML structure (dict, list, string, etc.)
 
         Returns:
-            The same structure with placeholders converted to Jinja2 format
+            The same structure with placeholders converted to !Env tags
         """
         if isinstance(obj, str):
-            # Replace [[PLACEHOLDER]] with {{ BLUEPRINT_PLACEHOLDER }}
             import re
-            return re.sub(r'\[\[([A-Z_]+)\]\]', r'{{ BLUEPRINT_\1 }}', obj)
+            # Check if the entire string is a single placeholder like [[DOMAIN]]
+            match = re.fullmatch(r'\[\[([A-Z_]+)\]\]', obj)
+            if match:
+                placeholder = match.group(1)
+                env_var = self.ENV_PLACEHOLDERS.get(placeholder)
+                if env_var:
+                    return EnvTag(env_var)
+                # Unknown placeholder - leave as-is
+                return obj
+            # Check if the string contains placeholders embedded in other text
+            # e.g. "https://[[DOMAIN]]/api" - for these, use !Format with !Env
+            if re.search(r'\[\[[A-Z_]+\]\]', obj):
+                # Replace each [[PLACEHOLDER]] with a %s and collect the env vars
+                parts = re.split(r'\[\[([A-Z_]+)\]\]', obj)
+                if len(parts) == 3 and parts[0] == '' and parts[2] == '':
+                    # Whole string was a single placeholder (shouldn't reach here but safety)
+                    env_var = self.ENV_PLACEHOLDERS.get(parts[1])
+                    if env_var:
+                        return EnvTag(env_var)
+                # Build a !Format with !Env args
+                format_str = ""
+                env_args = []
+                for i, part in enumerate(parts):
+                    if i % 2 == 0:
+                        # Literal text
+                        format_str += part
+                    else:
+                        # Placeholder name
+                        format_str += "%s"
+                        env_var = self.ENV_PLACEHOLDERS.get(part)
+                        if env_var:
+                            env_args.append(EnvTag(env_var))
+                        else:
+                            env_args.append(f"[[{part}]]")
+                return FormatTag(format_str, env_args)
+            return obj
         elif isinstance(obj, dict):
-            return {k: self._convert_to_jinja2_placeholders(v) for k, v in obj.items()}
+            return {k: self._convert_to_env_placeholders(v) for k, v in obj.items()}
         elif isinstance(obj, list):
-            return [self._convert_to_jinja2_placeholders(item) for item in obj]
+            return [self._convert_to_env_placeholders(item) for item in obj]
         elif isinstance(obj, (FindTag, ContextTag, FormatTag, KeyOfTag)):
-            # Handle custom tag objects - convert their internal data
             if isinstance(obj, FindTag):
                 return FindTag(
-                    self._convert_to_jinja2_placeholders(obj.model),
-                    self._convert_to_jinja2_placeholders(obj.identifiers)
+                    self._convert_to_env_placeholders(obj.model),
+                    self._convert_to_env_placeholders(obj.identifiers)
                 )
             elif isinstance(obj, ContextTag):
+                # In helm mode, convert context defaults that use [[PLACEHOLDER]]
                 return ContextTag(
-                    self._convert_to_jinja2_placeholders(obj.name),
-                    self._convert_to_jinja2_placeholders(obj.default)
+                    self._convert_to_env_placeholders(obj.name),
+                    self._convert_to_env_placeholders(obj.default)
                 )
             elif isinstance(obj, FormatTag):
                 return FormatTag(
-                    self._convert_to_jinja2_placeholders(obj.template),
-                    self._convert_to_jinja2_placeholders(obj.args)
+                    self._convert_to_env_placeholders(obj.template),
+                    self._convert_to_env_placeholders(obj.args)
                 )
             elif isinstance(obj, KeyOfTag):
                 return KeyOfTag(
-                    self._convert_to_jinja2_placeholders(obj.id_ref)
+                    self._convert_to_env_placeholders(obj.id_ref)
                 )
         return obj
 
@@ -1442,12 +1519,11 @@ class BlueprintConverter:
 
         return cleaned
 
-    def convert_blueprint(self, blueprint: Dict, jinja2: bool = False) -> Dict:
+    def convert_blueprint(self, blueprint: Dict) -> Dict:
         """Convert entire blueprint from PK to !Find references.
 
         Args:
             blueprint: Input blueprint data
-            jinja2: If True, prepare for Jinja2 template output (placeholder conversion happens in save)
 
         Returns:
             Converted blueprint

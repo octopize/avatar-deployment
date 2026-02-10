@@ -23,9 +23,6 @@ authentik-blueprint-export input.yaml output.yaml --validate
 
 # With verbose output
 authentik-blueprint-export input.yaml output.yaml --validate --verbose
-
-# Generate Jinja2 template format
-authentik-blueprint-export input.yaml output.yaml.j2 --jinja2
 ```
 
 ### Using uv tool run

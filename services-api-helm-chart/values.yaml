@@ -102,11 +102,10 @@ api:
   logLevel: "INFO"
   deleteFilesUsingCronjob: false
 
-  pepper: TODO   # python -c "import secrets; print(secrets.token_hex(), end='')"
-  authjwtSecretKey: TODO   # python -c "import secrets; print(secrets.token_hex(), end='')"
+  pepper: TODO # python -c "import secrets; print(secrets.token_hex(), end='')"
+  authjwtSecretKey: TODO # python -c "import secrets; print(secrets.token_hex(), end='')"
   # python -c "import base64; import os; print(str(base64.urlsafe_b64encode(os.urandom(32)), encoding='utf-8'), end='')"
   fileEncryptionKey: TODO
-
 
   # If useEmailAuthentication is true, provide only adminEmail. Else, provide
   # firstUserName and firstUserPassword.
@@ -115,14 +114,14 @@ api:
   adminEmails:
     - ""
   firstUserName: ""
-  firstUserPassword: ""   # python -c "import secrets; print(secrets.token_hex(), end='')"
+  firstUserPassword: "" # python -c "import secrets; print(secrets.token_hex(), end='')"
 
   # Path to s3:// or gs://
   sharedStoragePath: ""
   storageEndpointHost: ""
   storageEndpointPort: 8333
-  accessControlEndpointHost  : ""
-  accessControlEndpointPort  : 8111
+  accessControlEndpointHost: ""
+  accessControlEndpointPort: 8111
   fileJwtSecretKey: TODO
 
   storageAdminAccessKeyId: ""
@@ -156,9 +155,29 @@ api:
 authentik:
   enabled: true
 
+  blueprints:
+    # Mount the avatar blueprint from the Secret created by this chart
+    configMaps: []
+    secrets:
+      - authentik-avatar-blueprint
+
   global:
     image:
       tag: 2025.12.1
+
+    # Environment variables passed to all authentik components (server + worker).
+    # These are resolved by !Env tags in the avatar blueprint at apply time.
+    env:
+      - name: AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN
+        value: ""
+      - name: AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID
+        value: ""
+      - name: AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET
+        value: ""
+      - name: AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI
+        value: ""
+      - name: AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE
+        value: "full"
 
   authentik:
     secret_key: ""
@@ -183,14 +202,14 @@ authentik:
     # Email configuration for password resets and notifications
     # Leave empty to disable email functionality
     email:
-      host: "email-smtp.eu-west-3.amazonaws.com"  # SMTP server hostname (e.g., smtp.gmail.com)
-      port: 587  # SMTP port (587 for TLS, 465 for SSL, 25 for unencrypted)
-      username: ""  # SMTP username
-      password: ""  # SMTP password
-      from: "noreply@octopize.io"  # Email address emails are sent from
-      use_tls: true  # Use STARTTLS for connection security
-      use_ssl: false  # Use SSL/TLS for connection security (can't be enabled at same time as use_tls)
-      timeout: 30  # Connection timeout in seconds
+      host: "email-smtp.eu-west-3.amazonaws.com" # SMTP server hostname (e.g., smtp.gmail.com)
+      port: 587 # SMTP port (587 for TLS, 465 for SSL, 25 for unencrypted)
+      username: "" # SMTP username
+      password: "" # SMTP password
+      from: "noreply@octopize.io" # Email address emails are sent from
+      use_tls: true # Use STARTTLS for connection security
+      use_ssl: false # Use SSL/TLS for connection security (can't be enabled at same time as use_tls)
+      timeout: 30 # Connection timeout in seconds
 
   worker:
     resources: {}

@@ -39,7 +39,7 @@ Source: `../authentik-branding/`
 
 ⚠️ **Do not edit** synced directories - they're auto-synced:
 - `docker/authentik/custom-templates/`
-- `services-api-helm-chart/templates-files/`
-- `services-api-helm-chart/branding/`
+- `services-api-helm-chart/static/emails/`
+- `services-api-helm-chart/static/branding/`
 
 Docs: https://goauthentik.io/docs/flow/stages/email/

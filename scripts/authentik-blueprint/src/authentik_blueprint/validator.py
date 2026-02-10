@@ -125,11 +125,12 @@ class BlueprintValidator:
 
         return errors
 
-    def validate(self, blueprint_path: Path) -> bool:
+    def validate(self, blueprint_path: Path, verbose: bool = True) -> bool:
         """Run all validations on a blueprint file.
 
         Args:
             blueprint_path: Path to blueprint file
+            verbose: If True, print validation results; if False, only print on failure
 
         Returns:
             True if all validations pass, False otherwise
@@ -149,12 +150,13 @@ class BlueprintValidator:
                 for error in errors:
                     print(f"   {error}")
                 all_errors.extend(errors)
-            else:
+            elif verbose:
                 print(f"✅ {name}: PASSED")
 
         if all_errors:
             print(f"\n❌ Validation failed with {len(all_errors)} error(s)")
             return False
         else:
-            print("\n✅ All validations PASSED")
+            if verbose:
+                print("\n✅ All validations PASSED")
             return True

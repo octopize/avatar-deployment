@@ -175,11 +175,11 @@ After creating/editing templates in `common/authentik-templates/`:
    ```bash
    ./sync-templates.sh
    ```
-   This syncs to `docker/authentik/custom-templates/` and `services-api-helm-chart/templates-files/`
+   This syncs to `docker/authentik/custom-templates/` and `services-api-helm-chart/static/emails/`
 
 
 
-⚠️ **Never edit** `docker/authentik/custom-templates/` or `services-api-helm-chart/templates-files/` directly - they are auto-synced.
+⚠️ **Never edit** `docker/authentik/custom-templates/` or `services-api-helm-chart/static/emails/` directly - they are auto-synced.
 
 ## File Naming Convention
 

@@ -1,23 +1,26 @@
 # yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
 ---
-# Octopize Avatar - Authentik Blueprint Template
+# Octopize Avatar - Authentik Blueprint
 # Converted from staging export - automated conversion
 #
-# PLACEHOLDERS (replace before deployment):
-#   [[DOMAIN]]                - Base domain for the deployment (e.g., avatar.example.com)
-#   [[CLIENT_ID]]             - OAuth2 client ID for the Avatar API provider
-#   [[CLIENT_SECRET]]         - OAuth2 client secret for the Avatar API provider
-#   [[API_REDIRECT_URI]]      - OAuth2 redirect URI for the Avatar API (e.g., https://avatar.example.com/api/login/sso/auth)
-#   [[SELF_SERVICE_LICENSE]]  - License type for self-service user groups (e.g., "demo", "trial", "full")
+# This blueprint uses !Env tags to resolve deployment-specific values
+# from environment variables at blueprint apply time.
+#
+# Required environment variables:
+#   AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN            - Base domain for the deployment (e.g., avatar.example.com)
+#   AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID         - OAuth2 client ID for the Avatar API provider
+#   AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET     - OAuth2 client secret for the Avatar API provider
+#   AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI  - OAuth2 redirect URI for the Avatar API
+#   AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE - License type for self-service user groups
 #
 # CONTEXT VARIABLES (can be overridden at deployment):
 #   app_name                  - Application name (default: "Avatar API")
-#   domain                    - Deployment domain (uses [[DOMAIN]] placeholder by default)
+#   domain                    - Deployment domain (from AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN env var)
 #   license_type              - Default license type for groups (default: "full")
 
 context:
   app_name: Avatar API
-  domain: '[[DOMAIN]]'
+  domain: !Env AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN
   license_type: full
 metadata:
   name: octopize-avatar-sso-configuration
@@ -30,6 +33,7 @@ entries:
   - attrs:
       attributes:
         license: !Context 'license_type'
+        role: admin
       is_superuser: true
       name: Octopize - Admins
     id: octopize---admins
@@ -176,7 +180,8 @@ entries:
     model: authentik_policies_expression.expressionpolicy
     state: present
   - attrs:
-      expression: |-
+      expression: !Format
+      - |-
         from authentik.core.models import Group
 
         # Get the email from the prompt data collected in the first stage
@@ -191,7 +196,7 @@ entries:
             if not group.attributes:
                 group.attributes = {}
 
-            group.attributes["license"] = "[[SELF_SERVICE_LICENSE]]"
+            group.attributes["license"] = "%s"
             group.save()
 
             # Assign the group object to the flow context
@@ -204,6 +209,7 @@ entries:
                 ak_logger.info(f"Updated existing group attributes for user: {email}")
 
         return True
+      - !Env AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE
       name: avatar-self-service-per-user-organization-creation
     id: avatar-self-service-per-user-organization-creation
     identifiers:
@@ -629,8 +635,8 @@ entries:
       access_token_validity: minutes=5
       authentication_flow: !KeyOf 'avatar-authentication-flow'
       authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-explicit-consent]]
-      client_id: '[[CLIENT_ID]]'
-      client_secret: '[[CLIENT_SECRET]]'
+      client_id: !Env AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID
+      client_secret: !Env AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET
       client_type: confidential
       include_claims_in_id_token: true
       invalidation_flow: !Find [authentik_flows.flow, [slug, default-invalidation-flow]]
@@ -645,7 +651,7 @@ entries:
       - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-offline_access]]
       redirect_uris:
       - matching_mode: strict
-        url: '[[API_REDIRECT_URI]]'
+        url: !Env AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI
       refresh_token_threshold: hours=1
       refresh_token_validity: days=30
       signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]

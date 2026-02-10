@@ -19,8 +19,8 @@ render:
 template *PATHS:
     @helm template {{RELEASE_NAME}} {{PATHS}} --namespace {{NAMESPACE}}
 
-lint:
-    @uv run scripts/lint-helm-templates.py
+lint *ARGS:
+    @uv run scripts/lint-helm-templates.py {{ARGS}}
 
 install:
     @helm install  \

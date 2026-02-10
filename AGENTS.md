@@ -69,23 +69,27 @@ Located in [helm.just](helm.just):
 
 ### Template Synchronization Workflow
 
-**Source of Truth**: `common/authentik-templates/*.html`
+**Source of Truth**: `common/` directory
 
-When modifying email templates:
+When modifying email templates, branding, or the blueprint:
 
 ```bash
-# 1. Edit templates in common/authentik-templates/
+# 1. Edit files in common/authentik-templates/, common/authentik-branding/, or common/authentik-blueprint/
 # 2. Sync to deployment targets
 ./scripts/sync-templates.py [--dry-run] [--verbose]
 
-# This copies HTML files to:
-#   - services-api-helm-chart/templates-files/
+# This copies files to:
+#   - services-api-helm-chart/static/emails/
+#   - services-api-helm-chart/static/branding/
+#   - services-api-helm-chart/static/blueprint/
 #   - docker/authentik/custom-templates/
+#   - docker/authentik/branding/
+#   - docker/templates/authentik/
 ```
 
 **How it works**:
 
-- Helm chart uses `.Files.Glob "templates-files/*.html"` in [authentik-custom-templates-configmap.yaml](services-api-helm-chart/templates/authentik-custom-templates-configmap.yaml)
+- Helm chart uses `.Files.Glob "static/emails/*.html"` in [authentik-custom-templates-configmap.yaml](services-api-helm-chart/templates/authentik-custom-templates-configmap.yaml)
 - Django template syntax (`{{ url }}`) is preserved as raw content (NOT evaluated by Helm)
 - Docker compose mounts `custom-templates/` directly to authentik container
 
@@ -168,7 +172,7 @@ See [docker/deploying-on-single-instance.md](docker/deploying-on-single-instance
 
 ## Common Pitfalls
 
-1. **Editing deployment targets directly** - Always edit `common/authentik-templates/`, never `templates-files/` or `docker/authentik/custom-templates/`
+1. **Editing deployment targets directly** - Always edit `common/authentik-templates/`, never `static/emails/` or `docker/authentik/custom-templates/`
 2. **Forgetting helm dependency update** - Required before `just push-helm-chart` to include latest authentik chart
 3. **Using `latest` image tags** - Pin specific versions in values.yaml (see avatarServiceApiVersion)
 4. **Helm template variable confusion** - Authentik templates use `{{ }}` for Django, Helm uses `{{ .Values }}` - they don't interfere because `.Files.Glob` loads raw content
@@ -204,12 +208,17 @@ When adding or modifying tests for the deployment tool, **always consult QUICK_R
 
 ```
 ├── common/authentik-templates/        ← SOURCE OF TRUTH for email templates
+├── common/authentik-branding/         ← SOURCE OF TRUTH for branding assets
+├── common/authentik-blueprint/        ← SOURCE OF TRUTH for authentik blueprint
 ├── services-api-helm-chart/           ← Kubernetes deployment
 │   ├── Chart.yaml                     ← Version (bump on changes)
 │   ├── values.yaml                    ← Config (flat structure for API)
 │   ├── templates/                     ← Kubernetes manifests
 │   │   └── authentik-custom-templates-configmap.yaml  ← Template loader
-│   └── templates-files/               ← Synced from common/ (DO NOT EDIT)
+│   └── static/                        ← Synced from common/ (DO NOT EDIT)
+│       ├── emails/                    ← Email templates (*.html)
+│       ├── branding/                  ← Branding assets (favicon, logo)
+│       └── blueprint/                 ← Authentik blueprint (*.yaml)
 ├── docker/                            ← Single-instance deployment
 │   ├── Makefile                       ← Secret generation targets
 │   ├── docker-compose.yml             ← Service definitions

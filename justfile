@@ -23,17 +23,17 @@ check-image-versions:
 
 # Blueprint tools
 blueprint-install:
-    @uv tool install --force --reinstall scripts/authentik-blueprint
+    @uv tool install --force --reinstall scripts/authentik-blueprint 2> /dev/null
 
 blueprint-export *ARGS: blueprint-install
-    uv tool run authentik-blueprint export {{ARGS}}
+    @uv tool run authentik-blueprint export {{ARGS}}
 
 blueprint-validate *ARGS: blueprint-install
-    uv tool run authentik-blueprint validate {{ARGS}}
+    @uv tool run authentik-blueprint validate {{ARGS}}
+
 
 blueprint-convert-staging: blueprint-install
-    uv tool run authentik-blueprint export \
-        --jinja2 \
+    @uv tool run authentik-blueprint export \
         --validate \
         docker/authentik/blueprints/staging-export.yaml \
-        docker/templates/authentik/octopize-avatar-blueprint.yaml.j2
+        common/authentik-blueprint/octopize-avatar-blueprint.yaml

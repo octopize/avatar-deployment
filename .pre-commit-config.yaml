@@ -37,7 +37,7 @@ repos:
 
       - id: validate-authentik-blueprint
         name: Validate Authentik blueprint template
-        entry: python scripts/validate-authentik-blueprint.py
+        entry: just blueprint-validate common/authentik-blueprint/octopize-avatar-blueprint.yaml
         language: python
         pass_filenames: false
         files: ^docker/templates/authentik/octopize-avatar-blueprint\.yaml$

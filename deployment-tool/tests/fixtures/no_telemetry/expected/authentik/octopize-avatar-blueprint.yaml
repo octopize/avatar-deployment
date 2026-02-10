@@ -1,19 +1,20 @@
 # yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
 ---
-# Octopize Avatar - Authentik Blueprint Template
+# Octopize Avatar - Authentik Blueprint
 # This blueprint configures SSO authentication for the Avatar API platform
 # including custom flows, stages, policies, and email templates
 #
-# Required Placeholders (fill before import):
-#   avatar.internal.com                - Base domain (e.g., staging.octopize.tech)
-#   2c20ac6debb7a718b72441fee68dbc65c3374116144ac23b18303b07f47397eb             - OAuth2 Client ID
-#   f1ead85b631cc8700abb01fb5a39e0714d6dfeb9ce3a38561ee146c00a208e43         - OAuth2 Client Secret
-#   https://avatar.internal.com/api/login/sso/auth      - Full redirect URI for API (e.g., https://avatar.internal.com/api/login/sso/auth)
-#   demo  - License type for self-service signups (e.g., demo, trial, full)
+# All deployment-specific values are resolved at apply time via !Env tags.
+# The following environment variables must be set in the authentik deployment:
+#   AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN                - Base domain (e.g., avatar.yourcompany.com)
+#   AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID             - OAuth2 Client ID
+#   AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET         - OAuth2 Client Secret
+#   AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI      - Full redirect URI for API
+#   AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE   - License type for self-service signups
 
 context:
   app_name: Avatar API
-  domain: 'avatar.internal.com'
+  domain: !Env 'AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN'
   license_type: full
 metadata:
   name: octopize-avatar-sso-configuration
@@ -26,6 +27,7 @@ entries:
   - attrs:
       attributes:
         license: !Context 'license_type'
+        role: admin
       is_superuser: true
       name: Octopize - Admins
     id: octopize---admins
@@ -172,34 +174,7 @@ entries:
     model: authentik_policies_expression.expressionpolicy
     state: present
   - attrs:
-      expression: |-
-        from authentik.core.models import Group
-
-        # Get the email from the prompt data collected in the first stage
-        email = context.get("prompt_data", {}).get("email")
-
-        if email:
-            # Get or create a group with the same suffix as the email
-            group, created = Group.objects.get_or_create(name=f"self_service-{email}")
-
-            # Update the attributes for the group
-            # We use a dictionary update to ensure we don't overwrite other existing attributes
-            if not group.attributes:
-                group.attributes = {}
-
-            group.attributes["license"] = "demo"
-            group.save()
-
-            # Assign the group object to the flow context
-            # Authentik expects a list of Group objects in the ['groups'] key
-            context["flow_plan"].context["groups"] = [group]
-
-            if created:
-                ak_logger.info(f"Created new personal group with demo license for user: {email}")
-            else:
-                ak_logger.info(f"Updated existing group attributes for user: {email}")
-
-        return True
+      expression: !Format ["from authentik.core.models import Group\n\n# Get the email from the prompt data collected in the first stage\nemail = context.get(\"prompt_data\", {}).get(\"email\")\n\nif email:\n    # Get or create a group with the same suffix as the email\n    group, created = Group.objects.get_or_create(name=f\"self_service-{email}\")\n\n    # Update the attributes for the group\n    # We use a dictionary update to ensure we don't overwrite other existing attributes\n    if not group.attributes:\n        group.attributes = {}\n\n    group.attributes[\"license\"] = \"%s\"\n    group.save()\n\n    # Assign the group object to the flow context\n    # Authentik expects a list of Group objects in the ['groups'] key\n    context[\"flow_plan\"].context[\"groups\"] = [group]\n\n    if created:\n        ak_logger.info(f\"Created new personal group with demo license for user: {email}\")\n    else:\n        ak_logger.info(f\"Updated existing group attributes for user: {email}\")\n\nreturn True", !Env 'AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE']
       name: avatar-self-service-per-user-organization-creation
     id: avatar-self-service-per-user-organization-creation
     identifiers:
@@ -625,8 +600,8 @@ entries:
       access_token_validity: minutes=5
       authentication_flow: !KeyOf 'avatar-authentication-flow'
       authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-explicit-consent]]
-      client_id: '2c20ac6debb7a718b72441fee68dbc65c3374116144ac23b18303b07f47397eb'
-      client_secret: 'f1ead85b631cc8700abb01fb5a39e0714d6dfeb9ce3a38561ee146c00a208e43'
+      client_id: !Env 'AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID'
+      client_secret: !Env 'AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET'
       client_type: confidential
       include_claims_in_id_token: true
       invalidation_flow: !Find [authentik_flows.flow, [slug, default-invalidation-flow]]
@@ -635,13 +610,13 @@ entries:
       name: !Format [Provider for %s, !Context 'app_name']
       property_mappings:
       - !KeyOf 'grablicense'
-      - !Find [authentik_providers_oauth2.scopemapping, [scope_name, openid]]
-      - !Find [authentik_providers_oauth2.scopemapping, [scope_name, email]]
+      - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+      - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
       - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
-      - !Find [authentik_providers_oauth2.scopemapping, [scope_name, offline_access]]
+      - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-offline_access]]
       redirect_uris:
       - matching_mode: strict
-        url: 'https://avatar.internal.com/api/login/sso/auth'
+        url: !Env 'AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI'
       refresh_token_threshold: hours=1
       refresh_token_validity: days=30
       signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
@@ -675,7 +650,7 @@ entries:
       branding_favicon: favicon.ico
       branding_logo: brand_logo.png
       branding_title: Avatar
-      default: false
+      default: true
       default_application: !KeyOf 'avatar-api'
       domain: !Context 'domain'
       flow_authentication: !KeyOf 'avatar-authentication-flow'

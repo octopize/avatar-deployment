@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 import yaml
-from authentik_blueprint.converter import BlueprintConverter, KeyOfTag
+from authentik_blueprint.converter import BlueprintConverter, KeyOfTag, EnvTag, FormatTag
 
 # Path to test fixtures
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
@@ -35,12 +35,12 @@ class TestBlueprintConverter:
         blueprint = converter.load_blueprint(INPUT_SAMPLE)
 
         # Convert
-        converted = converter.convert_blueprint(blueprint, jinja2=False)
+        converted = converter.convert_blueprint(blueprint)
 
         # Save to temporary file for comparison
         with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as tmp:
             tmp_path = Path(tmp.name)
-            converter.save_blueprint(converted, tmp_path, jinja2=False)
+            converter.save_blueprint(converted, tmp_path)
 
         try:
             # Load both files for comparison
@@ -79,12 +79,12 @@ class TestBlueprintConverter:
         blueprint = converter.load_blueprint(STAGING_EXPORT)
 
         # Convert
-        converted = converter.convert_blueprint(blueprint, jinja2=False)
+        converted = converter.convert_blueprint(blueprint)
 
         # Save to temporary file for comparison
         with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as tmp:
             tmp_path = Path(tmp.name)
-            converter.save_blueprint(converted, tmp_path, jinja2=False)
+            converter.save_blueprint(converted, tmp_path)
 
         try:
             # Load both files for comparison
@@ -129,8 +129,8 @@ class TestBlueprintConverter:
         # This prevents infinite recursion when authentik resolves the context block
         assert "context:\n  app_name: Avatar API" in yaml_text, \
             "Context section should have plain string values, not !Context tags"
-        assert "  domain: '[[DOMAIN]]'" in yaml_text, \
-            "Context section should have plain string values"
+        assert "  domain: !Env AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN" in yaml_text, \
+            "Context section should use !Env tags for environment variables"
         assert "  license_type: full" in yaml_text, \
             "Context section should have plain string values"
 
@@ -377,12 +377,12 @@ class TestBlueprintConverter:
 
         # Load and convert
         blueprint = converter.load_blueprint(STAGING_EXPORT)
-        converted = converter.convert_blueprint(blueprint, jinja2=False)
+        converted = converter.convert_blueprint(blueprint)
 
         # Save to temp file
         with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as tmp:
             tmp_path = Path(tmp.name)
-            converter.save_blueprint(converted, tmp_path, jinja2=False)
+            converter.save_blueprint(converted, tmp_path)
 
         try:
             with open(tmp_path) as f:
@@ -397,6 +397,223 @@ class TestBlueprintConverter:
 
         finally:
             tmp_path.unlink()
+
+
+class TestEnvTag:
+    """Tests for the EnvTag class and Helm mode."""
+
+    def test_env_tag_class(self):
+        """Test EnvTag class creation and representation."""
+        tag = EnvTag("AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN")
+        assert tag.var_name == "AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN"
+        assert tag.default is None
+        assert repr(tag) == "EnvTag('AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN', None)"
+
+    def test_env_tag_with_default(self):
+        """Test EnvTag class with a default value."""
+        tag = EnvTag("AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE", "full")
+        assert tag.var_name == "AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE"
+        assert tag.default == "full"
+
+    def test_env_tag_equality(self):
+        """Test EnvTag equality comparison."""
+        tag1 = EnvTag("MY_VAR")
+        tag2 = EnvTag("MY_VAR")
+        tag3 = EnvTag("OTHER_VAR")
+
+        assert tag1 == tag2
+        assert tag1 != tag3
+        assert tag1 != "MY_VAR"  # Different type
+
+    def test_env_tag_yaml_serialization_scalar(self):
+        """Test that EnvTag without default serializes as scalar: !Env var_name."""
+        tag = EnvTag("AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN")
+        yaml_output = yaml.dump({"domain": tag}, default_flow_style=False)
+
+        assert "!Env" in yaml_output
+        assert "AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN" in yaml_output
+        # Scalar form should NOT have brackets
+        assert "[" not in yaml_output
+
+    def test_env_tag_yaml_serialization_with_default(self):
+        """Test that EnvTag with default serializes as sequence: !Env [var, default]."""
+        tag = EnvTag("AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE", "full")
+        yaml_output = yaml.dump({"license": tag}, default_flow_style=False)
+
+        assert "!Env" in yaml_output
+        assert "AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE" in yaml_output
+        assert "full" in yaml_output
+
+    def test_convert_to_env_simple_placeholder(self):
+        """Test that [[PLACEHOLDER]] strings are converted to EnvTag."""
+        converter = BlueprintConverter(verbose=False)
+        result = converter._convert_to_env_placeholders("[[DOMAIN]]")
+
+        assert isinstance(result, EnvTag)
+        assert result.var_name == "AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN"
+
+    def test_convert_to_env_all_placeholders(self):
+        """Test that all known placeholders are converted."""
+        converter = BlueprintConverter(verbose=False)
+
+        mapping = {
+            "[[DOMAIN]]": "AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN",
+            "[[CLIENT_ID]]": "AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID",
+            "[[CLIENT_SECRET]]": "AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET",
+            "[[API_REDIRECT_URI]]": "AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI",
+            "[[SELF_SERVICE_LICENSE]]": "AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE",
+        }
+
+        for placeholder, expected_env in mapping.items():
+            result = converter._convert_to_env_placeholders(placeholder)
+            assert isinstance(result, EnvTag), f"Expected EnvTag for {placeholder}"
+            assert result.var_name == expected_env, f"Expected {expected_env} for {placeholder}"
+
+    def test_convert_to_env_no_placeholder(self):
+        """Test that strings without placeholders are left unchanged."""
+        converter = BlueprintConverter(verbose=False)
+        result = converter._convert_to_env_placeholders("just a normal string")
+        assert result == "just a normal string"
+
+    def test_convert_to_env_dict(self):
+        """Test that dicts are recursively processed."""
+        converter = BlueprintConverter(verbose=False)
+        result = converter._convert_to_env_placeholders({
+            "domain": "[[DOMAIN]]",
+            "name": "Avatar API",
+        })
+
+        assert isinstance(result["domain"], EnvTag)
+        assert result["domain"].var_name == "AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN"
+        assert result["name"] == "Avatar API"
+
+    def test_convert_to_env_list(self):
+        """Test that lists are recursively processed."""
+        converter = BlueprintConverter(verbose=False)
+        result = converter._convert_to_env_placeholders(["[[CLIENT_ID]]", "keep-this"])
+
+        assert isinstance(result[0], EnvTag)
+        assert result[0].var_name == "AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID"
+        assert result[1] == "keep-this"
+
+    def test_convert_to_env_context_section(self):
+        """Test that context values with [[PLACEHOLDER]] become !Env tags."""
+        converter = BlueprintConverter(verbose=False)
+        context = {
+            "app_name": "Avatar API",
+            "domain": "[[DOMAIN]]",
+            "license_type": "full",
+        }
+        result = converter._convert_to_env_placeholders(context)
+
+        assert result["app_name"] == "Avatar API"
+        assert isinstance(result["domain"], EnvTag)
+        assert result["domain"].var_name == "AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN"
+        assert result["license_type"] == "full"
+
+    def test_env_marker_to_tag(self):
+        """Test that __ENV__ markers are converted to EnvTag objects."""
+        converter = BlueprintConverter(verbose=False)
+        result = converter._convert_markers_to_tags({"__ENV__": "MY_VAR"})
+
+        assert isinstance(result, EnvTag)
+        assert result.var_name == "MY_VAR"
+
+    def test_env_marker_to_tag_with_default(self):
+        """Test that __ENV__ markers with defaults are converted correctly."""
+        converter = BlueprintConverter(verbose=False)
+        result = converter._convert_markers_to_tags({"__ENV__": ["MY_VAR", "default-value"]})
+
+        assert isinstance(result, EnvTag)
+        assert result.var_name == "MY_VAR"
+        assert result.default == "default-value"
+
+    def test_save_produces_env_tags(self):
+        """Test that save_blueprint produces !Env tags in output."""
+        converter = BlueprintConverter(verbose=False)
+
+        # Create a minimal blueprint with placeholders
+        blueprint = {
+            "version": 1,
+            "metadata": {"name": "test-blueprint"},
+            "context": {
+                "domain": "[[DOMAIN]]",
+                "app_name": "Avatar API",
+            },
+            "entries": [
+                {
+                    "model": "authentik_providers_oauth2.oauth2provider",
+                    "identifiers": {"name": "test-provider"},
+                    "attrs": {
+                        "client_id": "[[CLIENT_ID]]",
+                        "client_secret": "[[CLIENT_SECRET]]",
+                    }
+                }
+            ],
+        }
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as tmp:
+            tmp_path = Path(tmp.name)
+            converter.save_blueprint(blueprint, tmp_path)
+
+        try:
+            with open(tmp_path) as f:
+                yaml_text = f.read()
+
+            # Should contain !Env tags
+            assert "!Env" in yaml_text, "Helm output should contain !Env tags"
+            assert "AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN" in yaml_text
+            assert "AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID" in yaml_text
+            assert "AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET" in yaml_text
+
+            # Should NOT contain [[PLACEHOLDER]] format
+            assert "[[DOMAIN]]" not in yaml_text
+            assert "[[CLIENT_ID]]" not in yaml_text
+            assert "[[CLIENT_SECRET]]" not in yaml_text
+
+            # Should have the header mentioning env variables
+            assert "environment variables" in yaml_text
+
+        finally:
+            tmp_path.unlink()
+
+    def test_save_header(self):
+        """Test that save_blueprint uses the correct header."""
+        converter = BlueprintConverter(verbose=False)
+
+        blueprint = {
+            "version": 1,
+            "metadata": {"name": "test"},
+            "context": {},
+            "entries": [],
+        }
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as tmp:
+            tmp_path = Path(tmp.name)
+            converter.save_blueprint(blueprint, tmp_path)
+
+        try:
+            with open(tmp_path) as f:
+                yaml_text = f.read()
+
+            assert "AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN" in yaml_text
+            assert "AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID" in yaml_text
+            assert "AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET" in yaml_text
+            assert "AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI" in yaml_text
+            assert "AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE" in yaml_text
+
+        finally:
+            tmp_path.unlink()
+
+    def test_env_placeholders_constant(self):
+        """Test that ENV_PLACEHOLDERS mapping covers all expected keys."""
+        expected_keys = {"DOMAIN", "CLIENT_ID", "CLIENT_SECRET", "API_REDIRECT_URI", "SELF_SERVICE_LICENSE"}
+        assert set(BlueprintConverter.ENV_PLACEHOLDERS.keys()) == expected_keys
+
+        # All env vars should be prefixed with AVATAR_AUTHENTIK_
+        for env_var in BlueprintConverter.ENV_PLACEHOLDERS.values():
+            assert env_var.startswith("AVATAR_AUTHENTIK_BLUEPRINT_"), \
+                f"Env var {env_var} should start with AVATAR_AUTHENTIK_BLUEPRINT_"
 
 
 if __name__ == "__main__":

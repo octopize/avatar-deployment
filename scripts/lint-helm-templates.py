@@ -9,13 +9,15 @@ This script:
 1. Renders the Helm chart templates
 2. Splits them into individual YAML files
 3. Filters out subchart templates (charts/ directory)
-4. Runs yamllint on our own templates
+4. Respects files listed in .check-yaml-ignore
+5. Runs yamllint on our own templates
 """
 
 import re
 import subprocess
 import sys
 import tempfile
+from argparse import ArgumentParser
 from pathlib import Path
 
 # Configuration
@@ -23,6 +25,44 @@ PATH_TO_CHART = "services-api-helm-chart"
 RELEASE_NAME = "services-api"
 NAMESPACE = "services-api"
 YAMLLINT_CONFIG = ".yamllint"
+IGNORE_FILE = ".check-yaml-ignore"
+
+
+def load_ignore_patterns() -> list[str]:
+    """Load ignore patterns from .check-yaml-ignore file."""
+    ignore_path = Path(IGNORE_FILE)
+    if not ignore_path.exists():
+        return []
+
+    patterns = []
+    with open(ignore_path) as f:
+        for line in f:
+            line = line.strip()
+            # Skip empty lines and comments
+            if not line or line.startswith("#"):
+                continue
+            patterns.append(line)
+    return patterns
+
+
+def should_ignore_file(file_path: Path, patterns: list[str], verbose: bool = False) -> bool:
+    """Check if file matches any ignore pattern."""
+    file_str = str(file_path)
+    for pattern in patterns:
+        # Simple glob-like matching
+        if pattern.endswith("/"):
+            # Directory pattern
+            if pattern.rstrip("/") in file_str:
+                if verbose:
+                    print(f"  ⊘ Ignored (dir pattern): {file_path}")
+                return True
+        else:
+            # File pattern - check if it matches anywhere in the path
+            if pattern in file_str or file_path.name == pattern:
+                if verbose:
+                    print(f"  ⊘ Ignored (file pattern): {file_path}")
+                return True
+    return False
 
 
 def render_helm_templates() -> str:
@@ -75,9 +115,20 @@ def split_yaml_to_files(yaml_content: str, output_dir: Path) -> list[Path]:
     return files_written
 
 
-def filter_own_templates(files: list[Path]) -> list[Path]:
-    """Filter out subchart templates, keeping only our own."""
-    return [f for f in files if "/charts/" not in str(f)]
+def filter_own_templates(files: list[Path], ignore_patterns: list[str], verbose: bool = False) -> list[Path]:
+    """Filter out subchart templates and ignored files, keeping only our own."""
+    filtered = []
+    for f in files:
+        if "/charts/" in str(f):
+            if verbose:
+                print(f"  ⊘ Ignored (subchart): {f}")
+        elif should_ignore_file(f, ignore_patterns, verbose):
+            pass  # Already printed by should_ignore_file
+        else:
+            if verbose:
+                print(f"  ✓ Linting: {f}")
+            filtered.append(f)
+    return filtered
 
 
 def run_yamllint(files: list[Path]) -> int:
@@ -101,6 +152,15 @@ def run_yamllint(files: list[Path]) -> int:
 
 
 def main():
+    parser = ArgumentParser(description="Lint Helm chart templates")
+    parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Show debug output (files being linted and ignored)"
+    )
+    args = parser.parse_args()
+    verbose = args.verbose
+
     try:
         subprocess.run(
             ["helm", "lint", PATH_TO_CHART],
@@ -112,6 +172,9 @@ def main():
         print(e.stderr.decode())
         return 1
 
+    # Load ignore patterns
+    ignore_patterns = load_ignore_patterns()
+
     # Render templates
     rendered_yaml = render_helm_templates()
 
@@ -120,8 +183,14 @@ def main():
         temp_path = Path(tmpdir)
         files = split_yaml_to_files(rendered_yaml, temp_path)
 
-        # Filter to only our templates (not subcharts)
-        our_files = filter_own_templates(files)
+        # Filter to only our templates (not subcharts or ignored files)
+        our_files = filter_own_templates(files, ignore_patterns, verbose)
+
+        if verbose:
+            print()
+            print(f"Total files: {len(files)}")
+            print(f"Files to lint: {len(our_files)}")
+            print()
 
         if not our_files:
             print("  ⚠️  No templates found to lint")
