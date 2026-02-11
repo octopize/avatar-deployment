@@ -311,6 +311,7 @@ services:
       AVATAR_API_INTERNAL_URL: "http://api:8000"
       AVATAR_STORAGE_ENDPOINT_PUBLIC_URL: ${AVATAR_STORAGE_ENDPOINT_PUBLIC_URL}
       AVATAR_STORAGE_ENDPOINT_INTERNAL_URL: ${AVATAR_STORAGE_ENDPOINT_INTERNAL_URL}
+      AVATAR_AUTHENTIK_URL: ${SSO_PROVIDER_URL}
       AVATAR_SSO_URL: ${AVATAR_API_URL}/login/sso
       AVATAR_SSO_ENABLED: true
 
@@ -523,11 +524,8 @@ services:
     <<: *authentik-environment
 
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
       - ./authentik/certs:/certs
-      # Mount custom email templates (synced from common/authentik-templates)
       - ./authentik/custom-templates:/templates/email:ro
-      # Mount custom branding assets (shared source)
       - ./authentik/branding/favicon.ico:/media/public/favicon.ico:ro
       - ./authentik/branding/logo.png:/media/public/brand_logo.png:ro
       - ./authentik/octopize-avatar-blueprint.yaml:/blueprints/octopize-avatar-blueprint.yaml:ro

@@ -31,9 +31,12 @@ blueprint-export *ARGS: blueprint-install
 blueprint-validate *ARGS: blueprint-install
     @uv tool run authentik-blueprint validate {{ARGS}}
 
-
-blueprint-convert-staging: blueprint-install
+blueprint-convert INPUT_FILE OUTPUT_FILE="common/authentik-blueprint/octopize-avatar-blueprint.yaml" *ARGS: blueprint-install
     @uv tool run authentik-blueprint export \
         --validate \
-        docker/authentik/blueprints/staging-export.yaml \
-        common/authentik-blueprint/octopize-avatar-blueprint.yaml
+        {{INPUT_FILE}} \
+        {{OUTPUT_FILE}} \
+        {{ARGS}}
+
+
+blueprint-convert-staging: (blueprint-convert "docker/authentik/blueprints/staging-export.yaml")
