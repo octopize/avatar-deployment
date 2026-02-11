@@ -9,6 +9,7 @@ import pytest
 import yaml
 
 from octopize_avatar_deploy.configure import DeploymentConfigurator
+from octopize_avatar_deploy.deployment_mode import DeploymentMode
 from octopize_avatar_deploy.steps import DeploymentStep
 
 
@@ -78,7 +79,8 @@ class TestDeploymentConfigurator:
 
         assert configurator.templates_dir == temp_templates_dir
         assert configurator.output_dir == temp_output_dir
-        assert configurator.config == {}
+        assert "deployment_mode" in configurator.config  # Mode added to config
+        assert configurator.mode == DeploymentMode.PRODUCTION  # Default mode
         assert configurator.use_state is True
         assert configurator.state is not None
         assert configurator.defaults is not None

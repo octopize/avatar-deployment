@@ -11,7 +11,6 @@ class DatabaseStep(DeploymentStep):
 
     name = "database"
     description = "Configure PostgreSQL database credentials"
-    required = True
 
     def collect_config(self) -> dict[str, Any]:
         """Collect database configuration."""

@@ -23,7 +23,6 @@ class AuthentikBlueprintStep(DeploymentStep):
 
     name = "authentik-blueprint"
     description = "Configure Authentik SSO blueprint settings"
-    required = True
 
     def collect_config(self) -> dict[str, Any]:
         """Collect Authentik blueprint configuration.
@@ -42,15 +41,14 @@ class AuthentikBlueprintStep(DeploymentStep):
         # Ensure domain is not empty
         if not domain:
             raise ValueError(
-                f"PUBLIC_URL '{public_url}' is not set or invalid; cannot derive AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN."
+                f"PUBLIC_URL '{public_url}' is not set or invalid;"
+                " cannot derive AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN."
             )
 
         config["AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN"] = domain
 
         # Generate random OAuth2 client ID (or use existing if provided)
-        client_id = self.config.get(
-            "AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID", secrets.token_hex(32)
-        )
+        client_id = self.config.get("AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID", secrets.token_hex(32))
         config["AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID"] = client_id
 
         # Generate OAuth2 client secret (or use existing if provided)

@@ -29,11 +29,11 @@ from typing import Any
 import yaml
 from jinja2 import Environment, FileSystemLoader
 
+from octopize_avatar_deploy.deployment_mode import DeploymentMode
 from octopize_avatar_deploy.download_templates import (
     GitHubTemplateProvider,
     LocalTemplateProvider,
     TemplateProvider,
-    download_templates,
     verify_required_files,
 )
 from octopize_avatar_deploy.input_gatherer import (
@@ -49,6 +49,7 @@ from octopize_avatar_deploy.steps import (
     DatabaseStep,
     DeploymentStep,
     EmailStep,
+    LocalSourceStep,
     LoggingStep,
     NginxTlsStep,
     RequiredConfigStep,
@@ -84,6 +85,7 @@ class DeploymentConfigurator:
         StorageStep,
         EmailStep,
         UserStep,
+        LocalSourceStep,  # Dev mode only - prompts for local source paths
         TelemetryStep,
         LoggingStep,
     ]
@@ -98,6 +100,7 @@ class DeploymentConfigurator:
         printer: Printer | None = None,
         input_gatherer: InputGatherer | None = None,
         step_classes: list[type[DeploymentStep]] | None = None,
+        mode: DeploymentMode = DeploymentMode.PRODUCTION,
     ):
         """
         Initialize the configurator.
@@ -111,12 +114,20 @@ class DeploymentConfigurator:
             printer: Optional printer for output (defaults to ConsolePrinter)
             input_gatherer: Optional input gatherer (defaults to ConsoleInputGatherer)
             step_classes: Optional list of step classes to use (defaults to DEFAULT_STEP_CLASSES)
+            mode: Deployment mode (DeploymentMode.PRODUCTION or DeploymentMode.DEV)
         """
         self.templates_dir = Path(templates_dir)
         self.output_dir = Path(output_dir)
         self.config = config or {}
         self.use_state = use_state
-        self.step_classes = step_classes or self.DEFAULT_STEP_CLASSES
+        self.mode = mode
+
+        # Add deployment mode to config early so steps can access it
+        self.config["deployment_mode"] = str(mode)
+
+        # Filter step classes based on deployment mode
+        all_step_classes = step_classes or self.DEFAULT_STEP_CLASSES
+        self.step_classes = [cls for cls in all_step_classes if mode in cls.modes]
 
         # Use Rich implementations if in interactive terminal, otherwise Console
         if printer is None:
@@ -223,6 +234,17 @@ class DeploymentConfigurator:
 
         # Generate docker-compose.yml from template
         self.render_template("docker-compose.yml.template", "docker-compose.yml")
+
+        # Generate compose.override.yaml for dev mode
+        if self.mode == DeploymentMode.DEV:
+            override_template = self.templates_dir / "compose.override.yaml.template"
+            if override_template.exists():
+                self.render_template("compose.override.yaml.template", "compose.override.yaml")
+            else:
+                self.printer.print_warning(
+                    "Dev mode enabled but compose.override.yaml.template not found. "
+                    "Skipping override file generation."
+                )
 
         # Copy authentik custom templates (email templates)
         custom_templates_src = self.templates_dir / "authentik" / "custom-templates"
@@ -408,6 +430,7 @@ class DeploymentRunner:
         verbose: bool = False,
         printer: Printer | None = None,
         input_gatherer: InputGatherer | None = None,
+        mode: DeploymentMode = DeploymentMode.PRODUCTION,
     ):
         """
         Initialize the deployment runner.
@@ -419,10 +442,12 @@ class DeploymentRunner:
             verbose: Enable verbose output
             printer: Optional printer for output (defaults to ConsolePrinter)
             input_gatherer: Optional input gatherer for prompts
+            mode: Deployment mode (DeploymentMode.PRODUCTION or DeploymentMode.DEV)
         """
         self.output_dir = Path(output_dir)
         self.template_from = template_from
         self.verbose = verbose
+        self.mode = mode
         self.template_provider: TemplateProvider
         self.template_source: Path | None = None
 
@@ -616,6 +641,7 @@ class DeploymentRunner:
             output_dir=self.output_dir,
             printer=self.printer,
             input_gatherer=self.input_gatherer,
+            mode=self.mode,
         )
 
         configurator.run(
@@ -671,7 +697,18 @@ def main():
         help="Verbose output",
     )
 
+    parser.add_argument(
+        "--mode",
+        type=str,
+        choices=["production", "dev"],
+        default="production",
+        help="Deployment mode: production (default) or dev",
+    )
+
     args = parser.parse_args()
+
+    # Convert mode string to enum
+    mode = DeploymentMode(args.mode)
 
     # Check if we're in test mode
     test_printer = None
@@ -692,6 +729,7 @@ def main():
         verbose=args.verbose,
         printer=test_printer,
         input_gatherer=test_input_gatherer,
+        mode=mode,
     )
 
     try:

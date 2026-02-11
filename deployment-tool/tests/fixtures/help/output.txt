@@ -2,6 +2,7 @@ usage: octopize-avatar-deploy [-h] [--output-dir OUTPUT_DIR]
                               [--template-from TEMPLATE_FROM]
                               [--config CONFIG] [--non-interactive]
                               [--save-config] [--verbose]
+                              [--mode {production,dev}]
 
 Avatar Deployment Configuration Tool
 
@@ -18,3 +19,5 @@ options:
                         file)
   --save-config         Save configuration to deployment-config.yaml
   --verbose             Verbose output
+  --mode {production,dev}
+                        Deployment mode: production (default) or dev

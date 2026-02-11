@@ -10,7 +10,6 @@ class EmailStep(DeploymentStep):
 
     name = "email"
     description = "Configure email provider (AWS SES or SMTP) and credentials"
-    required = True
 
     def collect_config(self) -> dict[str, Any]:
         """Collect email configuration."""
@@ -19,7 +18,7 @@ class EmailStep(DeploymentStep):
         print("\n--- Email Configuration ---")
 
         # Email provider
-        default_provider = self.defaults["email"]["provider"]
+        default_provider = self.get_default_value("email.provider")
         provider = self.config.get(
             "MAIL_PROVIDER",
             self.prompt("Mail provider (aws or smtp)", default_provider, key="email.mail_provider")
@@ -31,7 +30,7 @@ class EmailStep(DeploymentStep):
 
         # SMTP configuration
         if provider == "smtp":
-            smtp_defaults = self.defaults["email"]["smtp"]
+            smtp_defaults = self.get_default_value("email.smtp")
 
             config["SMTP_HOST"] = self.config.get(
                 "SMTP_HOST",
@@ -62,7 +61,7 @@ class EmailStep(DeploymentStep):
         # Email authentication
         config["USE_EMAIL_AUTHENTICATION"] = self.config.get(
             "USE_EMAIL_AUTHENTICATION",
-            self.defaults["application"]["email_authentication"],
+            self.get_default_value("application.email_authentication"),
         )
 
         self.config.update(config)

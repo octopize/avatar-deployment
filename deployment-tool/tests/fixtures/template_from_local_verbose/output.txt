@@ -1,6 +1,6 @@
 Copying templates from /home/tom/Documents/dev/octopize/avatar-deployment/docker/templates
-✓ Found all 14 required template files
-✓ Template version is compatible with script version 2.16.0
+✓ Found all 15 required template files
+✓ Template version is compatible with script version 2.17.0
 
 ============================================================
 Avatar Deployment Configuration

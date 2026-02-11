@@ -294,7 +294,7 @@ Implement your step in `src/octopize_avatar_deploy/steps/`:
 class MyNewStep(DeploymentStep):
     name = "my_new_step"
     description = "Configure my new feature"
-    required = True
+     
 
     def collect_config(self) -> dict[str, Any]:
         config = {}

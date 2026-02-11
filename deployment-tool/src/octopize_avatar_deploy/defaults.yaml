@@ -50,3 +50,6 @@ presets:
       sentry_enabled: 'false'
     telemetry:
       enabled: false
+local_source:
+  web_source_path: /path/to/avatar-website
+  npmrc_path: ~/.npmrc

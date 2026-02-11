@@ -5,6 +5,7 @@ from .authentik_blueprint import AuthentikBlueprintStep
 from .base import DeploymentStep
 from .database import DatabaseStep
 from .email import EmailStep
+from .local_source import LocalSourceStep
 from .logging import LoggingStep
 from .nginx import NginxTlsStep
 from .required import RequiredConfigStep
@@ -24,4 +25,5 @@ __all__ = [
     "AuthentikStep",
     "AuthentikBlueprintStep",
     "UserStep",
+    "LocalSourceStep",
 ]

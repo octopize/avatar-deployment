@@ -12,11 +12,17 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from octopize_avatar_deploy.deployment_mode import DeploymentMode
+
 if TYPE_CHECKING:
     from octopize_avatar_deploy.input_gatherer import InputGatherer
     from octopize_avatar_deploy.printer import Printer
 from octopize_avatar_deploy.input_gatherer import ConsoleInputGatherer
 from octopize_avatar_deploy.printer import ConsolePrinter
+
+_DEFAULT_VALUE_SENTINEL = (
+    object()
+)  # Sentinel for distinguishing between None and no default provided
 
 
 class DeploymentStep(ABC):
@@ -25,12 +31,21 @@ class DeploymentStep(ABC):
 
     Each step handles a specific aspect of the deployment configuration.
     Subclasses should implement collect_config() and generate_secrets().
+
+    Class Variables:
+        modes: List of deployment modes this step should run in.
+               Default is [DeploymentMode.PRODUCTION, DeploymentMode.DEV] (runs in all modes).
+               Override to limit step to specific modes (e.g., modes = [DeploymentMode.DEV]).
     """
 
     # Step metadata
     name: str = "base_step"
     description: str = "Base configuration step"
     required: bool = True  # Whether this step is required
+    modes: list[DeploymentMode] = [
+        DeploymentMode.PRODUCTION,
+        DeploymentMode.DEV,
+    ]  # Deployment modes this step runs in
 
     def __init__(
         self,
@@ -181,6 +196,31 @@ class DeploymentStep(ABC):
         if ret is None:
             raise ValueError(f"Configuration key '{key}' is required but not set.")
         return ret
+
+    def get_default_value(self, key: str, default: Any = _DEFAULT_VALUE_SENTINEL) -> Any:
+        """Get the value defined in the defaults (possible nested), with a fallback default.
+
+        Args:
+            key: Dot-separated key to look up in defaults (e.g., "email.smtp_password")
+            default: Fallback default value if not found in defaults
+
+        Returns:
+            Value from defaults or the provided fallback default
+
+        Raises:
+            ValueError: If the key is not found in defaults and no fallback default is provided
+        """
+
+        keys = key.split(".")
+        value = self.defaults.copy()
+        for k in keys:
+            if isinstance(value, dict) and k in value:
+                value = value[k]
+            else:
+                if default is _DEFAULT_VALUE_SENTINEL:
+                    raise ValueError(f"Default value for key '{key}' not found in defaults.")
+                return default
+        return value
 
     # Utility methods for generating secrets
 

@@ -16,31 +16,33 @@ class TelemetryStep(DeploymentStep):
         """Collect telemetry configuration."""
         config = {}
 
+        default_sentry_enabled = self.get_default_value("application.sentry_enabled")
         sentry_enabled = (
             self.prompt_yes_no(
                 "Enable Sentry error monitoring?",
-                default=self.defaults["application"]["sentry_enabled"] == "true",
+                default=default_sentry_enabled == "true",
                 key="telemetry.enable_sentry",
             )
             if self.interactive
-            else self.defaults["application"]["sentry_enabled"] == "true"
+            else default_sentry_enabled == "true"
         )
 
         config["IS_SENTRY_ENABLED"] = "true" if sentry_enabled else "false"
 
+        default_telemetry_enabled = self.get_default_value("telemetry.enabled")
         enable_telemetry = (
             self.prompt_yes_no(
                 "Enable usage telemetry?",
-                default=self.defaults["telemetry"]["enabled"],
+                default=default_telemetry_enabled,
                 key="telemetry.enable_telemetry",
             )
             if self.interactive
-            else self.defaults["telemetry"]["enabled"]
+            else default_telemetry_enabled
         )
 
         if enable_telemetry:
-            config["TELEMETRY_S3_ENDPOINT_URL"] = self.defaults["telemetry"]["endpoint_url"]
-            config["TELEMETRY_S3_REGION"] = self.defaults["telemetry"]["region"]
+            config["TELEMETRY_S3_ENDPOINT_URL"] = self.get_default_value("telemetry.endpoint_url")
+            config["TELEMETRY_S3_REGION"] = self.get_default_value("telemetry.region")
         else:
             config["TELEMETRY_S3_ENDPOINT_URL"] = ""
             config["TELEMETRY_S3_REGION"] = ""

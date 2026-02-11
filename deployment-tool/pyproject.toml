@@ -100,7 +100,7 @@ target-version = "py313"
 line-length = 100
 
 [tool.ruff.lint]
-select = [
+extend-select = [
     "E",   # pycodestyle errors
     "W",   # pycodestyle warnings
     "F",   # pyflakes
@@ -109,9 +109,7 @@ select = [
     "C4",  # flake8-comprehensions
     "UP",  # pyupgrade
 ]
-ignore = [
-    "F401",  # Unused import - Template used in try/except validation
-]
+
 
 [tool.ruff.lint.isort]
 known-first-party = ["octopize_avatar_deploy"]

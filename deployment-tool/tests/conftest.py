@@ -2,8 +2,6 @@
 Shared pytest configuration and fixtures for integration tests.
 """
 
-import contextlib
-import os
 import tempfile
 from pathlib import Path
 
@@ -249,15 +247,25 @@ def _compare_directories(actual_dir: Path, expected_dir: Path) -> bool:
                 expected_content = re.sub(pattern, replacement, expected_content)
 
             # Normalize random OAuth2 client ID/secret patterns
-            normalize_both(r"AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID: [0-9a-f]+", "AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID: RANDOM_ID")
-            normalize_both(r"AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET: [0-9a-f]+", "AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET: RANDOM_SECRET")
+            normalize_both(
+                r"AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID: [0-9a-f]+",
+                "AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID: RANDOM_ID",
+            )
+            normalize_both(
+                r"AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET: [0-9a-f]+",
+                "AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET: RANDOM_SECRET",
+            )
 
             # Normalize 64-char hex client IDs/secrets in blueprint (OAuth provider)
             # Support both single and double quotes
             normalize_both(r"client_id: '[0-9a-f]{64}'", "client_id: 'RANDOM_CLIENT_ID'")
             normalize_both(r'client_id: "[0-9a-f]{64}"', 'client_id: "RANDOM_CLIENT_ID"')
-            normalize_both(r"client_secret: '[0-9a-f]{64}'", "client_secret: 'RANDOM_CLIENT_SECRET'")
-            normalize_both(r'client_secret: "[0-9a-f]{64}"', 'client_secret: "RANDOM_CLIENT_SECRET"')
+            normalize_both(
+                r"client_secret: '[0-9a-f]{64}'", "client_secret: 'RANDOM_CLIENT_SECRET'"
+            )
+            normalize_both(
+                r'client_secret: "[0-9a-f]{64}"', 'client_secret: "RANDOM_CLIENT_SECRET"'
+            )
 
             # Normalize 64-char hex in comments (blueprint template header)
             normalize_both(
@@ -271,7 +279,9 @@ def _compare_directories(actual_dir: Path, expected_dir: Path) -> bool:
 
             # Normalize SSO credentials in .env file
             normalize_both(r"SSO_CLIENT_ID=[0-9a-f]{64}", "SSO_CLIENT_ID=RANDOM_CLIENT_ID")
-            normalize_both(r"SSO_CLIENT_SECRET=[0-9a-f]{64}", "SSO_CLIENT_SECRET=RANDOM_CLIENT_SECRET")
+            normalize_both(
+                r"SSO_CLIENT_SECRET=[0-9a-f]{64}", "SSO_CLIENT_SECRET=RANDOM_CLIENT_SECRET"
+            )
 
             # Normalize AVATAR_AUTHENTIK_BLUEPRINT_* credentials in .env file
             normalize_both(

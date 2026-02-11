@@ -1,7 +1,5 @@
 """Tests for Rich-based printer and input gatherer implementations."""
 
-import pytest
-
 from octopize_avatar_deploy.input_gatherer import RichInputGatherer
 from octopize_avatar_deploy.printer import RichPrinter
 

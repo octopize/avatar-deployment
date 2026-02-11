@@ -10,19 +10,15 @@ class NginxTlsStep(DeploymentStep):
 
     name = "nginx_tls"
     description = "Configure Nginx TLS and HTTP settings"
-    required = True
 
     def collect_config(self) -> dict[str, Any]:
         """Collect Nginx TLS and HTTP configuration."""
         config: dict[str, Any] = {}
 
-        defaults = self.defaults.get("nginx", {})
-        default_tls_enabled = bool(defaults.get("tls_enabled", True))
-        default_http_port = str(defaults.get("http_port", "8080"))
-        default_cert_path = defaults.get("ssl_certificate_path", "./tls/server.fullchain.crt")
-        default_key_path = defaults.get(
-            "ssl_certificate_key_path", "./tls/private/server.decrypted.key"
-        )
+        default_tls_enabled = bool(self.get_default_value("nginx.tls_enabled"))
+        default_http_port = str(self.get_default_value("nginx.http_port"))
+        default_cert_path = self.get_default_value("nginx.ssl_certificate_path")
+        default_key_path = self.get_default_value("nginx.ssl_certificate_key_path")
 
         if "NGINX_TLS_ENABLED" in self.config:
             tls_enabled = bool(self.config["NGINX_TLS_ENABLED"])

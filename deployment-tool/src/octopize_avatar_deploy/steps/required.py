@@ -11,7 +11,6 @@ class RequiredConfigStep(DeploymentStep):
 
     name = "required_config"
     description = "Collect required deployment settings (PUBLIC_URL, ENV_NAME, etc.)"
-    required = True
 
     def collect_config(self) -> dict[str, Any]:
         """Collect required configuration."""
@@ -63,19 +62,19 @@ class RequiredConfigStep(DeploymentStep):
 
         # Service versions
         config["AVATAR_API_VERSION"] = self.config.get(
-            "AVATAR_API_VERSION", self.defaults["images"]["api"]
+            "AVATAR_API_VERSION", self.get_default_value("images.api")
         )
         config["AVATAR_WEB_VERSION"] = self.config.get(
-            "AVATAR_WEB_VERSION", self.defaults["images"]["web"]
+            "AVATAR_WEB_VERSION", self.get_default_value("images.web")
         )
         config["AVATAR_PDFGENERATOR_VERSION"] = self.config.get(
-            "AVATAR_PDFGENERATOR_VERSION", self.defaults["images"]["pdfgenerator"]
+            "AVATAR_PDFGENERATOR_VERSION", self.get_default_value("images.pdfgenerator")
         )
         config["AVATAR_SEAWEEDFS_VERSION"] = self.config.get(
-            "AVATAR_SEAWEEDFS_VERSION", self.defaults["images"]["seaweedfs"]
+            "AVATAR_SEAWEEDFS_VERSION", self.get_default_value("images.seaweedfs")
         )
         config["AVATAR_AUTHENTIK_VERSION"] = self.config.get(
-            "AVATAR_AUTHENTIK_VERSION", self.defaults["images"]["authentik"]
+            "AVATAR_AUTHENTIK_VERSION", self.get_default_value("images.authentik")
         )
 
         # Update self.config so generate_secrets() can access these values

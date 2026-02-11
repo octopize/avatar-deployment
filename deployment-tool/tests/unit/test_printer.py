@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Tests for printer abstraction."""
 
-import pytest
-
 from octopize_avatar_deploy.printer import ConsolePrinter, SilentPrinter
 
 

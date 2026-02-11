@@ -11,7 +11,6 @@ class StorageStep(DeploymentStep):
 
     name = "storage"
     description = "Configure S3-compatible storage (SeaweedFS) credentials"
-    required = True
 
     def collect_config(self) -> dict[str, Any]:
         """Collect storage configuration."""

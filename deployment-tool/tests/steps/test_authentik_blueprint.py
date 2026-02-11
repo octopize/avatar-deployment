@@ -133,8 +133,14 @@ class TestAuthentikBlueprintStep:
         config = step.collect_config()
 
         # Verify all values are also in self.config
-        assert step.config["AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN"] == config["AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN"]
-        assert step.config["AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID"] == config["AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID"]
+        assert (
+            step.config["AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN"]
+            == config["AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN"]
+        )
+        assert (
+            step.config["AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID"]
+            == config["AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID"]
+        )
         assert (
             step.config["AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET"]
             == config["AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET"]

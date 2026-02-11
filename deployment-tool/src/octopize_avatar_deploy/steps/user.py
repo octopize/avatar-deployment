@@ -39,7 +39,6 @@ class UserStep(DeploymentStep):
 
     name = "user"
     description = "Configure user authentication settings"
-    required = True
 
     def collect_config(self) -> dict[str, Any]:
         """Collect user authentication configuration."""
@@ -49,7 +48,7 @@ class UserStep(DeploymentStep):
         # Get from config, or fallback to defaults
         use_email_auth = self.config.get(
             "USE_EMAIL_AUTHENTICATION",
-            self.defaults.get("application", {}).get("email_authentication", True),
+            self.get_default_value("application.email_authentication"),
         )
         # Convert to string for comparison (defaults might be bool)
         use_email_auth_str = str(use_email_auth).lower()
@@ -78,7 +77,7 @@ class UserStep(DeploymentStep):
         # USE_EMAIL_AUTHENTICATION comes from EmailStep, so use .get() with fallback
         use_email_auth = self.config.get(
             "USE_EMAIL_AUTHENTICATION",
-            self.defaults.get("application", {}).get("email_authentication", "true"),
+            self.get_default_value("application.email_authentication"),
         )
         # Convert to string for comparison
         use_email_auth_str = str(use_email_auth).lower()

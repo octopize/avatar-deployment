@@ -9,8 +9,6 @@ import os
 import tempfile
 from pathlib import Path
 
-import pytest
-
 from octopize_avatar_deploy.cli_test_harness import (
     CLITestHarness,
     get_test_input_gatherer,

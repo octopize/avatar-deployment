@@ -23,6 +23,7 @@ REQUIRED_FILE_MANIFEST: dict[str, dict[str, object]] = {
             ".env.template",
             "nginx.conf.template",
             "docker-compose.yml.template",
+            "compose.override.yaml.template",  # Dev mode override (optional in production)
             ".template-version",
             "authentik/octopize-avatar-blueprint.yaml",
         ],

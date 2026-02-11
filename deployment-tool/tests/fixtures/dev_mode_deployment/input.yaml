@@ -1,0 +1,18 @@
+responses:
+  required_config.public_url: https://avatar-dev.example.com
+  required_config.env_name: development
+  required_config.organization_name: DevCompany
+  nginx_tls.enabled: true
+  nginx_tls.ssl_certificate_path: ''
+  nginx_tls.ssl_certificate_key_path: ''
+  authentik.bootstrap_email: dev@example.com
+  email.mail_provider: smtp
+  email.smtp_host: smtp.example.com
+  email.smtp_port: '587'
+  email.smtp_sender_email: dev@example.com
+  email.smtp_password: ''
+  user.admin_emails: dev@example.com
+  local_source.web_source_path: __TEMP_WEB_SOURCE__
+  local_source.npmrc_path: __TEMP_NPMRC__
+  telemetry.enable_sentry: false
+  telemetry.enable_telemetry: false

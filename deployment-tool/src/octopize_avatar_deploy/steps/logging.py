@@ -18,11 +18,13 @@ class LoggingStep(DeploymentStep):
 
         # Console logging
         if "USE_CONSOLE_LOGGING" not in self.config:
-            config["USE_CONSOLE_LOGGING"] = self.defaults["application"]["use_console_logging"]
+            config["USE_CONSOLE_LOGGING"] = self.get_default_value(
+                "application.use_console_logging"
+            )
 
         # Log level
         config["LOG_LEVEL"] = self.config.get(
-            "LOG_LEVEL", self.defaults["application"]["log_level"]
+            "LOG_LEVEL", self.get_default_value("application.log_level")
         )
 
         return config

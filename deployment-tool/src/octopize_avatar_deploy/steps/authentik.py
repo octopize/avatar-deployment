@@ -11,7 +11,6 @@ class AuthentikStep(DeploymentStep):
 
     name = "authentik"
     description = "Configure Authentik SSO authentication credentials"
-    required = True
 
     def collect_config(self) -> dict[str, Any]:
         """Collect Authentik configuration."""

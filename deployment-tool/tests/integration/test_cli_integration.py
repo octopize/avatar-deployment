@@ -10,9 +10,8 @@ import io
 import os
 import sys
 import tempfile
-from pathlib import Path
 import uuid
-import re
+from pathlib import Path
 
 import pytest
 import yaml
@@ -87,6 +86,57 @@ class TestCLIDeploymentScenarios:
         # Verify generated configuration files
         assert compare_generated_files(temp_deployment_dir, scenario, FIXTURES_DIR)
 
+    def test_dev_mode_deployment(self, temp_deployment_dir, log_file, docker_templates_dir):
+        """Test dev mode deployment with local source bind mounts."""
+        # Create temporary directories for local source paths
+        web_source_dir = temp_deployment_dir / "test-avatar-website"
+        web_source_dir.mkdir()
+        (web_source_dir / "package.json").write_text('{"name": "test"}')
+
+        npmrc_file = temp_deployment_dir / "test-.npmrc"
+        npmrc_file.write_text("//registry.npmjs.org/:_authToken=test")
+
+        # Load fixture and replace placeholders with temp paths
+        responses = fixture_manager.load_input_fixture("dev_mode_deployment")
+        responses["local_source.web_source_path"] = str(web_source_dir)
+        responses["local_source.npmrc_path"] = str(npmrc_file)
+
+        harness = CLITestHarness(
+            responses=responses,
+            args=[
+                "--mode",
+                "dev",
+                "--output-dir",
+                str(temp_deployment_dir),
+                "--template-from",
+                str(docker_templates_dir),
+            ],
+            log_file=str(log_file),
+        )
+        exit_code = harness.run()
+
+        assert exit_code == 0
+
+        # Verify compose.override.yaml was generated
+        override_file = temp_deployment_dir / "compose.override.yaml"
+        assert override_file.exists(), "compose.override.yaml should be generated in dev mode"
+
+        # Verify override file contains bind mount paths
+        override_content = override_file.read_text()
+        assert str(web_source_dir) in override_content, "Web source path should be in override"
+        assert str(npmrc_file) in override_content, "NPM RC path should be in override"
+
+        # Verify standard files still generated
+        assert (temp_deployment_dir / "docker-compose.yml").exists()
+        assert (temp_deployment_dir / ".env").exists()
+
+        # Verify override file has expected structure
+        assert "services:" in override_content
+        assert "web:" in override_content
+        assert "build:" in override_content
+        assert "volumes:" in override_content
+        assert "secrets:" in override_content
+
     def test_blueprint_template_rendering(
         self, temp_deployment_dir, log_file, docker_templates_dir
     ):
@@ -116,7 +166,9 @@ class TestCLIDeploymentScenarios:
 
         # Verify !Env tags are present (not rendered away by Jinja2)
         # Note: Tags may be with or without quotes (both are valid YAML)
-        assert "!Env" in blueprint_content and "AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN" in blueprint_content
+        assert (
+            "!Env" in blueprint_content and "AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN" in blueprint_content
+        )
         assert "AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID" in blueprint_content
         assert "AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET" in blueprint_content
         assert "AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI" in blueprint_content

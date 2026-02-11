@@ -8,7 +8,6 @@ and updating expected outputs when needed.
 import difflib
 import os
 from pathlib import Path
-from typing import Any
 
 import yaml
 
