@@ -44,18 +44,19 @@ from octopize_avatar_deploy.input_gatherer import (
 from octopize_avatar_deploy.printer import ConsolePrinter, Printer, RichPrinter
 from octopize_avatar_deploy.state_manager import DeploymentState
 from octopize_avatar_deploy.steps import (
+    ApiLocalSourceStep,
     AuthentikBlueprintStep,
     AuthentikStep,
     DatabaseStep,
     DeploymentStep,
     EmailStep,
-    LocalSourceStep,
     LoggingStep,
     NginxTlsStep,
     RequiredConfigStep,
     StorageStep,
     TelemetryStep,
     UserStep,
+    WebLocalSourceStep,
 )
 from octopize_avatar_deploy.version_compat import (
     SCRIPT_VERSION,
@@ -85,7 +86,8 @@ class DeploymentConfigurator:
         StorageStep,
         EmailStep,
         UserStep,
-        LocalSourceStep,  # Dev mode only - prompts for local source paths
+        WebLocalSourceStep,  # Dev mode only - prompts for Web local source paths
+        ApiLocalSourceStep,  # Dev mode only - prompts for API local source paths
         TelemetryStep,
         LoggingStep,
     ]

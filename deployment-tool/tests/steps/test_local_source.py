@@ -1,17 +1,18 @@
-"""Tests for LocalSourceStep configuration step."""
+"""Tests for WebLocalSourceStep configuration step."""
 
 import pytest
 
 from octopize_avatar_deploy.deployment_mode import DeploymentMode
-from octopize_avatar_deploy.steps import LocalSourceStep
+from octopize_avatar_deploy.steps import WebLocalSourceStep
+from octopize_avatar_deploy.steps.base import ValidationError, ValidationSuccess
 
 
-class TestLocalSourceStep:
-    """Test the LocalSourceStep."""
+class TestWebLocalSourceStep:
+    """Test the WebLocalSourceStep."""
 
     @pytest.fixture
     def step(self, tmp_path):
-        """Create a LocalSourceStep instance."""
+        """Create a WebLocalSourceStep instance."""
         defaults = {
             "local_source": {
                 "web_source_path": "/default/path/to/avatar-website",
@@ -19,13 +20,13 @@ class TestLocalSourceStep:
             }
         }
         config = {}
-        return LocalSourceStep(tmp_path, defaults, config, interactive=False)
+        return WebLocalSourceStep(tmp_path, defaults, config, interactive=False)
 
     def test_step_metadata(self, step):
         """Test step metadata."""
-        assert step.name == "local_source"
+        assert step.name == "web_local_source"
         assert step.required is True
-        assert "local source" in step.description.lower()
+        assert "source" in step.description.lower()
 
     def test_modes_dev_only(self, step):
         """Test that step only runs in dev mode."""
@@ -50,7 +51,7 @@ class TestLocalSourceStep:
         }
         config = {}
 
-        step = LocalSourceStep(tmp_path, defaults, config, interactive=False)
+        step = WebLocalSourceStep(tmp_path, defaults, config, interactive=False)
         collected = step.collect_config()
 
         assert "WEB_SOURCE_PATH" in collected
@@ -79,7 +80,7 @@ class TestLocalSourceStep:
             }
         }
 
-        step = LocalSourceStep(tmp_path, defaults, config, interactive=False)
+        step = WebLocalSourceStep(tmp_path, defaults, config, interactive=False)
         collected = step.collect_config()
 
         assert collected["WEB_SOURCE_PATH"] == str(web_source_dir)
@@ -97,7 +98,7 @@ class TestLocalSourceStep:
             }
         }
 
-        step = LocalSourceStep(tmp_path, defaults, {}, interactive=False)
+        step = WebLocalSourceStep(tmp_path, defaults, {}, interactive=False)
 
         with pytest.raises(ValueError, match="does not exist"):
             step.collect_config()
@@ -114,7 +115,7 @@ class TestLocalSourceStep:
             }
         }
 
-        step = LocalSourceStep(tmp_path, defaults, {}, interactive=False)
+        step = WebLocalSourceStep(tmp_path, defaults, {}, interactive=False)
 
         with pytest.raises(ValueError, match="does not exist"):
             step.collect_config()
@@ -130,45 +131,45 @@ class TestLocalSourceStep:
         test_dir = tmp_path / "test_dir"
         test_dir.mkdir()
 
-        is_valid, error = LocalSourceStep._validate_directory_path(str(test_dir))
-        assert is_valid is True
-        assert error == ""
+        result = WebLocalSourceStep._validate_directory_path(str(test_dir))
+        assert isinstance(result, ValidationSuccess)
+        assert result.value == str(test_dir)
 
     def test_validate_directory_path_not_exists(self):
         """Test directory path validation with non-existent path."""
-        is_valid, error = LocalSourceStep._validate_directory_path("/nonexistent/path")
-        assert is_valid is False
-        assert "does not exist" in error
+        result = WebLocalSourceStep._validate_directory_path("/nonexistent/path")
+        assert isinstance(result, ValidationError)
+        assert "does not exist" in result.message
 
     def test_validate_directory_path_is_file(self, tmp_path):
         """Test directory path validation with file instead of directory."""
         test_file = tmp_path / "test_file.txt"
         test_file.write_text("test")
 
-        is_valid, error = LocalSourceStep._validate_directory_path(str(test_file))
-        assert is_valid is False
-        assert "not a directory" in error
+        result = WebLocalSourceStep._validate_directory_path(str(test_file))
+        assert isinstance(result, ValidationError)
+        assert "not a directory" in result.message
 
     def test_validate_file_path_success(self, tmp_path):
         """Test file path validation with valid file."""
         test_file = tmp_path / ".npmrc"
         test_file.write_text("test")
 
-        is_valid, error = LocalSourceStep._validate_file_path(str(test_file))
-        assert is_valid is True
-        assert error == ""
+        result = WebLocalSourceStep._validate_file_path(str(test_file))
+        assert isinstance(result, ValidationSuccess)
+        assert result.value == str(test_file)
 
     def test_validate_file_path_not_exists(self):
         """Test file path validation with non-existent path."""
-        is_valid, error = LocalSourceStep._validate_file_path("/nonexistent/.npmrc")
-        assert is_valid is False
-        assert "does not exist" in error
+        result = WebLocalSourceStep._validate_file_path("/nonexistent/.npmrc")
+        assert isinstance(result, ValidationError)
+        assert "does not exist" in result.message
 
     def test_validate_file_path_is_directory(self, tmp_path):
         """Test file path validation with directory instead of file."""
         test_dir = tmp_path / "test_dir"
         test_dir.mkdir()
 
-        is_valid, error = LocalSourceStep._validate_file_path(str(test_dir))
-        assert is_valid is False
-        assert "not a file" in error
+        result = WebLocalSourceStep._validate_file_path(str(test_dir))
+        assert isinstance(result, ValidationError)
+        assert "not a file" in result.message

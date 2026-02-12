@@ -5,13 +5,14 @@ import pytest
 from octopize_avatar_deploy.configure import DeploymentConfigurator
 from octopize_avatar_deploy.deployment_mode import DeploymentMode
 from octopize_avatar_deploy.steps import (
+    ApiLocalSourceStep,
     AuthentikStep,
     DatabaseStep,
     DeploymentStep,
     EmailStep,
-    LocalSourceStep,
     RequiredConfigStep,
     TelemetryStep,
+    WebLocalSourceStep,
 )
 
 
@@ -145,8 +146,8 @@ telemetry:
         assert MockProductionOnlyStep not in configurator.step_classes
 
     def test_local_source_step_only_in_dev_mode(self, tmp_path, tmp_templates_dir, mock_defaults):
-        """Test that LocalSourceStep is filtered out in production mode."""
-        # Test with actual default steps including LocalSourceStep
+        """Test that WebLocalSourceStep and ApiLocalSourceStep are filtered out."""
+        # Test with actual default steps including local source steps
         from octopize_avatar_deploy.configure import DeploymentConfigurator
 
         configurator_prod = DeploymentConfigurator(
@@ -165,16 +166,18 @@ telemetry:
             use_state=False,
         )
 
-        # LocalSourceStep should not be in production steps
-        assert LocalSourceStep not in configurator_prod.step_classes
+        # Local source steps should not be in production steps
+        assert WebLocalSourceStep not in configurator_prod.step_classes
+        assert ApiLocalSourceStep not in configurator_prod.step_classes
 
-        # LocalSourceStep should be in dev steps
-        assert LocalSourceStep in configurator_dev.step_classes
+        # Local source steps should be in dev steps
+        assert WebLocalSourceStep in configurator_dev.step_classes
+        assert ApiLocalSourceStep in configurator_dev.step_classes
 
     def test_all_default_steps_run_in_both_modes_except_local_source(
         self, tmp_path, tmp_templates_dir, mock_defaults
     ):
-        """Test that all default steps (except LocalSourceStep) run in both modes."""
+        """Test that all default steps (except local source steps) run in both modes."""
         from octopize_avatar_deploy.configure import DeploymentConfigurator
 
         configurator_prod = DeploymentConfigurator(
@@ -208,9 +211,10 @@ telemetry:
         # At least these should be in common (there may be more)
         assert expected_common.issubset(common_steps)
 
-        # LocalSourceStep should only be in dev
+        # Local source steps should only be in dev
         dev_only_steps = set(configurator_dev.step_classes) - set(configurator_prod.step_classes)
-        assert LocalSourceStep in dev_only_steps
+        assert WebLocalSourceStep in dev_only_steps
+        assert ApiLocalSourceStep in dev_only_steps
 
     def test_deployment_mode_added_to_config(self, tmp_path, tmp_templates_dir, mock_defaults):
         """Test that deployment_mode is added to config early."""

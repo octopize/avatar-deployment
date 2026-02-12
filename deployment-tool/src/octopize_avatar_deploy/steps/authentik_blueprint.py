@@ -34,7 +34,7 @@ class AuthentikBlueprintStep(DeploymentStep):
         config = {}
 
         # Extract domain from PUBLIC_URL (required config value)
-        public_url = self.config.get("PUBLIC_URL", "")
+        public_url = self.get_config("PUBLIC_URL", "")
         # Remove protocol and trailing slashes
         domain = public_url.replace("https://", "").replace("http://", "").rstrip("/")
 
@@ -48,24 +48,24 @@ class AuthentikBlueprintStep(DeploymentStep):
         config["AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN"] = domain
 
         # Generate random OAuth2 client ID (or use existing if provided)
-        client_id = self.config.get("AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID", secrets.token_hex(32))
+        client_id = self.get_config("AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID", secrets.token_hex(32))
         config["AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID"] = client_id
 
         # Generate OAuth2 client secret (or use existing if provided)
-        client_secret = self.config.get(
+        client_secret = self.get_config(
             "AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET", secrets.token_hex(32)
         )
         config["AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET"] = client_secret
 
         # Build API redirect URI from domain
-        redirect_uri = self.config.get(
+        redirect_uri = self.get_config(
             "AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI",
             f"https://{domain}/api/login/sso/auth",
         )
         config["AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI"] = redirect_uri
 
         # Use default license type (or from config)
-        license_type = self.config.get(
+        license_type = self.get_config(
             "AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE",
             "demo",  # Default to demo license
         )

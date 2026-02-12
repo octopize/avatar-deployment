@@ -3,10 +3,15 @@
 import re
 from typing import Any
 
-from .base import DeploymentStep
+from .base import (
+    DefaultKey,
+    DeploymentStep,
+    ValidationError,
+    ValidationSuccess,
+)
 
 
-def validate_comma_separated_emails(value: str) -> tuple[bool, str]:
+def validate_comma_separated_emails(value: str) -> ValidationSuccess[str] | ValidationError:
     """
     Validate comma-separated email addresses.
 
@@ -14,11 +19,11 @@ def validate_comma_separated_emails(value: str) -> tuple[bool, str]:
         value: String containing comma-separated email addresses
 
     Returns:
-        Tuple of (is_valid, error_message)
+        ValidationSuccess with the value or ValidationError with message
     """
     if not value.strip():
         # Empty is allowed (optional field)
-        return True, ""
+        return ValidationSuccess(value)
 
     # Simple email regex pattern
     email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
@@ -27,11 +32,11 @@ def validate_comma_separated_emails(value: str) -> tuple[bool, str]:
 
     for email in emails:
         if not email:
-            return False, "Empty email address found in list"
+            return ValidationError("Empty email address found in list")
         if not re.match(email_pattern, email):
-            return False, f"Invalid email address: {email}"
+            return ValidationError(f"Invalid email address: {email}")
 
-    return True, ""
+    return ValidationSuccess(value)
 
 
 class UserStep(DeploymentStep):
@@ -46,24 +51,22 @@ class UserStep(DeploymentStep):
 
         # Check if email authentication is enabled
         # Get from config, or fallback to defaults
-        use_email_auth = self.config.get(
+        use_email_auth = self.get_config(
             "USE_EMAIL_AUTHENTICATION",
-            self.get_default_value("application.email_authentication"),
+            DefaultKey("application.email_authentication"),
         )
         # Convert to string for comparison (defaults might be bool)
         use_email_auth_str = str(use_email_auth).lower()
 
         if use_email_auth_str == "true":
-            if self.interactive:
-                admin_emails = self.prompt(
-                    "Admin email addresses (comma-separated)",
-                    default="",
-                    validate=validate_comma_separated_emails,
-                    key="user.admin_emails",
-                )
-                config["ADMIN_EMAILS"] = admin_emails
-            else:
-                config["ADMIN_EMAILS"] = self.config.get("ADMIN_EMAILS", "")
+            admin_emails = self.get_config_or_prompt(
+                "ADMIN_EMAILS",
+                "Admin email addresses (comma-separated)",
+                "",
+                prompt_key="user.admin_emails",
+                validate=validate_comma_separated_emails,
+            )
+            config["ADMIN_EMAILS"] = admin_emails
 
         self.config.update(config)
 
@@ -75,15 +78,15 @@ class UserStep(DeploymentStep):
 
         # Admin emails for email-based authentication
         # USE_EMAIL_AUTHENTICATION comes from EmailStep, so use .get() with fallback
-        use_email_auth = self.config.get(
+        use_email_auth = self.get_config(
             "USE_EMAIL_AUTHENTICATION",
-            self.get_default_value("application.email_authentication"),
+            DefaultKey("application.email_authentication"),
         )
         # Convert to string for comparison
         use_email_auth_str = str(use_email_auth).lower()
 
         if use_email_auth_str == "true":
-            admin_emails = self.config.get("ADMIN_EMAILS", "")
+            admin_emails = self.get_config("ADMIN_EMAILS", "")
             secrets_dict["admin_emails"] = admin_emails
 
         return secrets_dict

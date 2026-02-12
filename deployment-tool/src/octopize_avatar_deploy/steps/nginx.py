@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from .base import DeploymentStep
+from .base import DeploymentStep, PromptConfig, parse_bool
 
 
 class NginxTlsStep(DeploymentStep):
@@ -20,55 +20,50 @@ class NginxTlsStep(DeploymentStep):
         default_cert_path = self.get_default_value("nginx.ssl_certificate_path")
         default_key_path = self.get_default_value("nginx.ssl_certificate_key_path")
 
-        if "NGINX_TLS_ENABLED" in self.config:
-            tls_enabled = bool(self.config["NGINX_TLS_ENABLED"])
-        elif self.interactive:
-            tls_enabled = self.prompt_yes_no(
-                "Enable TLS for Nginx?",
-                default=default_tls_enabled,
-                key="nginx_tls.enabled",
+        # Use generic prompt with boolean parser and yes/no prompt
+        tls_enabled = self.get_config_or_prompt_generic(
+            PromptConfig(
+                config_key="NGINX_TLS_ENABLED",
+                prompt_message="Enable TLS for Nginx?",
+                default_value=default_tls_enabled,
+                prompt_key="nginx_tls.enabled",
+                prompt_function=self.prompt_yes_no,
+                parse_and_validate=parse_bool,
             )
-        else:
-            tls_enabled = default_tls_enabled
+        )
 
         config["NGINX_TLS_ENABLED"] = tls_enabled
 
         if tls_enabled:
-            if "NGINX_SSL_CERTIFICATE_PATH" in self.config:
-                cert_path = self.config["NGINX_SSL_CERTIFICATE_PATH"]
-            elif self.interactive:
-                cert_path = self.prompt(
-                    "Path to TLS certificate (full chain)",
-                    default=default_cert_path,
-                    key="nginx_tls.ssl_certificate_path",
+            cert_path = self.get_config_or_prompt_generic(
+                PromptConfig(
+                    config_key="NGINX_SSL_CERTIFICATE_PATH",
+                    prompt_message="Path to TLS certificate (full chain)",
+                    default_value=default_cert_path,
+                    prompt_key="nginx_tls.ssl_certificate_path",
                 )
-            else:
-                cert_path = default_cert_path
+            )
 
-            if "NGINX_SSL_CERTIFICATE_KEY_PATH" in self.config:
-                key_path = self.config["NGINX_SSL_CERTIFICATE_KEY_PATH"]
-            elif self.interactive:
-                key_path = self.prompt(
-                    "Path to TLS private key (decrypted)",
-                    default=default_key_path,
-                    key="nginx_tls.ssl_certificate_key_path",
+            key_path = self.get_config_or_prompt_generic(
+                PromptConfig(
+                    config_key="NGINX_SSL_CERTIFICATE_KEY_PATH",
+                    prompt_message="Path to TLS private key (decrypted)",
+                    default_value=default_key_path,
+                    prompt_key="nginx_tls.ssl_certificate_key_path",
                 )
-            else:
-                key_path = default_key_path
+            )
 
             config["NGINX_SSL_CERTIFICATE_PATH"] = cert_path
             config["NGINX_SSL_CERTIFICATE_KEY_PATH"] = key_path
         else:
-            if "NGINX_HTTP_PORT" in self.config:
-                http_port = str(self.config["NGINX_HTTP_PORT"])
-            elif self.interactive:
-                http_port = self.prompt(
-                    "HTTP port for Nginx",
-                    default=default_http_port,
-                    key="nginx_tls.http_port",
+            http_port = self.get_config_or_prompt_generic(
+                PromptConfig(
+                    config_key="NGINX_HTTP_PORT",
+                    prompt_message="HTTP port for Nginx",
+                    default_value=default_http_port,
+                    prompt_key="nginx_tls.http_port",
                 )
-            else:
-                http_port = default_http_port
+            )
 
             config["NGINX_HTTP_PORT"] = http_port
             config["NGINX_SSL_CERTIFICATE_PATH"] = "/dev/null"

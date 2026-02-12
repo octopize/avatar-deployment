@@ -3,7 +3,7 @@
 import secrets
 from typing import Any
 
-from .base import DeploymentStep
+from .base import DefaultKey, DeploymentStep
 
 
 class RequiredConfigStep(DeploymentStep):
@@ -17,15 +17,12 @@ class RequiredConfigStep(DeploymentStep):
         config = {}
 
         # Public URL - Required
-        if "PUBLIC_URL" in self.config:
-            public_url = self.config["PUBLIC_URL"]
-        elif self.interactive:
-            public_url = self.prompt(
-                "Public URL (domain name, e.g., avatar.example.com)",
-                key="required_config.public_url",
-            )
-        else:
-            public_url = ""
+        public_url = self.get_config_or_prompt(
+            "PUBLIC_URL",
+            "Public URL (domain name, e.g., avatar.example.com)",
+            "",
+            prompt_key="required_config.public_url",
+        )
 
         # Normalize PUBLIC_URL to strip protocol and store just the domain
         if public_url:
@@ -33,14 +30,12 @@ class RequiredConfigStep(DeploymentStep):
         config["PUBLIC_URL"] = public_url
 
         # Environment name - Required
-        if "ENV_NAME" in self.config:
-            config["ENV_NAME"] = self.config["ENV_NAME"]
-        elif self.interactive:
-            config["ENV_NAME"] = self.prompt(
-                "Environment name (e.g., mycompany-prod)", key="required_config.env_name"
-            )
-        else:
-            config["ENV_NAME"] = ""
+        config["ENV_NAME"] = self.get_config_or_prompt(
+            "ENV_NAME",
+            "Environment name (e.g., mycompany-prod)",
+            "",
+            prompt_key="required_config.env_name",
+        )
 
         # Organization name - Required
         if "ORGANIZATION_NAME" in self.config:
@@ -61,20 +56,20 @@ class RequiredConfigStep(DeploymentStep):
             )
 
         # Service versions
-        config["AVATAR_API_VERSION"] = self.config.get(
-            "AVATAR_API_VERSION", self.get_default_value("images.api")
+        config["AVATAR_API_VERSION"] = self.get_config(
+            "AVATAR_API_VERSION", DefaultKey("images.api")
         )
-        config["AVATAR_WEB_VERSION"] = self.config.get(
-            "AVATAR_WEB_VERSION", self.get_default_value("images.web")
+        config["AVATAR_WEB_VERSION"] = self.get_config(
+            "AVATAR_WEB_VERSION", DefaultKey("images.web")
         )
-        config["AVATAR_PDFGENERATOR_VERSION"] = self.config.get(
-            "AVATAR_PDFGENERATOR_VERSION", self.get_default_value("images.pdfgenerator")
+        config["AVATAR_PDFGENERATOR_VERSION"] = self.get_config(
+            "AVATAR_PDFGENERATOR_VERSION", DefaultKey("images.pdfgenerator")
         )
-        config["AVATAR_SEAWEEDFS_VERSION"] = self.config.get(
-            "AVATAR_SEAWEEDFS_VERSION", self.get_default_value("images.seaweedfs")
+        config["AVATAR_SEAWEEDFS_VERSION"] = self.get_config(
+            "AVATAR_SEAWEEDFS_VERSION", DefaultKey("images.seaweedfs")
         )
-        config["AVATAR_AUTHENTIK_VERSION"] = self.config.get(
-            "AVATAR_AUTHENTIK_VERSION", self.get_default_value("images.authentik")
+        config["AVATAR_AUTHENTIK_VERSION"] = self.get_config(
+            "AVATAR_AUTHENTIK_VERSION", DefaultKey("images.authentik")
         )
 
         # Update self.config so generate_secrets() can access these values

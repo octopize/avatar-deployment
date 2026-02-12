@@ -159,6 +159,16 @@ def compare_generated_files(output_dir: Path, fixture_name: str, fixtures_dir: P
             expected_dir,
             ignore=shutil.ignore_patterns("*.log", "__pycache__", ".avatar-templates"),
         )
+
+        # Normalize temp paths in compose.override.yaml fixture
+        override_file = expected_dir / "compose.override.yaml"
+        if override_file.exists():
+            import re
+            content = override_file.read_text()
+            # Normalize all /tmp/tmpXXXXXX/ patterns to /tmp/TEMP_DIR/
+            content = re.sub(r"/tmp/tmp[a-zA-Z0-9_-]+/", "/tmp/TEMP_DIR/", content)
+            override_file.write_text(content)
+
         print(f"\n✓ Updated expected files for: {fixture_name}")
         return True
 
@@ -231,12 +241,13 @@ def _compare_directories(actual_dir: Path, expected_dir: Path) -> bool:
         expected_content = expected_file.read_text()
 
         # Normalize random values in .deployment-state.yaml, deployment-config.yaml,
-        # blueprint template, and .env file
+        # blueprint template, .env file, and compose.override.yaml
         if rel_path.name in [
             ".deployment-state.yaml",
             "deployment-config.yaml",
             "octopize-avatar-blueprint.yaml",
             ".env",
+            "compose.override.yaml",
         ]:
             import re
 
@@ -309,6 +320,17 @@ def _compare_directories(actual_dir: Path, expected_dir: Path) -> bool:
             normalize_both(
                 r"AUTHENTIK_BOOTSTRAP_TOKEN: [A-Za-z0-9_-]{43}",
                 "AUTHENTIK_BOOTSTRAP_TOKEN: RANDOM_TOKEN",
+            )
+
+            # Normalize temp directory paths in compose.override.yaml
+            # Matches patterns like:
+            #   file: /tmp/tmp_418bdac/test-.npmrc
+            #   context: /tmp/tmp8yzz1u22/test-avatar-website
+            #   - /tmp/tmp8yzz1u22/test-avatar-website:/app
+            #   avatar: /tmp/tmp8yzz1u22/test-avatar-repo/avatar
+            normalize_both(
+                r"/tmp/tmp[a-zA-Z0-9_-]+/",
+                "/tmp/TEMP_DIR/",
             )
 
         if actual_content != expected_content:

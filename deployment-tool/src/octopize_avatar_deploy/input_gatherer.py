@@ -10,10 +10,16 @@ Provides pluggable input gathering through Protocol pattern, enabling:
 import os
 import sys
 from collections.abc import Callable
-from typing import Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 from rich.console import Console
 from rich.prompt import Confirm, IntPrompt, Prompt
+
+if TYPE_CHECKING:
+    from octopize_avatar_deploy.steps.base import ValidationError, ValidationSuccess
+
+# Type alias for validators
+Validator = Callable[[str], "ValidationSuccess[Any] | ValidationError"]
 
 
 @runtime_checkable
@@ -29,7 +35,7 @@ class InputGatherer(Protocol):
         self,
         message: str,
         default: str | None = None,
-        validate: Callable[[str], tuple[bool, str]] | None = None,
+        validate: "Validator | None" = None,
         key: str | None = None,
     ) -> str:
         """
@@ -38,7 +44,7 @@ class InputGatherer(Protocol):
         Args:
             message: The prompt message
             default: Default value to use if user presses Enter (None = required field)
-            validate: Optional validation function that returns (is_valid, error_message)
+            validate: Optional validation function that returns ValidationSuccess | ValidationError
             key: Unique key for this prompt (e.g., "email.smtp_password") - used in testing
 
         Returns:
@@ -89,7 +95,7 @@ class ConsoleInputGatherer:
         self,
         message: str,
         default: str | None = None,
-        validate: Callable[[str], tuple[bool, str]] | None = None,
+        validate: "Validator | None" = None,
         key: str | None = None,
     ) -> str:
         """Prompt user for input with optional default value and validation."""
@@ -118,10 +124,14 @@ class ConsoleInputGatherer:
 
             # Validate if validator provided
             if validate:
-                is_valid, error_msg = validate(value)
-                if not is_valid:
-                    print(f"  ⚠ {error_msg}")
+                # Import here to avoid circular dependency
+                from octopize_avatar_deploy.steps.base import ValidationError
+
+                result = validate(value)
+                if isinstance(result, ValidationError):
+                    print(f"  ⚠ {result.message}")
                     continue
+                # ValidationSuccess - continue
 
             return value
 
@@ -207,7 +217,7 @@ class MockInputGatherer:
         self,
         message: str,
         default: str | None = None,
-        validate: Callable[[str], tuple[bool, str]] | None = None,
+        validate: "Validator | None" = None,
         key: str | None = None,
     ) -> str:
         """Return mocked response for the given key."""
@@ -234,9 +244,12 @@ class MockInputGatherer:
 
         # Validate if validator provided (for testing validation logic)
         if validate:
-            is_valid, error_msg = validate(value)
-            if not is_valid:
-                raise ValueError(f"MockInputGatherer: Validation failed for '{value}': {error_msg}")
+            # Import here to avoid circular dependency
+            from octopize_avatar_deploy.steps.base import ValidationError
+
+            result = validate(value)
+            if isinstance(result, ValidationError):
+                raise ValueError(f"MockInputGatherer: Validation failed for '{value}': {result.message}")
 
         return value
 
@@ -293,7 +306,7 @@ class RichInputGatherer:
         self,
         message: str,
         default: str | None = None,
-        validate: Callable[[str], tuple[bool, str]] | None = None,
+        validate: "Validator | None" = None,
         key: str | None = None,
     ) -> str:
         """Prompt user for input with optional default value and validation."""
@@ -314,10 +327,14 @@ class RichInputGatherer:
 
             # Validate if validator provided
             if validate:
-                is_valid, error_msg = validate(result)
-                if not is_valid:
-                    self.console.print(f"[yellow]⚠ {error_msg}[/yellow]")
+                # Import here to avoid circular dependency
+                from octopize_avatar_deploy.steps.base import ValidationError
+
+                validation_result = validate(result)
+                if isinstance(validation_result, ValidationError):
+                    self.console.print(f"[yellow]⚠ {validation_result.message}[/yellow]")
                     continue
+                # ValidationSuccess - continue
 
             return result
 

@@ -14,5 +14,6 @@ responses:
   user.admin_emails: dev@example.com
   local_source.web_source_path: __TEMP_WEB_SOURCE__
   local_source.npmrc_path: __TEMP_NPMRC__
+  local_source.api_source_path: __TEMP_API_SOURCE__
   telemetry.enable_sentry: false
   telemetry.enable_telemetry: false

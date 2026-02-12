@@ -9,8 +9,9 @@ import base64
 import secrets
 from abc import ABC, abstractmethod
 from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from octopize_avatar_deploy.deployment_mode import DeploymentMode
 
@@ -23,6 +24,181 @@ from octopize_avatar_deploy.printer import ConsolePrinter
 _DEFAULT_VALUE_SENTINEL = (
     object()
 )  # Sentinel for distinguishing between None and no default provided
+
+# Generic type for config values
+T = TypeVar("T")
+
+# Type alias for new-style validators
+Validator = Callable[[str], "ValidationSuccess[Any] | ValidationError"]
+
+
+@dataclass(frozen=True)
+class DefaultKey:
+    """
+    Wrapper to distinguish a defaults.yaml lookup key from a literal value.
+
+    Usage:
+        # Inline literal value
+        self.get_config("DB_NAME", "authentik")
+
+        # Lookup in defaults.yaml
+        self.get_config("DB_NAME", DefaultKey("database.name"))
+    """
+
+    key: str
+
+
+@dataclass
+class ValidationError:
+    """Represents a validation error with a message."""
+
+    message: str
+
+
+@dataclass
+class ValidationSuccess[T]:
+    """Represents a successful validation with a typed value."""
+
+    value: T
+
+
+# Type alias for validation results
+ValidationResult = ValidationSuccess[T] | ValidationError
+
+
+# Standard parser/validator functions
+
+
+def parse_bool(value: Any) -> ValidationResult[bool]:
+    """
+    Parse and validate a boolean value from various input types.
+
+    Accepts: bool, str ("true"/"false"/"yes"/"no"/"1"/"0"), int (0/1)
+
+    Returns:
+        ValidationSuccess with bool value or ValidationError
+    """
+    if isinstance(value, bool):
+        return ValidationSuccess(value)
+    if isinstance(value, str):
+        lower = value.lower().strip()
+        if lower in ("true", "yes", "1", "on", "enabled"):
+            return ValidationSuccess(True)
+        if lower in ("false", "no", "0", "off", "disabled"):
+            return ValidationSuccess(False)
+    if isinstance(value, int):
+        if value in (0, 1):
+            return ValidationSuccess(bool(value))
+    return ValidationError(f"Cannot parse as boolean: {value}")
+
+
+def parse_int(value: Any) -> ValidationResult[int]:
+    """
+    Parse and validate an integer value.
+
+    Returns:
+        ValidationSuccess with int value or ValidationError
+    """
+    if isinstance(value, int):
+        return ValidationSuccess(value)
+    if isinstance(value, str):
+        try:
+            return ValidationSuccess(int(value.strip()))
+        except ValueError:
+            return ValidationError(f"Cannot parse as integer: {value}")
+    return ValidationError(f"Cannot parse as integer: {value}")
+
+
+def parse_str(value: Any) -> ValidationResult[str]:
+    """
+    Parse and validate a string value (converts to string).
+
+    Returns:
+        ValidationSuccess with str value
+    """
+    return ValidationSuccess(str(value))
+
+
+def make_path_validator(
+    must_exist: bool = True, must_be_dir: bool = False, must_be_file: bool = False
+) -> Callable[[Any], ValidationResult[str]]:
+    """
+    Create a path validator with specific requirements.
+
+    Args:
+        must_exist: If True, path must exist
+        must_be_dir: If True, path must be a directory
+        must_be_file: If True, path must be a file
+
+    Returns:
+        Validator function that returns ValidationResult[str]
+    """
+
+    def validate_path(value: Any) -> ValidationResult[str]:
+        path_str = str(value)
+        path = Path(path_str).expanduser()
+
+        if must_exist and not path.exists():
+            return ValidationError(f"Path does not exist: {path_str}")
+        if must_be_dir and path.exists() and not path.is_dir():
+            return ValidationError(f"Path is not a directory: {path_str}")
+        if must_be_file and path.exists() and not path.is_file():
+            return ValidationError(f"Path is not a file: {path_str}")
+
+        return ValidationSuccess(path_str)
+
+    return validate_path
+
+
+@dataclass
+class PromptConfig[T]:
+    """
+    Configuration for prompting user input with type safety.
+
+    This encapsulates all parameters needed to get a config value from:
+    1. Pre-loaded config (highest priority)
+    2. Interactive user prompt (if interactive mode)
+    3. Default value (if non-interactive)
+
+    Type Parameters:
+        T: The expected type of the configuration value
+
+    Attributes:
+        config_key: Key to look up in self.config (e.g., "SMTP_HOST")
+        prompt_message: Message to show when prompting user
+        default_value: Default value to use (shown in prompt and used in non-interactive mode)
+        prompt_key: Optional key for prompt (e.g., "email.smtp_host") - used in testing
+        prompt_function: Function to use for prompting (prompt, prompt_yes_no, prompt_choice)
+        parse_and_validate: Optional function to parse/validate value and return typed result
+
+    Examples:
+        >>> # Simple string prompt
+        >>> config = PromptConfig(
+        ...     config_key="SMTP_HOST",
+        ...     prompt_message="SMTP host",
+        ...     default_value="smtp.example.com",
+        ...     prompt_key="email.smtp_host",
+        ... )
+        >>>
+        >>> # Boolean prompt with custom validation
+        >>> config = PromptConfig(
+        ...     config_key="NGINX_TLS_ENABLED",
+        ...     prompt_message="Enable TLS for Nginx?",
+        ...     default_value=True,
+        ...     prompt_key="nginx_tls.enabled",
+        ...     prompt_function=lambda msg, default, key: (
+        ...         step.prompt_yes_no(msg, default, key)
+        ...     ),
+        ...     parse_and_validate=parse_bool,
+        ... )
+    """
+
+    config_key: str
+    prompt_message: str
+    default_value: T
+    prompt_key: str | None = None
+    prompt_function: Callable[..., Any] | None = None
+    parse_and_validate: Callable[[Any], ValidationResult[T]] | None = None
 
 
 class DeploymentStep(ABC):
@@ -143,7 +319,7 @@ class DeploymentStep(ABC):
         self,
         message: str,
         default: str | None = None,
-        validate: "Callable[[str], tuple[bool, str]] | None" = None,
+        validate: "Validator | None" = None,
         key: str | None = None,
     ) -> str:
         """
@@ -152,7 +328,7 @@ class DeploymentStep(ABC):
         Args:
             message: The prompt message
             default: Default value to use if user presses Enter (None = required field)
-            validate: Optional validation function that returns (is_valid, error_message)
+            validate: Optional validation function that returns ValidationSuccess | ValidationError
             key: Unique key for this prompt (e.g., "email.smtp_password") - used in testing
 
         Returns:
@@ -191,11 +367,35 @@ class DeploymentStep(ABC):
         """
         return self.input_gatherer.prompt_choice(message, choices, default, key)
 
-    def get_config_value(self, key: str, default: Any = None) -> Any:
-        ret = self.config.get(key, default)
-        if ret is None:
-            raise ValueError(f"Configuration key '{key}' is required but not set.")
-        return ret
+    def get_config(self, config_key: str, default: Any | DefaultKey) -> Any:
+        """
+        Get value from config, or use default (either literal or from defaults.yaml).
+
+        Supports both inline defaults and defaults.yaml lookups via DefaultKey wrapper.
+
+        Args:
+            config_key: Key to look up in self.config (e.g., "SMTP_USE_TLS")
+            default_value: Either a literal value or DefaultKey("path.to.default")
+
+        Returns:
+            Value from config or the resolved default
+
+        Examples:
+            >>> # Inline literal default
+            >>> db_name = self.get_config("DB_NAME", "authentik")
+
+            >>> # Lookup in defaults.yaml
+            >>> use_tls = self.get_config(
+            ...     "SMTP_USE_TLS", DefaultKey("email.smtp.use_tls")
+            ... )
+        """
+        if config_key in self.config:
+            return self.config[config_key]
+
+        # Resolve default value
+        if isinstance(default, DefaultKey):
+            return self.get_default_value(default.key)
+        return default
 
     def get_default_value(self, key: str, default: Any = _DEFAULT_VALUE_SENTINEL) -> Any:
         """Get the value defined in the defaults (possible nested), with a fallback default.
@@ -221,6 +421,188 @@ class DeploymentStep(ABC):
                     raise ValueError(f"Default value for key '{key}' not found in defaults.")
                 return default
         return value
+
+    def get_config_or_prompt_generic(self, config: PromptConfig[T]) -> T:
+        """
+        Generic method to get config value with type-safe parsing and validation.
+
+        This unified method handles all prompt patterns:
+        1. Check if value exists in pre-loaded config
+        2. If interactive, prompt user with appropriate prompt function
+        3. If non-interactive, use default value
+        4. Parse and validate the value if parser provided
+
+        Args:
+            config: PromptConfig dataclass with all configuration parameters
+
+        Returns:
+            Typed configuration value
+
+        Raises:
+            ValueError: If validation fails
+
+        Examples:
+            >>> # Simple string prompt
+            >>> smtp_host = step.get_config_or_prompt_generic(
+            ...     PromptConfig(
+            ...         config_key="SMTP_HOST",
+            ...         prompt_message="SMTP host",
+            ...         default_value="smtp.example.com",
+            ...         prompt_key="email.smtp_host",
+            ...     )
+            ... )
+            >>>
+            >>> # Boolean prompt with validation
+            >>> tls_enabled = step.get_config_or_prompt_generic(
+            ...     PromptConfig(
+            ...         config_key="NGINX_TLS_ENABLED",
+            ...         prompt_message="Enable TLS?",
+            ...         default_value=True,
+            ...         prompt_key="nginx_tls.enabled",
+            ...         prompt_function=lambda msg, default, key: (
+            ...             step.prompt_yes_no(msg, default, key)
+            ...         ),
+            ...         parse_and_validate=parse_bool,
+            ...     )
+            ... )
+        """
+        # Step 1: Check if already in config
+        if config.config_key in self.config:
+            value = self.config[config.config_key]
+            # Parse and validate if parser provided
+            if config.parse_and_validate:
+                result = config.parse_and_validate(value)
+                if isinstance(result, ValidationError):
+                    raise ValueError(
+                        f"Invalid config value for '{config.config_key}': {result.message}"
+                    )
+                return result.value
+            return value
+
+        # Step 2: If interactive, prompt user
+        if self.interactive:
+            # Use provided prompt function or default to self.prompt
+            if config.prompt_function is None:
+                # Capture the parsed value to avoid parsing twice
+                parsed_value: Any = None
+
+                if config.parse_and_validate:
+                    # Capture validator in closure
+                    validator = config.parse_and_validate
+
+                    def new_style_validator(value: str) -> ValidationSuccess[Any] | ValidationError:
+                        nonlocal parsed_value
+                        result = validator(value)
+                        if isinstance(result, ValidationError):
+                            return result
+                        # Capture the parsed value so we don't need to parse again
+                        parsed_value = result.value
+                        return result
+
+                    # Pass new-style validator directly to prompt
+                    self.prompt(
+                        config.prompt_message,
+                        str(config.default_value),
+                        key=config.prompt_key,
+                        validate=new_style_validator,
+                    )
+                    # Return the already-parsed value from validation
+                    return parsed_value  # type: ignore[return-value]
+                else:
+                    # No validator, return raw value from prompt
+                    raw_value = self.prompt(
+                        config.prompt_message,
+                        str(config.default_value),
+                        key=config.prompt_key,
+                        validate=None,
+                    )
+                    return raw_value  # type: ignore[return-value]
+            else:
+                value = config.prompt_function(
+                    config.prompt_message, config.default_value, config.prompt_key
+                )
+                # For custom prompt functions, we still need to parse
+                if config.parse_and_validate:
+                    result = config.parse_and_validate(value)
+                    if isinstance(result, ValidationError):
+                        raise ValueError(f"Invalid value after prompt: {result.message}")
+                    return result.value
+                return value
+
+        # Step 3: Non-interactive, use default
+        default = config.default_value
+        # Parse and validate default if parser provided
+        if config.parse_and_validate:
+            result = config.parse_and_validate(default)
+            if isinstance(result, ValidationError):
+                raise ValueError(
+                    f"Invalid default value for '{config.config_key}': {result.message}"
+                )
+            return result.value
+        return default
+
+    def get_config_or_prompt(
+        self,
+        config_key: str,
+        prompt_message: str,
+        default_value: Any | DefaultKey,
+        prompt_key: str | None = None,
+        parse_and_validate: "Callable[[Any], ValidationResult[Any]] | None" = None,
+        validate: "Validator | None" = None,  # Deprecated: use parse_and_validate
+    ) -> Any:
+        """
+        Get value from config, or prompt user if interactive, or use default if non-interactive.
+
+        Supports both inline defaults and defaults.yaml lookups via DefaultKey wrapper.
+
+        Args:
+            config_key: Key to look up in self.config (e.g., "SMTP_HOST")
+            prompt_message: Message to show when prompting user
+            default_value: Default value - either literal or DefaultKey("path.in.defaults")
+            prompt_key: Optional key for prompt (e.g., "email.smtp_host") - used in testing
+            parse_and_validate: Optional validator (parse_str, parse_int, custom validator, etc.)
+            validate: Deprecated alias for parse_and_validate (for backwards compatibility)
+
+        Returns:
+            Value from config, user input, or resolved default value
+
+        Examples:
+            >>> # Inline literal default
+            >>> smtp_host = self.get_config_or_prompt(
+            ...     "SMTP_HOST",
+            ...     "SMTP host",
+            ...     "smtp.example.com",
+            ...     prompt_key="email.smtp_host"
+            ... )
+
+            >>> # Lookup in defaults.yaml with type conversion
+            >>> smtp_port = self.get_config_or_prompt(
+            ...     "SMTP_PORT",
+            ...     "SMTP port",
+            ...     DefaultKey("email.smtp.port"),
+            ...     prompt_key="email.smtp_port",
+            ...     parse_and_validate=parse_str
+            ... )
+        """
+        # Resolve default value if it's a DefaultKey
+        resolved_default = (
+            self.get_default_value(default_value.key)
+            if isinstance(default_value, DefaultKey)
+            else default_value
+        )
+
+        # Use the provided validator (now all validators are new-style)
+        validator = parse_and_validate if parse_and_validate is not None else validate
+
+        return self.get_config_or_prompt_generic(
+            PromptConfig(
+                config_key=config_key,
+                prompt_message=prompt_message,
+                default_value=resolved_default,
+                prompt_key=prompt_key,
+                parse_and_validate=validator,
+            )
+        )
 
     # Utility methods for generating secrets
 

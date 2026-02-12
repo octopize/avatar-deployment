@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from .base import DeploymentStep
+from .base import DefaultKey, DeploymentStep, parse_str
 
 
 class EmailStep(DeploymentStep):
@@ -19,49 +19,48 @@ class EmailStep(DeploymentStep):
 
         # Email provider
         default_provider = self.get_default_value("email.provider")
-        provider = self.config.get(
+        provider = self.get_config_or_prompt(
             "MAIL_PROVIDER",
-            self.prompt("Mail provider (aws or smtp)", default_provider, key="email.mail_provider")
-            if self.interactive
-            else default_provider,
+            "Mail provider (aws or smtp)",
+            default_provider,
+            prompt_key="email.mail_provider",
         ).lower()
 
         config["MAIL_PROVIDER"] = provider
 
         # SMTP configuration
         if provider == "smtp":
-            smtp_defaults = self.get_default_value("email.smtp")
-
-            config["SMTP_HOST"] = self.config.get(
+            config["SMTP_HOST"] = self.get_config_or_prompt(
                 "SMTP_HOST",
-                self.prompt("SMTP host", smtp_defaults["host"], key="email.smtp_host")
-                if self.interactive
-                else smtp_defaults["host"],
+                "SMTP host",
+                DefaultKey("email.smtp.host"),
+                prompt_key="email.smtp_host",
             )
-            config["SMTP_PORT"] = self.config.get(
+            config["SMTP_PORT"] = self.get_config_or_prompt(
                 "SMTP_PORT",
-                self.prompt("SMTP port", str(smtp_defaults["port"]), key="email.smtp_port")
-                if self.interactive
-                else str(smtp_defaults["port"]),
+                "SMTP port",
+                DefaultKey("email.smtp.port"),
+                prompt_key="email.smtp_port",
+                parse_and_validate=parse_str,
             )
-            config["SMTP_USE_TLS"] = self.config.get("SMTP_USE_TLS", smtp_defaults["use_tls"])
-            config["SMTP_START_TLS"] = self.config.get("SMTP_START_TLS", smtp_defaults["start_tls"])
-            config["SMTP_VERIFY"] = self.config.get("SMTP_VERIFY", smtp_defaults["verify"])
-            config["SMTP_SENDER_EMAIL"] = self.config.get(
+            config["SMTP_USE_TLS"] = self.get_config(
+                "SMTP_USE_TLS", DefaultKey("email.smtp.use_tls")
+            )
+            config["SMTP_START_TLS"] = self.get_config(
+                "SMTP_START_TLS", DefaultKey("email.smtp.start_tls")
+            )
+            config["SMTP_VERIFY"] = self.get_config("SMTP_VERIFY", DefaultKey("email.smtp.verify"))
+            config["SMTP_SENDER_EMAIL"] = self.get_config_or_prompt(
                 "SMTP_SENDER_EMAIL",
-                self.prompt(
-                    "SMTP sender email",
-                    smtp_defaults["sender_email"],
-                    key="email.smtp_sender_email",
-                )
-                if self.interactive
-                else smtp_defaults["sender_email"],
+                "SMTP sender email",
+                DefaultKey("email.smtp.sender_email"),
+                prompt_key="email.smtp_sender_email",
             )
 
         # Email authentication
-        config["USE_EMAIL_AUTHENTICATION"] = self.config.get(
+        config["USE_EMAIL_AUTHENTICATION"] = self.get_config(
             "USE_EMAIL_AUTHENTICATION",
-            self.get_default_value("application.email_authentication"),
+            DefaultKey("application.email_authentication"),
         )
 
         self.config.update(config)

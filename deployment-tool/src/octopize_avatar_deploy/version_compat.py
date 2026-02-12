@@ -9,7 +9,7 @@ import re
 from pathlib import Path
 
 # Script version (semantic versioning: MAJOR.MINOR.PATCH)
-SCRIPT_VERSION = "2.17.0"
+SCRIPT_VERSION = "2.18.0"
 
 
 class VersionError(Exception):

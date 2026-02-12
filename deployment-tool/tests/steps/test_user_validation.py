@@ -2,6 +2,7 @@
 
 import pytest
 
+from octopize_avatar_deploy.steps.base import ValidationError, ValidationSuccess
 from octopize_avatar_deploy.steps.user import UserStep, validate_comma_separated_emails
 
 
@@ -10,95 +11,95 @@ class TestEmailValidation:
 
     def test_valid_single_email(self):
         """Test validation of a single valid email."""
-        is_valid, error = validate_comma_separated_emails("admin@example.com")
-        assert is_valid is True
-        assert error == ""
+        result = validate_comma_separated_emails("admin@example.com")
+        assert isinstance(result, ValidationSuccess)
+        # Error message not checked for success
 
     def test_valid_multiple_emails(self):
         """Test validation of multiple valid emails."""
-        is_valid, error = validate_comma_separated_emails(
+        result = validate_comma_separated_emails(
             "admin@example.com,user@test.org,support@company.co.uk"
         )
-        assert is_valid is True
-        assert error == ""
+        assert isinstance(result, ValidationSuccess)
+        # Error message not checked for success
 
     def test_valid_emails_with_spaces(self):
         """Test validation handles extra spaces."""
-        is_valid, error = validate_comma_separated_emails(
+        result = validate_comma_separated_emails(
             "admin@example.com, user@test.org , support@company.co.uk"
         )
-        assert is_valid is True
-        assert error == ""
+        assert isinstance(result, ValidationSuccess)
+        # Error message not checked for success
 
     def test_valid_email_with_plus(self):
         """Test validation accepts + in email addresses."""
-        is_valid, error = validate_comma_separated_emails("admin+test@example.com")
-        assert is_valid is True
-        assert error == ""
+        result = validate_comma_separated_emails("admin+test@example.com")
+        assert isinstance(result, ValidationSuccess)
+        # Error message not checked for success
 
     def test_valid_email_with_dots(self):
         """Test validation accepts dots in email addresses."""
-        is_valid, error = validate_comma_separated_emails("first.last@example.com")
-        assert is_valid is True
-        assert error == ""
+        result = validate_comma_separated_emails("first.last@example.com")
+        assert isinstance(result, ValidationSuccess)
+        # Error message not checked for success
 
     def test_empty_string_is_valid(self):
         """Test that empty string is allowed (optional field)."""
-        is_valid, error = validate_comma_separated_emails("")
-        assert is_valid is True
-        assert error == ""
+        result = validate_comma_separated_emails("")
+        assert isinstance(result, ValidationSuccess)
+        # Error message not checked for success
 
     def test_whitespace_only_is_valid(self):
         """Test that whitespace-only string is treated as empty."""
-        is_valid, error = validate_comma_separated_emails("   ")
-        assert is_valid is True
-        assert error == ""
+        result = validate_comma_separated_emails("   ")
+        assert isinstance(result, ValidationSuccess)
+        # Error message not checked for success
 
     def test_invalid_email_no_at(self):
         """Test validation rejects email without @."""
-        is_valid, error = validate_comma_separated_emails("adminexample.com")
-        assert is_valid is False
-        assert "Invalid email" in error
-        assert "adminexample.com" in error
+        result = validate_comma_separated_emails("adminexample.com")
+        assert isinstance(result, ValidationError)
+        assert "Invalid email" in result.message
+        assert "adminexample.com" in result.message
 
     def test_invalid_email_no_domain(self):
         """Test validation rejects email without domain."""
-        is_valid, error = validate_comma_separated_emails("admin@")
-        assert is_valid is False
-        assert "Invalid email" in error
+        result = validate_comma_separated_emails("admin@")
+        assert isinstance(result, ValidationError)
+        assert "Invalid email" in result.message
 
     def test_invalid_email_no_tld(self):
         """Test validation rejects email without top-level domain."""
-        is_valid, error = validate_comma_separated_emails("admin@example")
-        assert is_valid is False
-        assert "Invalid email" in error
+        result = validate_comma_separated_emails("admin@example")
+        assert isinstance(result, ValidationError)
+        assert "Invalid email" in result.message
 
     def test_invalid_email_multiple_at(self):
         """Test validation rejects email with multiple @ symbols."""
-        is_valid, error = validate_comma_separated_emails("admin@@example.com")
-        assert is_valid is False
-        assert "Invalid email" in error
+        result = validate_comma_separated_emails("admin@@example.com")
+        assert isinstance(result, ValidationError)
+        assert "Invalid email" in result.message
 
     def test_invalid_email_in_list(self):
         """Test validation rejects list with one invalid email."""
-        is_valid, error = validate_comma_separated_emails(
+        result = validate_comma_separated_emails(
             "admin@example.com,invalid-email,user@test.org"
         )
-        assert is_valid is False
-        assert "Invalid email" in error
-        assert "invalid-email" in error
+        assert isinstance(result, ValidationError)
+        assert "Invalid email" in result.message
+        assert "invalid-email" in result.message
 
     def test_empty_email_in_list(self):
         """Test validation rejects list with empty entries."""
-        is_valid, error = validate_comma_separated_emails("admin@example.com,,user@test.org")
-        assert is_valid is False
-        assert "Empty email" in error
+        result = validate_comma_separated_emails("admin@example.com,,user@test.org")
+        assert isinstance(result, ValidationError)
+        assert "Empty email" in result.message
 
     def test_trailing_comma(self):
         """Test validation rejects trailing comma."""
-        is_valid, error = validate_comma_separated_emails("admin@example.com,")
-        assert is_valid is False
-        assert "Empty email" in error
+        result = validate_comma_separated_emails("admin@example.com,")
+        assert isinstance(result, ValidationError)
+        assert "Empty email" in result.message
 
 
 class TestUserStepWithValidation:

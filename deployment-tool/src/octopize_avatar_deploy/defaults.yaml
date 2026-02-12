@@ -1,10 +1,10 @@
 version: 1.0.0
 images:
-  api: 2.49.0
+  api: 2.50.1
   web: 0.52.0
   pdfgenerator: 0.2.3
   seaweedfs: 0.4.0
-  authentik: 2025.12.3
+  authentik: 2025.12.4
 email:
   provider: aws
   smtp:
@@ -25,7 +25,7 @@ application:
   email_authentication: 'true'
 nginx:
   tls_enabled: true
-  http_port: "8080"
+  http_port: '8080'
   ssl_certificate_path: ./tls/server.fullchain.crt
   ssl_certificate_key_path: ./tls/private/server.decrypted.key
 presets:
@@ -51,5 +51,6 @@ presets:
     telemetry:
       enabled: false
 local_source:
-  web_source_path: /path/to/avatar-website
+  web_source_path: ~/Documents/dev/avatar/services/web
   npmrc_path: ~/.npmrc
+  api_source_path: ~/Documents/dev/avatar/services/api

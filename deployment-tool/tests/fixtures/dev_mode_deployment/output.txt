@@ -1,6 +1,3 @@
-Copying templates from /home/tom/Documents/dev/octopize/avatar-deployment/docker/templates
-✓ Found all 15 required template files
-✓ Template version is compatible with script version 2.18.0
 
 ============================================================
 Avatar Deployment Configuration
@@ -25,6 +22,19 @@ Executing configuration steps...
 
 --- Configure user authentication settings ---
 
+--- Configure Web source code directories for development ---
+
+--- Local Source Configuration ---
+In dev mode, source code is bind-mounted for live reloading.
+Provide absolute paths to your local source directories.
+
+--- Configure API source code directories for development ---
+
+--- API Local Source Configuration ---
+In dev mode, API source code is bind-mounted for live reloading.
+Provide the absolute path to your API source directory.
+Additional contexts (avatar, core, dp) will be derived automatically.
+
 --- Configure telemetry and monitoring (Sentry, usage analytics) ---
 
 --- Configure application logging settings ---
@@ -36,6 +46,7 @@ Generating Configuration Files
 ✓ Generated: {{OUTPUT_DIR}}/nginx/nginx.conf
 ✓ Copied: {{OUTPUT_DIR}}/authentik/octopize-avatar-blueprint.yaml
 ✓ Generated: {{OUTPUT_DIR}}/docker-compose.yml
+✓ Generated: {{OUTPUT_DIR}}/compose.override.yaml
 ✓ Copied: email templates to {{OUTPUT_DIR}}/authentik/custom-templates
 ✓ Copied: branding files to {{OUTPUT_DIR}}/authentik/branding
 

@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from .base import DeploymentStep
+from .base import DefaultKey, DeploymentStep
 
 
 class LoggingStep(DeploymentStep):
@@ -23,9 +23,7 @@ class LoggingStep(DeploymentStep):
             )
 
         # Log level
-        config["LOG_LEVEL"] = self.config.get(
-            "LOG_LEVEL", self.get_default_value("application.log_level")
-        )
+        config["LOG_LEVEL"] = self.get_config("LOG_LEVEL", DefaultKey("application.log_level"))
 
         return config
 

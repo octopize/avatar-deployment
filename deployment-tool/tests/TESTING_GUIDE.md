@@ -120,7 +120,45 @@ def test_example(temp_deployment_dir, mock_templates_dir):
 - Output: `{scenario}_output.txt`
 - Use descriptive scenario names
 
-### 3. Output Normalization
+### 3. Verify Generated Files
+
+**CRITICAL**: All integration tests MUST verify generated files using `compare_generated_files()`.
+
+```python
+def test_deployment_scenario(temp_deployment_dir, log_file, docker_templates_dir):
+    """Test deployment scenario."""
+    responses = fixture_manager.load_input_fixture("my_scenario")
+    
+    harness = CLITestHarness(
+        responses=responses,
+        args=["--output-dir", str(temp_deployment_dir), ...],
+        log_file=str(log_file),
+    )
+    exit_code = harness.run()
+    
+    assert exit_code == 0
+    
+    # REQUIRED: Verify output matches expected
+    assert compare_output(log_file, temp_deployment_dir, "my_scenario", fixture_manager)
+    
+    # REQUIRED: Verify all generated files match expected fixtures
+    assert compare_generated_files(temp_deployment_dir, "my_scenario", FIXTURES_DIR)
+    
+    # Optional: Additional specific assertions for scenario-specific behavior
+    override_file = temp_deployment_dir / "compose.override.yaml"
+    if override_file.exists():
+        assert "special_config" in override_file.read_text()
+```
+
+**Why this matters**:
+- Ensures complete output verification (not just exit code)
+- Catches regressions in generated configuration files
+- Documents expected output behavior with fixtures
+- Prevents incomplete tests that only check exit code
+
+**Common mistake**: Tests that only check `assert exit_code == 0` without verifying the actual generated files.
+
+### 4. Output Normalization
 
 Add normalization for dynamic content:
 
@@ -435,6 +473,21 @@ git diff tests/fixtures/
 pytest tests/integration/
 ```
 
+**Important**: Ensure all integration tests use both `compare_output()` and `compare_generated_files()`:
+
+```python
+# REQUIRED pattern for all integration tests
+assert exit_code == 0
+assert compare_output(log_file, temp_deployment_dir, scenario, fixture_manager)
+assert compare_generated_files(temp_deployment_dir, scenario, FIXTURES_DIR)
+```
+
+This ensures complete verification of:
+- CLI output/logs
+- Generated configuration files (.env, docker-compose.yml, etc.)
+- Generated secrets
+- Any mode-specific files (e.g., compose.override.yaml in dev mode)
+
 ### 8. Common Issues When Adding Steps
 
 #### "Not enough responses" error
@@ -479,6 +532,11 @@ When adding a new step, verify:
   - [ ] Responses added in `input.yaml` (correct position!)
   - [ ] Step description added in `output.txt`
   - [ ] Secret count updated if applicable
+  - [ ] Generated files fixtures created/updated
+- [ ] **Integration tests use required assertions**:
+  - [ ] `assert exit_code == 0`
+  - [ ] `assert compare_output(...)` ← REQUIRED
+  - [ ] `assert compare_generated_files(...)` ← REQUIRED
 - [ ] **All unit tests pass**: `pytest tests/ -m "not integration"`
 - [ ] **All integration tests pass**: `pytest tests/integration/`
 - [ ] **Fixture changes reviewed**: `git diff tests/fixtures/`

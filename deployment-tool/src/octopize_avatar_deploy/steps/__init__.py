@@ -1,11 +1,12 @@
 """Deployment configuration steps."""
 
+from .api_local_source import ApiLocalSourceStep
 from .authentik import AuthentikStep
 from .authentik_blueprint import AuthentikBlueprintStep
-from .base import DeploymentStep
+from .base import DefaultKey, DeploymentStep
 from .database import DatabaseStep
 from .email import EmailStep
-from .local_source import LocalSourceStep
+from .local_source import WebLocalSourceStep
 from .logging import LoggingStep
 from .nginx import NginxTlsStep
 from .required import RequiredConfigStep
@@ -15,6 +16,7 @@ from .user import UserStep
 
 __all__ = [
     "DeploymentStep",
+    "DefaultKey",
     "RequiredConfigStep",
     "EmailStep",
     "TelemetryStep",
@@ -25,5 +27,6 @@ __all__ = [
     "AuthentikStep",
     "AuthentikBlueprintStep",
     "UserStep",
-    "LocalSourceStep",
+    "WebLocalSourceStep",
+    "ApiLocalSourceStep",
 ]

@@ -5,14 +5,14 @@ from typing import Any
 
 from octopize_avatar_deploy.deployment_mode import DeploymentMode
 
-from .base import DeploymentStep
+from .base import DeploymentStep, ValidationError, ValidationSuccess
 
 
-class LocalSourceStep(DeploymentStep):
-    """Handles local source directory configuration for development."""
+class WebLocalSourceStep(DeploymentStep):
+    """Handles local Web source directory configuration for development."""
 
-    name = "local_source"
-    description = "Configure local source code directories for development"
+    name = "web_local_source"
+    description = "Configure Web source code directories for development"
 
     modes = [DeploymentMode.DEV]  # Only runs in dev mode
 
@@ -29,16 +29,12 @@ class LocalSourceStep(DeploymentStep):
         # Web service source path
         web_source_default = self.get_default_value("local_source.web_source_path")
 
-        web_source_path = self.config.get(
+        web_source_path = self.get_config_or_prompt(
             "WEB_SOURCE_PATH",
-            self.prompt(
-                "Path to avatar-website source directory",
-                default=web_source_default,
-                validate=self._validate_directory_path,
-                key="local_source.web_source_path",
-            )
-            if self.interactive
-            else web_source_default,
+            "Path to avatar-website source directory",
+            web_source_default,
+            prompt_key="local_source.web_source_path",
+            validate=self._validate_directory_path,
         )
 
         # Validate the path exists
@@ -53,16 +49,12 @@ class LocalSourceStep(DeploymentStep):
         # NPM RC file path for build secrets
         npmrc_default = self.get_default_value("local_source.npmrc_path")
 
-        npmrc_path = self.config.get(
+        npmrc_path = self.get_config_or_prompt(
             "NPMRC_PATH",
-            self.prompt(
-                "Path to .npmrc file (for private npm packages)",
-                default=npmrc_default,
-                validate=self._validate_file_path,
-                key="local_source.npmrc_path",
-            )
-            if self.interactive
-            else npmrc_default,
+            "Path to .npmrc file (for private npm packages)",
+            npmrc_default,
+            prompt_key="local_source.npmrc_path",
+            validate=self._validate_file_path,
         )
 
         # Validate the path exists
@@ -81,21 +73,21 @@ class LocalSourceStep(DeploymentStep):
         return {}
 
     @staticmethod
-    def _validate_directory_path(value: str) -> tuple[bool, str]:
+    def _validate_directory_path(value: str) -> ValidationSuccess[str] | ValidationError:
         """Validate that a path is a directory and exists."""
         path = Path(value).expanduser()
         if not path.exists():
-            return False, f"Directory does not exist: {value}"
+            return ValidationError(f"Directory does not exist: {value}")
         if not path.is_dir():
-            return False, f"Path is not a directory: {value}"
-        return True, ""
+            return ValidationError(f"Path is not a directory: {value}")
+        return ValidationSuccess(value)
 
     @staticmethod
-    def _validate_file_path(value: str) -> tuple[bool, str]:
+    def _validate_file_path(value: str) -> ValidationSuccess[str] | ValidationError:
         """Validate that a path is a file and exists."""
         path = Path(value).expanduser()
         if not path.exists():
-            return False, f"File does not exist: {value}"
+            return ValidationError(f"File does not exist: {value}")
         if not path.is_file():
-            return False, f"Path is not a file: {value}"
-        return True, ""
+            return ValidationError(f"Path is not a file: {value}")
+        return ValidationSuccess(value)

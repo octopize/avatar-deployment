@@ -96,10 +96,24 @@ class TestCLIDeploymentScenarios:
         npmrc_file = temp_deployment_dir / "test-.npmrc"
         npmrc_file.write_text("//registry.npmjs.org/:_authToken=test")
 
+        # Create monorepo structure for API
+        api_repo = temp_deployment_dir / "test-avatar-repo"
+        api_repo.mkdir()
+
+        api_dir = api_repo / "services" / "api"
+        api_dir.mkdir(parents=True)
+        (api_dir / "main.py").write_text("# API main")
+
+        # Create additional contexts
+        (api_repo / "avatar").mkdir()
+        (api_repo / "core").mkdir()
+        (api_repo / "dp").mkdir()
+
         # Load fixture and replace placeholders with temp paths
         responses = fixture_manager.load_input_fixture("dev_mode_deployment")
         responses["local_source.web_source_path"] = str(web_source_dir)
         responses["local_source.npmrc_path"] = str(npmrc_file)
+        responses["local_source.api_source_path"] = str(api_dir)
 
         harness = CLITestHarness(
             responses=responses,
@@ -117,6 +131,10 @@ class TestCLIDeploymentScenarios:
 
         assert exit_code == 0
 
+        # Verify output and generated files (like other deployment tests)
+        assert compare_output(log_file, temp_deployment_dir, "dev_mode_deployment", fixture_manager)
+        assert compare_generated_files(temp_deployment_dir, "dev_mode_deployment", FIXTURES_DIR)
+
         # Verify compose.override.yaml was generated
         override_file = temp_deployment_dir / "compose.override.yaml"
         assert override_file.exists(), "compose.override.yaml should be generated in dev mode"
@@ -125,17 +143,25 @@ class TestCLIDeploymentScenarios:
         override_content = override_file.read_text()
         assert str(web_source_dir) in override_content, "Web source path should be in override"
         assert str(npmrc_file) in override_content, "NPM RC path should be in override"
+        assert str(api_dir) in override_content, "API source path should be in override"
 
         # Verify standard files still generated
         assert (temp_deployment_dir / "docker-compose.yml").exists()
         assert (temp_deployment_dir / ".env").exists()
 
-        # Verify override file has expected structure
+        # Verify override file has expected structure for web
         assert "services:" in override_content
         assert "web:" in override_content
         assert "build:" in override_content
         assert "volumes:" in override_content
         assert "secrets:" in override_content
+
+        # Verify override file has expected structure for API
+        assert "api:" in override_content
+        assert "additional_contexts:" in override_content
+        assert "init-db:" in override_content
+        assert "dask-scheduler:" in override_content
+        assert "dask-worker:" in override_content
 
     def test_blueprint_template_rendering(
         self, temp_deployment_dir, log_file, docker_templates_dir

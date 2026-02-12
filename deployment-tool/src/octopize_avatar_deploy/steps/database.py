@@ -16,9 +16,9 @@ class DatabaseStep(DeploymentStep):
         """Collect database configuration."""
         config = {}
 
-        config["DB_NAME"] = self.get_config_value("DB_NAME", "avatar")
-        config["DB_USER"] = self.get_config_value("DB_USER", "avatar")
-        config["DB_ADMIN_USER"] = self.get_config_value("DB_ADMIN_USER", "avatar_dba")
+        config["DB_NAME"] = self.get_config("DB_NAME", "avatar")
+        config["DB_USER"] = self.get_config("DB_USER", "avatar")
+        config["DB_ADMIN_USER"] = self.get_config("DB_ADMIN_USER", "avatar_dba")
 
         # Update self.config so generate_secrets() can access these values
         self.config.update(config)
