@@ -327,7 +327,7 @@ services:
     restart: *default-restart
     networks:
       - default
-    command: "-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} master -ip=master -volumeSizeLimitMB=10 -raftBootstrap -raftHashicorp -electionTimeout=1s"
+    command: "-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} -logtostderr master -ip=master -mdir=/data -volumeSizeLimitMB=10 -raftBootstrap -raftHashicorp -electionTimeout=1s"
     healthcheck:
       test:
         ["CMD", "echo", "--fail", "-I", "http://localhost:9333/cluster/healthz"]
@@ -336,30 +336,39 @@ services:
       # This is a workaround for the fact that the master and filer are not fully ready when they are declared healthy
       start_interval: 5s
       start_period: 5s
+    tmpfs:
+      - /tmp
+
     volumes:
       - ./tls:/etc/seaweedfs/tls
+      - seaweedfs-metadata:/data
+
   volume:
     image: *seaweedfs-image
     logging: *default-logging
     restart: *default-restart
     networks:
       - default
-    command: "-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} volume -mserver=master:9333 -port=8080 -ip=volume -preStopSeconds=1 -max=10000"
+    command: "-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} -logtostderr volume -dir=/data -mserver=master:9333 -port=8080 -ip=volume -preStopSeconds=1 -max=10000"
     healthcheck:
       test: ["CMD", "echo", "--fail", "-I", "http://volume:8080/status"]
       interval: 5s
     depends_on:
       master:
         condition: service_healthy
+    tmpfs:
+      - /tmp
     volumes:
       - ./tls:/etc/seaweedfs/tls
+      - seaweedfs-blocks:/data
+
   filer:
     image: *seaweedfs-image
     logging: *default-logging
     restart: *default-restart
     networks:
       - default
-    command: '-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} filer -ip.bind=0.0.0.0 -master="master:9333"'
+    command: '-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} -logtostderr filer -defaultStoreDir=/data -ip.bind=0.0.0.0 -master="master:9333"'
     healthcheck:
       test: ["CMD", "echo", "--fail", "-I", "http://localhost:8888"]
       interval: 5s
@@ -368,7 +377,8 @@ services:
         condition: service_healthy
       volume:
         condition: service_healthy
-
+    tmpfs:
+      - /tmp
     volumes:
       - ./tls:/etc/seaweedfs/tls
       - seaweedfs-data:/data
@@ -379,7 +389,7 @@ services:
     restart: *default-restart
     networks:
       - default
-    command: '-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} iam -filer="filer:8888" -master="master:9333"'
+    command: '-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} -logtostderr iam -filer="filer:8888" -master="master:9333"'
     healthcheck:
       test: ["CMD", "echo", "--fail", "--get", "http://localhost:8111"]
       interval: 5s
@@ -390,7 +400,8 @@ services:
         condition: service_healthy
       filer:
         condition: service_healthy
-
+    tmpfs:
+      - /tmp
     volumes:
       - ./tls:/etc/seaweedfs/tls
   s3:
@@ -399,7 +410,7 @@ services:
     restart: *default-restart
     networks:
       - default
-    command: '-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} s3 -filer="filer:8888" -ip.bind=s3'
+    command: '-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} -logtostderr s3 -filer="filer:8888" -ip.bind=s3'
     healthcheck:
       test: ["CMD", "echo", "--fail", "--get", "http://localhost:8333/healthz"]
       interval: 5s
@@ -410,6 +421,8 @@ services:
         condition: service_healthy
       filer:
         condition: service_healthy
+    tmpfs:
+      - /tmp
     volumes:
       - ./tls:/etc/seaweedfs/tls
 
@@ -612,6 +625,10 @@ networks:
 volumes:
   seaweedfs-data:
     name: ${SEAWEEDFS_VOLUME}
+  seaweedfs-metadata:
+    name: avatar_seaweedfs_metadata
+  seaweedfs-blocks:
+    name: avatar_seaweedfs_blocks
   postgres_data:
     name: ${DB_VOLUME}
     external: true
