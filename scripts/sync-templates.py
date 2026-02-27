@@ -36,6 +36,13 @@ BRANDING_TARGETS = {
     "Docker Compose": "docker/authentik/branding",
 }
 
+# ── Custom CSS ───────────────────────────────────────────────────────────────
+CSS_SOURCE_DIR = "common/authentik-css"
+CSS_TARGETS = {
+    "Helm chart":     "services-api-helm-chart/static/css",
+    "Docker Compose": "docker/authentik/css",
+}
+
 # ── Blueprint ────────────────────────────────────────────────────────────────
 BLUEPRINT_SOURCE_DIR = "common/authentik-blueprint"
 BLUEPRINT_TARGETS = {
@@ -177,6 +184,13 @@ ASSET_CATEGORIES = [
         file_patterns=["*.ico", "*.png"],
     ),
     AssetCategory(
+        label="Custom CSS",
+        emoji="🎨",
+        source_dir=CSS_SOURCE_DIR,
+        targets=CSS_TARGETS,
+        file_patterns=["*.css"],
+    ),
+    AssetCategory(
         label="Blueprint",
         emoji="📋",
         source_dir=BLUEPRINT_SOURCE_DIR,
@@ -278,7 +292,7 @@ def main() -> int:
         print()
         print("Next steps:")
         print("  Commit all changes:")
-        print("    git add services-api-helm-chart/static/ docker/authentik/ docker/templates/authentik/")
+        print("    git add services-api-helm-chart/static/ docker/authentik/ docker/templates/authentik/ common/authentik-css/")
         print("    git commit -m 'sync: update authentik assets'")
         print("━" * 80)
 

@@ -40,6 +40,7 @@ REQUIRED_FILE_MANIFEST: dict[str, dict[str, object]] = {
             "authentik/branding/favicon.ico",
             "authentik/branding/logo.png",
             "authentik/branding/background.png",
+            "authentik/css/custom.css",
         ],
     },
 }
