@@ -519,6 +519,8 @@ services:
       - ./authentik/branding/favicon.ico:/media/public/favicon.ico:ro
       - ./authentik/branding/logo.png:/media/public/brand_logo.png:ro
       - ./authentik/branding/background.png:/media/public/background.png:ro
+      # Mount custom CSS for Octopize brand styling
+      - ./authentik/css/custom.css:/web/dist/custom.css:ro
 
     secrets:
       - authentik_database_name
@@ -548,6 +550,8 @@ services:
       - ./authentik/branding/favicon.ico:/media/public/favicon.ico:ro
       - ./authentik/branding/logo.png:/media/public/brand_logo.png:ro
       - ./authentik/octopize-avatar-blueprint.yaml:/blueprints/octopize-avatar-blueprint.yaml:ro
+      # Mount custom CSS for Octopize brand styling
+      - ./authentik/css/custom.css:/web/dist/custom.css:ro
 
     secrets:
       - authentik_database_name

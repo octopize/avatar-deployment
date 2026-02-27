@@ -59,6 +59,7 @@ Generating Configuration Files
 ✓ Generated: {{OUTPUT_DIR}}/docker-compose.yml
 ✓ Copied: email templates to {{OUTPUT_DIR}}/authentik/custom-templates
 ✓ Copied: branding files to {{OUTPUT_DIR}}/authentik/branding
+✓ Copied: custom CSS to {{OUTPUT_DIR}}/authentik/css
 
 ✓ Configuration files generated successfully!
 

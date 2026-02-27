@@ -267,6 +267,16 @@ class DeploymentConfigurator:
                     shutil.copy2(branding_file, branding_dst / branding_file.name)
             self.printer.print_success(f"Copied: branding files to {branding_dst}")
 
+        # Copy authentik custom CSS
+        css_src = self.templates_dir / "authentik" / "css"
+        css_dst = self.output_dir / "authentik" / "css"
+        if css_src.exists():
+            css_dst.mkdir(parents=True, exist_ok=True)
+            for css_file in css_src.glob("*"):
+                if css_file.is_file():
+                    shutil.copy2(css_file, css_dst / css_file.name)
+            self.printer.print_success(f"Copied: custom CSS to {css_dst}")
+
         self.printer.print()
         self.printer.print_success("Configuration files generated successfully!")
 
