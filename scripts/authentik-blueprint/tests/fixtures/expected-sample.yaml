@@ -1,26 +1,20 @@
 # yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
 ---
 # Octopize Avatar - Authentik Blueprint
-# Converted from staging export - automated conversion
+# This blueprint configures SSO authentication for the Avatar API platform
+# including custom flows, stages, policies, and email templates
 #
-# This blueprint uses !Env tags to resolve deployment-specific values
-# from environment variables at blueprint apply time.
-#
-# Required environment variables:
-#   AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN            - Base domain for the deployment (e.g., avatar.example.com)
-#   AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID         - OAuth2 client ID for the Avatar API provider
-#   AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET     - OAuth2 client secret for the Avatar API provider
-#   AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI  - OAuth2 redirect URI for the Avatar API
-#   AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE - License type for self-service user groups
-#
-# CONTEXT VARIABLES (can be overridden at deployment):
-#   app_name                  - Application name (default: "Avatar API")
-#   domain                    - Deployment domain (from AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN env var)
-#   license_type              - Default license type for groups (default: "full")
+# All deployment-specific values are resolved at apply time via !Env tags.
+# The following environment variables must be set in the authentik deployment:
+#   AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN                - Base domain (e.g., avatar.yourcompany.com)
+#   AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID             - OAuth2 Client ID
+#   AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET         - OAuth2 Client Secret
+#   AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI      - Full redirect URI for API
+#   AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE   - License type for self-service signups
 
 context:
   app_name: Avatar API
-  domain: !Env AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN
+  domain: !Env 'AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN'
   license_type: full
 metadata:
   name: octopize-avatar-sso-configuration
@@ -59,6 +53,19 @@ entries:
       slug: avatar-authentication-flow
     model: authentik_flows.flow
     state: present
+  - attrs:
+      denied_action: message_continue
+      designation: enrollment
+      layout: stacked
+      name: avatar-self-service-signup-flow
+      policy_engine_mode: any
+      slug: avatar-self-service-signup-flow
+      title: Self-service signup for Avatar
+    id: avatar-self-service-signup-flow
+    identifiers:
+      slug: avatar-self-service-signup-flow
+    model: authentik_flows.flow
+    state: present
 
 # ============================================================
 # POLICIES
@@ -87,7 +94,7 @@ entries:
 # ============================================================
   - attrs:
       case_insensitive_matching: true
-      enrollment_flow: c21e4ccf-6dde-4cc7-b0c4-6cd85c394734
+      enrollment_flow: !KeyOf 'avatar-self-service-signup-flow'
       name: avatar-authentication-stage
       pretend_user_exists: true
       recovery_flow: 60d3f40a-bee9-4394-828e-dc2b5da2cdf9
@@ -114,6 +121,16 @@ entries:
     identifiers:
       name: avatar-password-stage
     model: authentik_stages_password.passwordstage
+    state: present
+  - attrs:
+      fields:
+      - !Find [authentik_stages_prompt.prompt, [field_key, email, name, default-user-settings-field-email]]
+      - !Find [authentik_stages_prompt.prompt, [field_key, username, name, default-source-enrollment-field-username]]
+      name: avatar-source-enrollment-prompt
+    id: avatar-source-enrollment-prompt
+    identifiers:
+      name: avatar-source-enrollment-prompt
+    model: authentik_stages_prompt.promptstage
     state: present
 
 # ============================================================
@@ -163,6 +180,24 @@ entries:
       order: 30
       stage: !Find [authentik_stages_user_login.userloginstage, [name, default-authentication-login]]
       target: !KeyOf 'avatar-authentication-flow'
+    model: authentik_flows.flowstagebinding
+    state: present
+
+  # ========================================
+  # FLOW STAGE BINDINGS - Self Service Signup Flow
+  # ========================================
+  - attrs:
+      invalid_response_action: retry
+      order: 10
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: !KeyOf 'avatar-source-enrollment-prompt'
+      target: !KeyOf 'avatar-self-service-signup-flow'
+    id: avatar-self-service-signup-flow-bind-avatar-source-enrollment-prompt-order-10
+    identifiers:
+      order: 10
+      stage: !KeyOf 'avatar-source-enrollment-prompt'
+      target: !KeyOf 'avatar-self-service-signup-flow'
     model: authentik_flows.flowstagebinding
     state: present
 

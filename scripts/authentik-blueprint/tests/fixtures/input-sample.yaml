@@ -3,11 +3,17 @@
 # Contains representative entries covering all key conversion scenarios:
 #   - Custom group (Octopize - Admins) → should get !KeyOf id
 #   - Custom flow (avatar-authentication-flow) → should get !KeyOf id
+#   - Custom flow (avatar-self-service-signup-flow) → should get !KeyOf id
 #   - Custom stage (avatar-authentication-stage) → should get !KeyOf id, refs custom flow via !KeyOf
 #   - Default stage (default-authentication-login) → should get !Find references
+#   - Custom enrollment stage (avatar-source-enrollment-prompt) → should be INCLUDED with both fields
+#   - Default prompts (default-source-enrollment-field-username, default-user-settings-field-email)
+#     → skipped as standalone entries, but referenced via !Find from within the enrollment stage
 #   - Custom password policy (avatar-password-length-policy) → should get !KeyOf id
 #   - Flow stage binding referencing custom flow + custom stage → both !KeyOf
 #   - Flow stage binding referencing custom flow + default stage → !KeyOf + !Find
+#   - Flow stage binding: avatar-source-enrollment-prompt → avatar-self-service-signup-flow
+#     → both stage and target use !KeyOf
 #   - Policy binding referencing custom policy + custom stage → both !KeyOf
 context: {}
 entries:
@@ -43,8 +49,54 @@ entries:
     model: authentik_flows.flow
     permissions: []
     state: present
+  - attrs:
+      denied_action: message_continue
+      designation: enrollment
+      layout: stacked
+      name: avatar-self-service-signup-flow
+      policy_engine_mode: any
+      slug: avatar-self-service-signup-flow
+      title: Self-service signup for Avatar
+    conditions: []
+    identifiers:
+      pk: c21e4ccf-6dde-4cc7-b0c4-6cd85c394734
+    model: authentik_flows.flow
+    permissions: []
+    state: present
 
-  # --- PROMPTS (none in this sample) ---
+  # --- PROMPTS ---
+  # These default prompts are skipped as standalone entries (they already exist in Authentik)
+  # but must be referenced via !Find from within default-source-enrollment-prompt
+  - attrs:
+      field_key: username
+      label: Username
+      name: default-source-enrollment-field-username
+      order: 100
+      placeholder: Username
+      required: true
+      type: username
+    conditions: []
+    identifiers:
+      pk: b4110617-ea3b-4c51-944d-68d4b1ecc7c5
+    model: authentik_stages_prompt.prompt
+    permissions: []
+    state: present
+  - attrs:
+      field_key: email
+      initial_value: "try:\n    return user.email\nexcept:\n    return ''"
+      initial_value_expression: true
+      label: Email
+      name: default-user-settings-field-email
+      order: 202
+      placeholder: Email
+      required: true
+      type: email
+    conditions: []
+    identifiers:
+      pk: f03ca4ab-9eca-4cd2-bf5e-c51d35c8b3e4
+    model: authentik_stages_prompt.prompt
+    permissions: []
+    state: present
 
   # --- POLICIES ---
   - attrs:
@@ -113,6 +165,18 @@ entries:
     model: authentik_stages_password.passwordstage
     permissions: []
     state: present
+  # Custom enrollment stage: owns both username+email fields via !Find references
+  - attrs:
+      fields:
+        - f03ca4ab-9eca-4cd2-bf5e-c51d35c8b3e4
+        - b4110617-ea3b-4c51-944d-68d4b1ecc7c5
+      name: avatar-source-enrollment-prompt
+    conditions: []
+    identifiers:
+      pk: 2f9d71e9-0bee-4155-bb30-d1dd77099f6e
+    model: authentik_stages_prompt.promptstage
+    permissions: []
+    state: present
 
   # --- FLOW STAGE BINDINGS ---
   # Binding: avatar-authentication-stage → avatar-authentication-flow (both custom → !KeyOf + !KeyOf)
@@ -154,6 +218,21 @@ entries:
     conditions: []
     identifiers:
       pk: 39b564e2-5eff-4c6d-9c11-d6752095f484
+    model: authentik_flows.flowstagebinding
+    permissions: []
+    state: present
+  # Binding: avatar-source-enrollment-prompt → avatar-self-service-signup-flow
+  # Custom stage → !KeyOf for both stage and target
+  - attrs:
+      invalid_response_action: retry
+      order: 10
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: 2f9d71e9-0bee-4155-bb30-d1dd77099f6e
+      target: c21e4ccf-6dde-4cc7-b0c4-6cd85c394734
+    conditions: []
+    identifiers:
+      pk: 92f7f30f-6bf4-46fc-ab79-6c7dff95667e
     model: authentik_flows.flowstagebinding
     permissions: []
     state: present

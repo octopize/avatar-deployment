@@ -399,6 +399,149 @@ class TestBlueprintConverter:
             tmp_path.unlink()
 
 
+    def test_self_service_signup_enrollment_prompt(self, converter):
+        """Regression test: the enrollment prompt stage must include BOTH username and email fields.
+
+        Bug: The signup flow was referencing the built-in default-source-enrollment-prompt stage
+        which on a fresh Authentik install only has the username field. The email field was added
+        manually in staging but never captured in the blueprint.
+
+        Fix: Use a custom avatar-source-enrollment-prompt stage (not the Authentik default) that
+        explicitly declares both fields via !Find references, ensuring both are present on every deploy.
+        """
+        enrollment_prompt_pk = "2f9d71e9-0bee-4155-bb30-d1dd77099f6e"
+        username_prompt_pk = "b4110617-ea3b-4c51-944d-68d4b1ecc7c5"
+        email_prompt_pk = "f03ca4ab-9eca-4cd2-bf5e-c51d35c8b3e4"
+        signup_flow_pk = "c21e4ccf-6dde-4cc7-b0c4-6cd85c394734"
+
+        test_blueprint = {
+            "version": 1,
+            "metadata": {"name": "test", "labels": {}},
+            "entries": [
+                # The self-service signup flow
+                {
+                    "model": "authentik_flows.flow",
+                    "identifiers": {"pk": signup_flow_pk},
+                    "attrs": {
+                        "slug": "avatar-self-service-signup-flow",
+                        "name": "avatar-self-service-signup-flow",
+                        "designation": "enrollment",
+                    },
+                    "conditions": [],
+                    "permissions": [],
+                    "state": "present",
+                },
+                # Default username prompt (exists in fresh Authentik, skip as standalone)
+                {
+                    "model": "authentik_stages_prompt.prompt",
+                    "identifiers": {"pk": username_prompt_pk},
+                    "attrs": {
+                        "field_key": "username",
+                        "name": "default-source-enrollment-field-username",
+                        "label": "Username",
+                        "type": "username",
+                    },
+                    "conditions": [],
+                    "permissions": [],
+                    "state": "present",
+                },
+                # Default email prompt (exists in fresh Authentik, skip as standalone)
+                {
+                    "model": "authentik_stages_prompt.prompt",
+                    "identifiers": {"pk": email_prompt_pk},
+                    "attrs": {
+                        "field_key": "email",
+                        "name": "default-user-settings-field-email",
+                        "label": "Email",
+                        "type": "email",
+                    },
+                    "conditions": [],
+                    "permissions": [],
+                    "state": "present",
+                },
+                # Custom enrollment stage — must be named with avatar- prefix (not default-)
+                {
+                    "model": "authentik_stages_prompt.promptstage",
+                    "identifiers": {"pk": enrollment_prompt_pk},
+                    "attrs": {
+                        "name": "avatar-source-enrollment-prompt",
+                        "fields": [email_prompt_pk, username_prompt_pk],
+                    },
+                    "conditions": [],
+                    "permissions": [],
+                    "state": "present",
+                },
+                # Flow stage binding tying the enrollment stage to the signup flow
+                {
+                    "model": "authentik_flows.flowstagebinding",
+                    "identifiers": {"pk": "92f7f30f-6bf4-46fc-ab79-6c7dff95667e"},
+                    "attrs": {
+                        "target": signup_flow_pk,
+                        "stage": enrollment_prompt_pk,
+                        "order": 10,
+                    },
+                    "conditions": [],
+                    "permissions": [],
+                    "state": "present",
+                },
+            ],
+        }
+
+        converted = converter.convert_blueprint(test_blueprint)
+        entries = converted["entries"]
+
+        # The enrollment stage must appear as a concrete blueprint entry (not be skipped)
+        stage_entries = [
+            e for e in entries
+            if e.get("model") == "authentik_stages_prompt.promptstage"
+            and e.get("identifiers", {}).get("name") == "avatar-source-enrollment-prompt"
+        ]
+        assert len(stage_entries) == 1, (
+            "avatar-source-enrollment-prompt must appear as a blueprint entry "
+            "(was it accidentally skipped?)"
+        )
+
+        stage_entry = stage_entries[0]
+        fields = stage_entry.get("attrs", {}).get("fields", [])
+
+        # Both username and email must be referenced via !Find (stored as __FIND__ dicts internally)
+        assert len(fields) == 2, (
+            f"avatar-source-enrollment-prompt must have exactly 2 fields "
+            f"(username + email), got {len(fields)}"
+        )
+        assert all(isinstance(f, dict) and "__FIND__" in f for f in fields), (
+            "Both fields must be !Find references (internal __FIND__ dicts)"
+        )
+        field_names = {
+            id_val
+            for f in fields
+            for key, id_val in zip(f["__FIND__"][1][::2], f["__FIND__"][1][1::2])
+            if key == "name"
+        }
+        assert "default-source-enrollment-field-username" in field_names, (
+            "Username field must be present in avatar-source-enrollment-prompt"
+        )
+        assert "default-user-settings-field-email" in field_names, (
+            "Email field must be present in avatar-source-enrollment-prompt — "
+            "missing email field causes the signup form to only show username"
+        )
+
+        # The flow stage binding must reference the custom stage via !KeyOf
+        # Internally, !KeyOf references are stored as {"__KEYOF__": "id"} dicts.
+        binding_entries = [
+            e for e in entries
+            if e.get("model") == "authentik_flows.flowstagebinding"
+            and isinstance(e.get("attrs", {}).get("target"), dict)
+            and e["attrs"]["target"].get("__KEYOF__") == "avatar-self-service-signup-flow"
+        ]
+        assert len(binding_entries) == 1, "Flow stage binding for signup flow must exist"
+        binding_stage_ref = binding_entries[0]["attrs"]["stage"]
+        assert isinstance(binding_stage_ref, dict) and "__KEYOF__" in binding_stage_ref, (
+            "Flow stage binding must reference avatar-source-enrollment-prompt via !KeyOf"
+        )
+        assert binding_stage_ref["__KEYOF__"] == "avatar-source-enrollment-prompt"
+
+
 class TestEnvTag:
     """Tests for the EnvTag class and Helm mode."""
 
