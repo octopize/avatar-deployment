@@ -170,4 +170,19 @@ Define the default app env variables
                 configMapKeyRef:
                   name: avatar-api-config
                   key: SSO_PROVIDER_URL
+            - name: TELEMETRY_S3_BUCKET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: avatar-api-config
+                  key: TELEMETRY_S3_BUCKET_NAME
+            - name: TELEMETRY_S3_ENDPOINT_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: avatar-api-config
+                  key: TELEMETRY_S3_ENDPOINT_URL
+            - name: TELEMETRY_S3_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: avatar-api-config
+                  key: TELEMETRY_S3_REGION
 {{- end }}
