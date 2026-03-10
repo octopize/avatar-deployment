@@ -7,6 +7,10 @@ metadata:
   labels:
     {{- include "avatar.labels" . | nindent 4 }}
 data:
-  {{- /* Strip trailing spaces before nindent: blank lines in the CSS become lines of pure spaces after indentation, which yamllint rejects as trailing-spaces errors. */ -}}
-  {{- (.Files.Glob "static/css/*.css").AsConfig | regexReplaceAll `(?m) +$` "" | nindent 2 }}
+  {{- /* regexReplaceAll must NOT be used in a pipeline: Go templates pass the piped value as
+       the LAST argument, making it the replacement string instead of the source. We assign to a
+       variable first and call regexReplaceAll directly. The regex runs AFTER nindent: nindent turns
+       blank lines into lines of pure spaces which yamllint rejects as trailing-spaces errors. */ -}}
+  {{- $css := (.Files.Glob "static/css/*.css").AsConfig | nindent 2 -}}
+  {{- regexReplaceAll "(?m)[ \t]+$" $css "" }}
 {{- end }}
