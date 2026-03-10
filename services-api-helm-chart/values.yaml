@@ -163,7 +163,7 @@ authentik:
 
   global:
     image:
-      tag: 2025.12.1
+      tag: 2026.2.1
 
     # Environment variables passed to all authentik components (server + worker).
     # These are resolved by !Env tags in the avatar blueprint at apply time.
