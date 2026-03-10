@@ -668,7 +668,7 @@ entries:
 # ============================================================
   - attrs:
       branding_default_flow_background: background.png
-      branding_custom_css: "@import url('/static/dist/custom.css');"
+      branding_custom_css: "@import url('/sso/static/dist/custom.css');"
       branding_favicon: favicon.ico
       branding_logo: brand_logo.png
       branding_title: Avatar

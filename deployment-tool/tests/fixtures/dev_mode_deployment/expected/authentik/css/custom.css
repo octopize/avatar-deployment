@@ -7,8 +7,8 @@
  *
  * Deployment:
  *   1. Mount this file to /web/dist/custom.css inside the authentik container.
- *   2. Blueprint sets: branding_custom_css: "@import url('/static/dist/custom.css');"
- *   3. The browser loads this file from /static/dist/custom.css.
+ *   2. Blueprint sets: branding_custom_css: "@import url('/sso/static/dist/custom.css');"
+ *   3. The browser loads this file from /sso/static/dist/custom.css.
  *
  * Known issues / research references:
  *   - Issue #14958: Font families using quoted strings don't work when inlined in YAML blueprints.

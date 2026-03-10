@@ -31,11 +31,11 @@ config:
   AUTHENTIK_DATABASE_NAME: authentik
   AUTHENTIK_DATABASE_USER: authentik
   AUTHENTIK_BOOTSTRAP_EMAIL: dev@example.com
-  AUTHENTIK_BOOTSTRAP_PASSWORD: fZI1_03ph8oyqN1QtOIUUhKdkkPR4AkDwiggXLjZQdQ
-  AUTHENTIK_BOOTSTRAP_TOKEN: wQA7-3qIbCo10x3qUo03jqqhdYvr5eUKeRgmZLDYz_s
+  AUTHENTIK_BOOTSTRAP_PASSWORD: BwT3MeovHZzOawI5W_bvsj2trXPDfYiqLQ8ppCifV4c
+  AUTHENTIK_BOOTSTRAP_TOKEN: jN11CYsHU6eu7qfaINRXhDyV6gIm_w9AVG4VllWhWAg
   AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN: avatar-dev.example.com
-  AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID: c7d6225e8aaf64c45de52c91aa0bc7c6a688f45ff8fe778c2b585a4c9cc94aff
-  AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET: 860ba6c044ae8a89008d734621a06bd725afd74901c723ca9c04431870499685
+  AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID: ec48f6292ddf4739dbb1c2723deb8c47a5c69cb670aa636eaedb5f036deec3e5
+  AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET: 53021be187cfeb5e42f7fb5e2f4e6b616609786921bd82d5adb422f2da5b5b3b
   AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI: https://avatar-dev.example.com/api/login/sso/auth
   AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE: demo
   MAIL_PROVIDER: smtp
@@ -47,12 +47,12 @@ config:
   SMTP_SENDER_EMAIL: dev@example.com
   USE_EMAIL_AUTHENTICATION: 'true'
   ADMIN_EMAILS: dev@example.com
-  WEB_SOURCE_PATH: /tmp/tmpz2d2h5i9/test-avatar-website
-  NPMRC_PATH: /tmp/tmpz2d2h5i9/test-.npmrc
-  API_SOURCE_PATH: /tmp/tmpz2d2h5i9/test-avatar-repo/services/api
-  API_CONTEXT_AVATAR: /tmp/tmpz2d2h5i9/test-avatar-repo/avatar
-  API_CONTEXT_CORE: /tmp/tmpz2d2h5i9/test-avatar-repo/core
-  API_CONTEXT_DP: /tmp/tmpz2d2h5i9/test-avatar-repo/dp
+  WEB_SOURCE_PATH: /tmp/tmpjgc91y6x/test-avatar-website
+  NPMRC_PATH: /tmp/tmpjgc91y6x/test-.npmrc
+  API_SOURCE_PATH: /tmp/tmpjgc91y6x/test-avatar-repo/services/api
+  API_CONTEXT_AVATAR: /tmp/tmpjgc91y6x/test-avatar-repo/avatar
+  API_CONTEXT_CORE: /tmp/tmpjgc91y6x/test-avatar-repo/core
+  API_CONTEXT_DP: /tmp/tmpjgc91y6x/test-avatar-repo/dp
   IS_SENTRY_ENABLED: 'false'
   TELEMETRY_S3_ENDPOINT_URL: ''
   TELEMETRY_S3_REGION: ''
