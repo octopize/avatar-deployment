@@ -7,13 +7,6 @@ metadata:
   labels:
     {{- include "avatar.labels" . | nindent 4 }}
 data:
-  {{- /*
-    Automatically load all .css files from the static/css/ directory.
-    This uses .Files.Glob to find all CSS files and .AsConfig to
-    convert them into ConfigMap data entries.
-
-    The CSS file is mounted to /web/dist/custom.css and loaded via
-    @import url() in the blueprint's branding_custom_css setting.
-  */ -}}
-  {{- (.Files.Glob "static/css/*.css").AsConfig | nindent 2 }}
+  {{- /* Strip trailing spaces before nindent: blank lines in the CSS become lines of pure spaces after indentation, which yamllint rejects as trailing-spaces errors. */ -}}
+  {{- (.Files.Glob "static/css/*.css").AsConfig | regexReplaceAll `(?m) +$` "" | nindent 2 }}
 {{- end }}

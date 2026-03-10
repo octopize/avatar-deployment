@@ -45,7 +45,11 @@ ak-flow-executor {
   /* Override PatternFly blue with Octopize teal */
   --pf-global--primary-color--100: hsl(165.3, 65.4%, 53.5%);
   --pf-global--primary-color--200: hsl(165.3, 65.4%, 48%);
-  --pf-global--primary-color--300: hsl(165.3, 65.4%, 42%);  /* login button hover */
+  --pf-global--primary-color--300: hsl(
+    165.3,
+    65.4%,
+    42%
+  ); /* login button hover */
   --pf-global--link--Color: hsl(165.3, 65.4%, 40%);
   --pf-global--link--Color--hover: hsl(165.3, 65.4%, 32%);
 }
@@ -64,7 +68,7 @@ ak-flow-executor {
   /* Keep default white card on light backgrounds; override if needed */
   --pf-c-login__main--BackgroundColor: #ffffff;
   --pf-v5-c-login__main--BackgroundColor: #ffffff;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.10);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
 }
 
 /* ── Primary buttons (login / submit / next) ───────────────────────────────── */
