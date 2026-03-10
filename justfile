@@ -4,7 +4,7 @@ default:
     @just -l
 
 
-tag VERSION:
+tag-helm VERSION:
     @git tag -s services-api-helm-chart-v{{VERSION}} -m "Release new services-api helm chart v{{VERSION}}"
 
 setup-precommit:
