@@ -45,13 +45,30 @@ ak-flow-executor {
   /* Override PatternFly blue with Octopize teal */
   --pf-global--primary-color--100: hsl(165.3, 65.4%, 53.5%);
   --pf-global--primary-color--200: hsl(165.3, 65.4%, 48%);
-  --pf-global--primary-color--300: hsl(
-    165.3,
-    65.4%,
-    42%
-  ); /* login button hover */
+  --pf-global--primary-color--300: hsl(165.3, 65.4%, 42%); /* login button hover */
   --pf-global--link--Color: hsl(165.3, 65.4%, 40%);
   --pf-global--link--Color--hover: hsl(165.3, 65.4%, 32%);
+
+  /* Fix input focus ring: override PF v4 active color and PF v5 focus-ring color.
+   * These CSS vars inherit into shadow DOM children, reaching all form elements. */
+  --pf-global--active-color--100: hsl(165.3, 65.4%, 53.5%);
+  --pf-v5-global--focus-ring--Color: hsl(165.3, 65.4%, 53.5%);
+  --pf-c-form-control--focus--BorderBottomColor: hsl(165.3, 65.4%, 53.5%);
+  --pf-v5-c-form-control--focus--BorderBottomColor: hsl(165.3, 65.4%, 53.5%);
+
+  /* Remove per-flow background images (e.g., the mountain photo on the recovery
+   * flow). The --pf-c-background-image--BackgroundImage vars are used by
+   * .pf-c-background-image::before inside ak-flow-executor's shadow DOM.
+   * CSS custom properties inherit through shadow DOM boundaries. */
+  --pf-c-background-image--BackgroundImage: none;
+  --pf-c-background-image--BackgroundImage-2x: none;
+  --pf-c-background-image--BackgroundImage--sm: none;
+  --pf-c-background-image--BackgroundImage--sm-2x: none;
+  --pf-c-background-image--BackgroundImage--lg: none;
+  --pf-c-background-image--BackgroundColor: #f0f2f5;
+  --pf-c-background-image--Filter: none;
+  /* Also override the xl login background-image CSS variable */
+  --pf-c-login--xl--BackgroundImage: none;
 }
 
 /* ── Login card background ─────────────────────────────────────────────────── */
@@ -103,11 +120,20 @@ ak-flow-executor a:hover {
 }
 
 /* ── Input focus ring ───────────────────────────────────────────────────────── */
+/*
+ * The gold/yellow focus ring on inputs comes from PF v5 --pf-v5-global--focus-ring--Color.
+ * These selectors apply to light DOM elements; the CSS vars above (on ak-flow-executor)
+ * handle elements inside shadow DOM.
+ */
 .pf-c-form-control:focus,
-.pf-v5-c-form-control:focus {
+.pf-c-form-control:focus-within,
+.pf-v5-c-form-control:focus,
+.pf-v5-c-form-control:focus-within {
   --pf-c-form-control--focus--BorderBottomColor: hsl(165.3, 65.4%, 53.5%);
   --pf-v5-c-form-control--focus--BorderBottomColor: hsl(165.3, 65.4%, 53.5%);
-  outline-color: hsl(165.3, 65.4%, 53.5%);
+  outline-color: hsl(165.3, 65.4%, 53.5%) !important;
+  outline: 1px solid hsl(165.3, 65.4%, 53.5%) !important;
+  outline-offset: -1px;
 }
 
 /* ── "Powered by authentik" footer ─────────────────────────────────────────── */
@@ -143,7 +169,6 @@ ak-brand-links {
  *                         exportparts="label:locale-select-label,select:locale-select-select">
  *
  * Issue #19506 fix: use ::part() pseudo-element to cross shadow DOM boundary.
- * User-specified: [part="locale-select"] --pf-global--Color--100
  *
  * Available parts (from exportparts):
  *   ::part(locale-select)         — the ak-locale-select host element
@@ -151,11 +176,14 @@ ak-brand-links {
  *   ::part(locale-select-select)  — the <select> dropdown element
  */
 ak-flow-executor::part(locale-select) {
-  --pf-global--Color--100: hsl(165.3, 65.4%, 35%);
-  color: hsl(165.3, 65.4%, 35%);
+  color: hsl(165.3, 65.4%, 30%);
+}
+
+ak-flow-executor::part(locale-select-label) {
+  color: hsl(165.3, 65.4%, 30%);
 }
 
 ak-flow-executor::part(locale-select-select) {
-  color: hsl(165.3, 65.4%, 35%);
+  color: hsl(165.3, 65.4%, 30%);
   border-color: hsl(165.3, 65.4%, 53.5%);
 }
