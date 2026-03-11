@@ -149,6 +149,16 @@ See [docker/deploying-on-single-instance.md](docker/deploying-on-single-instance
 **Trigger**: Working with authentication emails in `common/authentik-templates/`  
 **Skill Reference**: [.claude/skills/authentik-email-templates/SKILL.md](.claude/skills/authentik-email-templates/SKILL.md)
 
+### Helm Chart Release
+
+**Trigger**: Bumping the chart version, pushing to the registry, or deploying a new chart version to staging/prod  
+**Skill Reference**: [.claude/skills/helm-chart-release/SKILL.md](.claude/skills/helm-chart-release/SKILL.md)
+
+### Debug Kubernetes Deployment
+
+**Trigger**: Debugging live pods, missing configs, blueprint errors, stale mounts, or any staging/prod issue requiring `kubectl`, `helm`, or `pulumi`  
+**Skill Reference**: [.claude/skills/debug-k8s-deployment/SKILL.md](.claude/skills/debug-k8s-deployment/SKILL.md)
+
 ### Deployment Tool Steps
 
 **Trigger**: Adding new configuration steps to the deployment tool  
@@ -243,6 +253,8 @@ When adding or modifying tests for the deployment tool, **always consult QUICK_R
 │   └── update-image-versions.py       ← Image version updater
 ├── .claude/skills/                    ← Agent skill definitions
 │   ├── authentik-email-templates/     ← Email template creation skill
+│   ├── helm-chart-release/            ← Helm chart version bump + deploy skill
+│   ├── debug-k8s-deployment/          ← kubectl/helm/pulumi debugging skill
 │   └── deployment-tool-steps/         ← Deployment step creation skill
 └── AGENTS.md                          ← This file (agent configuration guide)
 ```

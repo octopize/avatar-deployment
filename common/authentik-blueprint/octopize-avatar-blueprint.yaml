@@ -667,7 +667,16 @@ entries:
 # ============================================================
   - attrs:
       branding_default_flow_background: background.png
-      branding_custom_css: "@import url('/sso/static/dist/custom.css');"
+      # branding_custom_css is processed by authentik's JS into an adopted
+      # stylesheet injected into every shadow root in the flow. Rules here DO
+      # reach shadow DOM elements (inputs, buttons, .pf-c-brand header, footer).
+      # Rules in the @import'd custom.css only reach the light DOM — see
+      # common/authentik-css/custom.css and SHADOW-DOM-CSS-NOTES.md for details.
+      branding_custom_css: |
+        @import url('/sso/static/dist/custom.css');
+        input:focus, input:focus-visible, select:focus, select:focus-visible, textarea:focus, textarea:focus-visible { outline: 2px solid hsl(165.3, 65.4%, 53.5%) !important; outline-offset: 2px; box-shadow: none !important; }
+        .pf-c-brand { background: linear-gradient(180deg, hsl(165.3, 65.4%, 28%) 0%, hsl(165.3, 65.4%, 22%) 100%); padding: 1.5rem 2rem; }
+        ak-brand-links { visibility: hidden; height: 0; overflow: hidden; display: block; }
       branding_favicon: favicon.ico
       branding_logo: brand_logo.png
       branding_title: Avatar

@@ -2,160 +2,93 @@
  * Octopize Brand CSS for authentik SSO
  * Source of truth: common/authentik-css/custom.css
  *
- * Scope: ak-flow-executor {} targets ALL authentication flows.
- * Does NOT affect the admin interface (admin uses separate shadow DOM context).
+ * ARCHITECTURE
+ * ─────────────────────────────────────────────────────────────────────────────
+ * authentik renders each login stage inside nested Web Components, each with
+ * its own shadow root. This file is loaded via @import in a light DOM <style>
+ * tag and therefore can ONLY affect elements in the light DOM.
  *
- * Deployment:
- *   1. Mount this file to /web/dist/custom.css inside the authentik container.
- *   2. Blueprint sets: branding_custom_css: "@import url('/sso/static/dist/custom.css');"
- *   3. The browser loads this file from /sso/static/dist/custom.css.
+ * What this file CAN do:
+ *   1. CSS custom properties set on the shadow host (ak-flow-executor) propagate
+ *      into all nested shadow roots via CSS inheritance. PatternFly's component
+ *      CSS reads --pf-global--* vars for colours, so overriding them here is
+ *      enough to teal-ify buttons, links, and focus rings everywhere.
+ *   2. Inherited CSS properties (color-scheme, color, font-size, …) are also
+ *      inherited across shadow DOM boundaries.
+ *   3. ak-flow-executor::part(…) — the CSS-standard way to pierce shadow DOM;
+ *      ak-locale-select explicitly exports named parts for host-page styling.
  *
- * Known issues / research references:
- *   - Issue #14958: Font families using quoted strings don't work when inlined in YAML blueprints.
- *     Using @import+file avoids this entirely.
+ * What this file CANNOT do (regular selectors don't pierce shadow DOM):
+ *   .pf-c-button { … }        → button elements are inside shadow DOM
+ *   ak-flow-executor a { … }  → <a> elements are inside shadow DOM
+ *   input:focus { … }         → inputs are inside shadow DOM
+ *   .pf-c-login__footer { … } → footer is inside shadow DOM
+ *   ak-brand-links { … }      → is inside shadow DOM
+ *
+ * Those rules live in branding_custom_css in the blueprint, where authentik
+ * injects them as adopted stylesheets into every shadow root at runtime.
+ * See: common/authentik-blueprint/octopize-avatar-blueprint.yaml
+ * See: common/authentik-css/SHADOW-DOM-CSS-NOTES.md for a full explanation.
+ *
+ * Known issues:
+ *   - Issue #14958: Font families with quoted strings fail in YAML blueprints.
  *   - Issue #15149: No native file-path support in branding_custom_css.
  *     Workaround: mount file + @import url() in blueprint.
- *   - Issue #19506: Locale selector (ak-locale-select) is in shadow DOM.
- *     Use ak-flow-executor::part(locale-select) to style it.
- *   - Issue #19556: 2025.12 CSS regression — custom CSS stopped applying for many users.
- *     Fix: use CSS custom properties at :root or ak-flow-executor scope, add !important,
- *     and include both pf-c-* (PF v4) AND pf-v5-c-* (PF v5) class variants.
- *   - Issue #20275: Admin dashboard shadow DOM — custom CSS cannot reach buttons inside
- *     admin wizard shadow DOM. Scoping to ak-flow-executor avoids affecting admin.
+ *   - Issue #19506: ak-locale-select is in shadow DOM; use ::part() to style.
+ *   - Issue #19556: 2025.12 CSS regression — use CSS custom properties,
+ *     not direct element selectors. Include both pf-c-* and pf-v5-c-* variants.
  *
- * Octopize brand:
- *   Primary teal:  hsl(165.3, 65.4%, 53.5%) ≈ #3ecfb2
- *   Hover teal:    hsl(165.3, 65.4%, 42%)   ≈ #2ea88e
- *   Dark navy bg:  hsl(222.2, 84%, 4.9%)    (dark mode)
- *   Font: No font changes — authentik default font is kept as-is
+ * Octopize brand colours:
+ *   Primary teal: hsl(165.3, 65.4%, 53.5%) ≈ #3ecfb2
+ *   Hover teal:   hsl(165.3, 65.4%, 42%)   ≈ #2ea88e
  */
 
-/* ── CSS Custom Properties scoped to all flows ─────────────────────────────── */
+/* ── CSS Custom Properties + inherited properties ───────────────────────────── */
 /*
- * ak-flow-executor wraps EVERY authentication/enrollment/recovery flow.
- * Setting CSS vars here overrides PatternFly's defaults for all flows
- * without affecting the admin interface.
+ * Set on the shadow host (<ak-flow-executor>), these cascade into all nested
+ * shadow roots via CSS inheritance / the custom-property inheritance mechanism.
  *
- * User-specified selectors:
- *   Login button:       --pf-global--primary-color--300
- *   Card background:    --pf-global--BackgroundColor--100
- *   Locale picker:      [part="locale-select"] --pf-global--Color--100
+ * PatternFly's component CSS consumes the --pf-global--* vars for colours, so
+ * overriding them here changes buttons, links, focus rings, etc. everywhere.
+ *
+ * color-scheme: light — prevents the browser from applying OS dark-mode styling
+ * to native form controls (e.g. black input fields on dark-mode systems).
+ * It is an inherited property and propagates through all nested shadow roots.
  */
 ak-flow-executor {
-  /* Override PatternFly blue with Octopize teal */
-  --pf-global--primary-color--100: hsl(165.3, 65.4%, 53.5%);
-  --pf-global--primary-color--200: hsl(165.3, 65.4%, 48%);
-  --pf-global--primary-color--300: hsl(
-    165.3,
-    65.4%,
-    42%
-  ); /* login button hover */
-  --pf-global--link--Color: hsl(165.3, 65.4%, 40%);
+  /* Octopize teal replaces PatternFly's default blue */
+  --pf-global--primary-color--100: hsl(165.3, 65.4%, 53.5%); /* button bg, badge */
+  --pf-global--primary-color--200: hsl(165.3, 65.4%, 48%);   /* button bg hover */
+  --pf-global--primary-color--300: hsl(165.3, 65.4%, 42%);   /* button bg active */
+  --pf-global--link--Color:        hsl(165.3, 65.4%, 40%);
   --pf-global--link--Color--hover: hsl(165.3, 65.4%, 32%);
-}
+  --pf-global--active-color--100:  hsl(165.3, 65.4%, 53.5%); /* PF v4 focus ring */
 
-/* ── Login card background ─────────────────────────────────────────────────── */
-/*
- * HTML structure (from page export):
- *   <main class="pf-c-login__main style-scope ak-flow-executor">
- *     <div class="pf-c-login__main-body style-scope ak-flow-card">
- *
- * User-specified parent selector: .pf-c-login__main.ak-flow-executor
- * CSS var to override: --pf-global--BackgroundColor--100
- */
-.pf-c-login__main,
-.pf-v5-c-login__main {
-  /* Keep default white card on light backgrounds; override if needed */
-  --pf-c-login__main--BackgroundColor: #ffffff;
-  --pf-v5-c-login__main--BackgroundColor: #ffffff;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
-}
-
-/* ── Primary buttons (login / submit / next) ───────────────────────────────── */
-/*
- * HTML: <button class="pf-c-button pf-m-primary pf-m-block style-scope ak-stage-identification">
- * Include both pf-c (PF v4, used pre-2025.12) and pf-v5-c (PF v5, used 2025.12+)
- * to handle both versions safely.
- */
-.pf-c-button.pf-m-primary,
-.pf-v5-c-button.pf-m-primary {
-  background-color: hsl(165.3, 65.4%, 53.5%) !important;
-  border-color: hsl(165.3, 65.4%, 53.5%) !important;
-  color: #fff !important;
-}
-
-.pf-c-button.pf-m-primary:hover,
-.pf-c-button.pf-m-primary:focus,
-.pf-v5-c-button.pf-m-primary:hover,
-.pf-v5-c-button.pf-m-primary:focus {
-  background-color: hsl(165.3, 65.4%, 42%) !important;
-  border-color: hsl(165.3, 65.4%, 42%) !important;
-}
-
-/* ── Links ─────────────────────────────────────────────────────────────────── */
-ak-flow-executor a,
-ak-flow-executor a:visited {
-  color: hsl(165.3, 65.4%, 40%) !important;
-}
-
-ak-flow-executor a:hover {
-  color: hsl(165.3, 65.4%, 32%) !important;
-}
-
-/* ── Input focus ring ───────────────────────────────────────────────────────── */
-.pf-c-form-control:focus,
-.pf-v5-c-form-control:focus {
-  --pf-c-form-control--focus--BorderBottomColor: hsl(165.3, 65.4%, 53.5%);
+  /* PF v5 variants (introduced in authentik 2025.12) */
+  --pf-v5-global--focus-ring--Color:                hsl(165.3, 65.4%, 53.5%);
+  --pf-c-form-control--focus--BorderBottomColor:    hsl(165.3, 65.4%, 53.5%);
   --pf-v5-c-form-control--focus--BorderBottomColor: hsl(165.3, 65.4%, 53.5%);
-  outline-color: hsl(165.3, 65.4%, 53.5%);
+
+  /* Suppress the right-panel background image at xl (>1200px) viewport widths */
+  --pf-c-login--xl--BackgroundImage: none;
 }
 
-/* ── "Powered by authentik" footer ─────────────────────────────────────────── */
+/* ── Locale selector ────────────────────────────────────────────────────────── */
 /*
- * HTML: <ak class="pf-c-login__footer pf-m-dark">
- *         <ak-brand-links>
- *           <ul class="pf-c-list pf-m-inline">
- *             <li><span>Powered by authentik</span></li>
- *           </ul>
- *         </ak-brand-links>
- *       </ak>
- *
- * User-specified: .pf-c-login__footer { color }
- * Set color to transparent to hide text while preserving layout, or use
- * visibility:hidden / height:0 on ak-brand-links to remove entirely.
- */
-ak-brand-links {
-  visibility: hidden;
-  height: 0;
-  overflow: hidden;
-  display: block;
-}
-
-/* Alternative: if ak-brand-links can't be selected, make footer text invisible */
-.pf-c-login__footer {
-  color: transparent !important;
-}
-
-/* ── Locale selector (shadow DOM) ───────────────────────────────────────────── */
-/*
- * ak-locale-select is inside ak-flow-executor's shadow DOM.
- * From the page export: <ak-locale-select part=locale-select
- *                         exportparts="label:locale-select-label,select:locale-select-select">
- *
- * Issue #19506 fix: use ::part() pseudo-element to cross shadow DOM boundary.
- * User-specified: [part="locale-select"] --pf-global--Color--100
- *
- * Available parts (from exportparts):
- *   ::part(locale-select)         — the ak-locale-select host element
- *   ::part(locale-select-label)   — the <label> element (globe icon label)
- *   ::part(locale-select-select)  — the <select> dropdown element
+ * ak-locale-select renders inside ak-flow-executor's shadow root and exposes:
+ *   exportparts="label:locale-select-label,select:locale-select-select"
+ * These ::part() rules are the only way to style it from the outer document.
+ * (Issue #19506)
  */
 ak-flow-executor::part(locale-select) {
-  --pf-global--Color--100: hsl(165.3, 65.4%, 35%);
-  color: hsl(165.3, 65.4%, 35%);
+  color: hsl(165.3, 65.4%, 30%);
+}
+
+ak-flow-executor::part(locale-select-label) {
+  color: hsl(165.3, 65.4%, 30%);
 }
 
 ak-flow-executor::part(locale-select-select) {
-  color: hsl(165.3, 65.4%, 35%);
+  color: hsl(165.3, 65.4%, 30%);
   border-color: hsl(165.3, 65.4%, 53.5%);
 }
