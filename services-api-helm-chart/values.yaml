@@ -79,6 +79,7 @@ web:
     apiInternalHost: "http://avatar-api"
     apiInternalPort: 8000
     webClientUrl: "https://avatar.yourcompany.com/web"
+    authentikUrl: "https://avatar.yourcompany.com/sso/"
     ssoEnabled: "false"
     ssoUrl: "https://avatar.yourcompany.com/sso/"
     envName: "prod"
