@@ -229,9 +229,6 @@ authentik:
       - name: branding-assets
         configMap:
           name: authentik-branding
-      - name: custom-css
-        configMap:
-          name: authentik-custom-css
 
     volumeMounts:
       # Mount custom templates directory so authentik can discover them in the UI
@@ -251,10 +248,6 @@ authentik:
       - name: branding-assets
         mountPath: /media/public/background.png
         subPath: background.png
-        readOnly: true
-      - name: custom-css
-        mountPath: /web/dist/custom.css
-        subPath: custom.css
         readOnly: true
 
   # Server configuration to mount custom templates
@@ -267,9 +260,6 @@ authentik:
       - name: branding-assets
         configMap:
           name: authentik-branding
-      - name: custom-css
-        configMap:
-          name: authentik-custom-css
 
     volumeMounts:
       # Mount custom templates directory so authentik can discover them in the UI
@@ -289,8 +279,4 @@ authentik:
       - name: branding-assets
         mountPath: /media/public/background.png
         subPath: background.png
-        readOnly: true
-      - name: custom-css
-        mountPath: /web/dist/custom.css
-        subPath: custom.css
         readOnly: true
