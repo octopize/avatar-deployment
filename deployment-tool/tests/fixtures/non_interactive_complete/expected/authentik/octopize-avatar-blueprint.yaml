@@ -38,6 +38,7 @@ entries:
   - attrs:
       attributes:
         license: !Context 'license_type'
+      is_superuser: false
       name: Octopize - Users
     id: octopize---users
     identifiers:
@@ -50,6 +51,7 @@ entries:
 # ============================================================
   - attrs:
       authentication: none
+      background: ''
       compatibility_mode: true
       denied_action: message_continue
       designation: enrollment
@@ -65,6 +67,8 @@ entries:
     state: present
   - attrs:
       authentication: require_unauthenticated
+      background: ''
+      compatibility_mode: false
       denied_action: message_continue
       designation: recovery
       layout: stacked
@@ -79,6 +83,7 @@ entries:
     state: present
   - attrs:
       authentication: none
+      background: ''
       compatibility_mode: true
       denied_action: message_continue
       designation: authentication
@@ -98,11 +103,15 @@ entries:
 # ============================================================
   - attrs:
       field_key: password
+      initial_value: ''
+      initial_value_expression: false
       label: Password
       name: default-recovery-field-password
       order: 0
       placeholder: Password
+      placeholder_expression: false
       required: true
+      sub_text: ''
       type: password
     id: password
     identifiers:
@@ -112,11 +121,15 @@ entries:
     state: present
   - attrs:
       field_key: password_repeat
+      initial_value: ''
+      initial_value_expression: false
       label: Password (repeat)
       name: default-recovery-field-password-repeat
       order: 1
       placeholder: Password (repeat)
+      placeholder_expression: false
       required: true
+      sub_text: ''
       type: password
     id: password_repeat
     identifiers:
@@ -126,11 +139,15 @@ entries:
     state: present
   - attrs:
       field_key: password
+      initial_value: ''
+      initial_value_expression: false
       label: Password
       name: avatar-initial-setup-field-password
       order: 300
       placeholder: Password
+      placeholder_expression: false
       required: true
+      sub_text: ''
       type: password
     id: password
     identifiers:
@@ -143,6 +160,7 @@ entries:
 # POLICIES
 # ============================================================
   - attrs:
+      execution_logging: false
       expression: |-
         from authentik.core.models import User
 
@@ -161,6 +179,7 @@ entries:
     model: authentik_policies_expression.expressionpolicy
     state: present
   - attrs:
+      execution_logging: false
       expression: |-
         # Check if the 'user_already_exists' flag was set to False
         user_exists = context.get("user_already_exists", False)
@@ -185,8 +204,11 @@ entries:
       amount_lowercase: 0
       amount_symbols: 0
       amount_uppercase: 0
+      check_have_i_been_pwned: false
       check_static_rules: true
+      check_zxcvbn: false
       error_message: Password must be at least 12 characters long.
+      execution_logging: false
       hibp_allowed_count: 0
       length_min: 12
       name: avatar-password-length-policy
@@ -203,6 +225,7 @@ entries:
 # STAGES
 # ============================================================
   - attrs:
+      activate_user_on_success: false
       from_address: system@authentik.local
       host: localhost
       name: avatar-email-someone-tried-to-register-with-your-mail
@@ -214,6 +237,9 @@ entries:
       timeout: 10
       token_expiry: minutes=0
       use_global_settings: true
+      use_ssl: false
+      use_tls: false
+      username: ''
     id: avatar-email-someone-tried-to-register-with-your-mail
     identifiers:
       name: avatar-email-someone-tried-to-register-with-your-mail
@@ -232,6 +258,9 @@ entries:
       timeout: 10
       token_expiry: hours=24
       use_global_settings: true
+      use_ssl: false
+      use_tls: false
+      username: ''
     id: avatar-email-account-confirmation
     identifiers:
       name: avatar-email-account-confirmation
@@ -250,34 +279,51 @@ entries:
       timeout: 10
       token_expiry: minutes=30
       use_global_settings: true
+      use_ssl: false
+      use_tls: false
+      username: ''
     id: avatar-recovery-email
     identifiers:
       name: avatar-recovery-email
     model: authentik_stages_email.emailstage
     state: present
   - attrs:
+      captcha_stage: null
       case_insensitive_matching: true
+      enable_remember_me: false
+      enrollment_flow: null
       name: default-recovery-identification
+      password_stage: null
+      passwordless_flow: null
       pretend_user_exists: true
+      recovery_flow: null
       show_matched_user: true
+      show_source_labels: false
       user_fields:
       - email
       - username
+      webauthn_stage: null
     id: default-recovery-identification
     identifiers:
       name: default-recovery-identification
     model: authentik_stages_identification.identificationstage
     state: present
   - attrs:
+      captcha_stage: null
       case_insensitive_matching: true
+      enable_remember_me: false
       enrollment_flow: !KeyOf 'avatar-self-service-signup-flow'
       name: avatar-authentication-stage
+      password_stage: null
+      passwordless_flow: null
       pretend_user_exists: true
       recovery_flow: !KeyOf 'avatar-recovery-flow'
       show_matched_user: true
+      show_source_labels: false
       user_fields:
       - username
       - email
+      webauthn_stage: null
     id: avatar-authentication-stage
     identifiers:
       name: avatar-authentication-stage
@@ -300,8 +346,8 @@ entries:
     state: present
   - attrs:
       fields:
-      - !Find [authentik_stages_prompt.prompt, [field_key, email, name, default-user-settings-field-email]]
       - !Find [authentik_stages_prompt.prompt, [field_key, username, name, default-source-enrollment-field-username]]
+      - !Find [authentik_stages_prompt.prompt, [field_key, email, name, default-user-settings-field-email]]
       name: avatar-source-enrollment-prompt
     id: avatar-source-enrollment-prompt
     identifiers:
@@ -326,6 +372,7 @@ entries:
       remember_device: days=30
       remember_me_offset: seconds=0
       session_duration: seconds=0
+      terminate_other_sessions: false
     id: default-recovery-user-login
     identifiers:
       name: default-recovery-user-login
@@ -333,6 +380,7 @@ entries:
     state: present
   - attrs:
       create_users_as_inactive: true
+      create_users_group: null
       name: avatar-self-service-userinfo-write
       user_creation_mode: create_when_required
       user_path_template: users/self-service
@@ -343,8 +391,11 @@ entries:
     model: authentik_stages_user_write.userwritestage
     state: present
   - attrs:
+      create_users_as_inactive: false
+      create_users_group: null
       name: default-recovery-user-write
       user_creation_mode: never_create
+      user_path_template: ''
       user_type: external
     id: default-recovery-user-write
     identifiers:
@@ -360,6 +411,7 @@ entries:
   # FLOW STAGE BINDINGS - Authentication Flow
   # ========================================
   - attrs:
+      evaluate_on_plan: false
       invalid_response_action: retry
       order: 10
       policy_engine_mode: any
@@ -374,6 +426,7 @@ entries:
     model: authentik_flows.flowstagebinding
     state: present
   - attrs:
+      evaluate_on_plan: false
       invalid_response_action: retry
       order: 20
       policy_engine_mode: any
@@ -388,6 +441,7 @@ entries:
     model: authentik_flows.flowstagebinding
     state: present
   - attrs:
+      evaluate_on_plan: false
       invalid_response_action: retry
       order: 30
       policy_engine_mode: any
@@ -436,6 +490,7 @@ entries:
     model: authentik_flows.flowstagebinding
     state: present
   - attrs:
+      evaluate_on_plan: false
       invalid_response_action: retry
       order: 30
       policy_engine_mode: any
@@ -454,6 +509,7 @@ entries:
       invalid_response_action: retry
       order: 40
       policy_engine_mode: any
+      re_evaluate_policies: true
       stage: !KeyOf 'default-recovery-user-write'
       target: !KeyOf 'avatar-recovery-flow'
     id: avatar-recovery-flow-bind-default-recovery-user-write-order-40
@@ -468,6 +524,7 @@ entries:
       invalid_response_action: retry
       order: 100
       policy_engine_mode: any
+      re_evaluate_policies: true
       stage: !KeyOf 'default-recovery-user-login'
       target: !KeyOf 'avatar-recovery-flow'
     id: avatar-recovery-flow-bind-default-recovery-user-login-order-100
@@ -482,6 +539,7 @@ entries:
   # FLOW STAGE BINDINGS - Self Service Signup Flow
   # ========================================
   - attrs:
+      evaluate_on_plan: false
       invalid_response_action: retry
       order: 10
       policy_engine_mode: any
@@ -496,6 +554,7 @@ entries:
     model: authentik_flows.flowstagebinding
     state: present
   - attrs:
+      evaluate_on_plan: false
       invalid_response_action: retry
       order: 20
       policy_engine_mode: all
@@ -510,6 +569,7 @@ entries:
     model: authentik_flows.flowstagebinding
     state: present
   - attrs:
+      evaluate_on_plan: false
       invalid_response_action: retry
       order: 30
       policy_engine_mode: any
@@ -524,6 +584,7 @@ entries:
     model: authentik_flows.flowstagebinding
     state: present
   - attrs:
+      evaluate_on_plan: false
       invalid_response_action: retry
       order: 35
       policy_engine_mode: any
@@ -538,6 +599,7 @@ entries:
     model: authentik_flows.flowstagebinding
     state: present
   - attrs:
+      evaluate_on_plan: false
       invalid_response_action: retry
       order: 40
       policy_engine_mode: all
@@ -557,10 +619,14 @@ entries:
 # ============================================================
   - attrs:
       enabled: true
+      failure_result: false
+      group: null
+      negate: false
       order: 10
       policy: !KeyOf 'avatar-self-service-per-user-organization-creation'
       target: !KeyOf 'avatar-self-service-signup-flow-bind-avatar-self-service-userinfo-write-order-40'
       timeout: 30
+      user: null
     id: avatar-self-service-per-user-organization-creation-bind-avatar-self-service-signup-flow-bind-avatar-self-service-userinfo-write-order-40-order-10
     identifiers:
       order: 10
@@ -571,10 +637,13 @@ entries:
   - attrs:
       enabled: true
       failure_result: true
+      group: null
+      negate: false
       order: 5
       policy: !KeyOf 'check-email-exists-silently'
       target: !KeyOf 'avatar-self-service-signup-flow-bind-avatar-self-service-userinfo-write-order-20'
       timeout: 30
+      user: null
     id: check-email-exists-silently-bind-avatar-self-service-signup-flow-bind-avatar-self-service-userinfo-write-order-20-order-5
     identifiers:
       order: 5
@@ -586,6 +655,16 @@ entries:
 # ============================================================
 # SCOPE MAPPINGS
 # ============================================================
+  - attrs:
+      description: ''
+      expression: 'return {"is_authentik_superuser" : request.user.is_superuser}'
+      name: GrabAuthentikSuperuserStatus
+      scope_name: profile
+    id: grabauthentiksuperuserstatus
+    identifiers:
+      name: GrabAuthentikSuperuserStatus
+    model: authentik_providers_oauth2.scopemapping
+    state: present
   - attrs:
       description: Grab license from the user group
       expression: |-
@@ -622,18 +701,21 @@ entries:
       client_id: !Env 'AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID'
       client_secret: !Env 'AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET'
       client_type: confidential
+      encryption_key: null
       include_claims_in_id_token: true
       invalidation_flow: !Find [authentik_flows.flow, [slug, default-invalidation-flow]]
       issuer_mode: per_provider
       logout_method: backchannel
+      logout_uri: ''
       name: !Format [Provider for %s, !Context 'app_name']
       property_mappings:
-      - !KeyOf 'grabavatarrole'
-      - !KeyOf 'grablicense'
       - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
       - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
       - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
       - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-offline_access]]
+      - !KeyOf 'grabauthentiksuperuserstatus'
+      - !KeyOf 'grablicense'
+      - !KeyOf 'grabavatarrole'
       redirect_uris:
       - matching_mode: strict
         url: !Env 'AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI'
@@ -651,8 +733,13 @@ entries:
 # APPLICATION
 # ============================================================
   - attrs:
+      group: ''
+      meta_description: ''
+      meta_icon: ''
       meta_launch_url: !Format ['https://%s/web', !Context 'domain']
+      meta_publisher: ''
       name: !Context 'app_name'
+      open_in_new_tab: false
       policy_engine_mode: any
       provider: !KeyOf 'provider-for-avatar-api'
       slug: avatar-api
@@ -707,9 +794,6 @@ entries:
          * PatternFly's component CSS consumes the --pf-global--* vars for colours, so
          * overriding them here changes buttons, links, focus rings, etc. everywhere.
          *
-         * color-scheme: light — prevents the browser from applying OS dark-mode styling
-         * to native form controls (e.g. black input fields on dark-mode systems).
-         * It is an inherited property and propagates through all nested shadow roots.
          */
         ak-flow-executor {
           /* Octopize teal replaces PatternFly's default blue */
@@ -750,9 +834,28 @@ entries:
         }
 
         /* ── Shadow DOM element rules ───────────────────────────────────────────────── */
-        input:focus, input:focus-visible, select:focus, select:focus-visible, textarea:focus, textarea:focus-visible { outline: 2px solid hsl(165.3, 65.4%, 53.5%) !important; outline-offset: 2px; box-shadow: none !important; }
-        .pf-c-brand { background: linear-gradient(180deg, hsl(165.3, 65.4%, 28%) 0%, hsl(165.3, 65.4%, 22%) 100%); padding: 1.5rem 2rem; }
-        ak-brand-links { visibility: hidden; height: 0; overflow: hidden; display: block; }
+        input:focus,
+        input:focus-visible,
+        select:focus,
+        select:focus-visible,
+        textarea:focus,
+        textarea:focus-visible {
+          outline: 2px solid hsl(165.3, 65.4%, 53.5%) !important;
+          outline-offset: 2px;
+          box-shadow: none !important;
+        }
+
+        .pf-c-brand {
+          background: linear-gradient(180deg, hsl(165.3, 65.4%, 28%) 0%, hsl(165.3, 65.4%, 22%) 100%);
+          padding: 1.5rem 2rem;
+        }
+
+        ak-brand-links {
+          visibility: hidden;
+          height: 0;
+          overflow: hidden;
+          display: block;
+        }
       branding_favicon: favicon.ico
       branding_logo: brand_logo.png
       branding_title: Avatar
@@ -760,10 +863,13 @@ entries:
       default_application: !KeyOf 'avatar-api'
       domain: !Context 'domain'
       flow_authentication: !KeyOf 'avatar-authentication-flow'
+      flow_device_code: null
       flow_invalidation: !Find [authentik_flows.flow, [slug, default-invalidation-flow]]
       flow_recovery: !KeyOf 'avatar-recovery-flow'
+      flow_unenrollment: null
       flow_user_settings: !Find [authentik_flows.flow, [slug, default-user-settings-flow]]
-    id: octopize.tech
+      web_certificate: null
+    id: staging.octopize.tech
     identifiers:
       domain: !Context 'domain'
     model: authentik_brands.brand

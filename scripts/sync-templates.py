@@ -21,7 +21,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 # ── Email Templates ──────────────────────────────────────────────────────────
 EMAIL_SOURCE_DIR = "common/authentik-templates"
 EMAIL_TARGETS = {

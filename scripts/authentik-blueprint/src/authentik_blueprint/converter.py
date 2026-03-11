@@ -1209,6 +1209,7 @@ class BlueprintConverter:
             # Skip specific initial-setup prompts (Section 10 requirement)
             if model == "authentik_stages_prompt.prompt":
                 skip_prompts = [
+                    "initial-setup-field-password",
                     "initial-setup-field-password-repeat",
                     "initial-setup-field-header",
                     "initial-setup-field-email",
