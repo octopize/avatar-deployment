@@ -89,7 +89,11 @@ services:
       - file_jwt_secret_key
       - storage_admin_access_key_id
       - storage_admin_secret_access_key
-
+      
+      # For telemetry usage
+      - telemetry_s3_access_key_id
+      - telemetry_s3_secret_access_key
+      
       # If using clevercloud
       - clevercloud_sso_salt
     depends_on:
@@ -591,11 +595,6 @@ secrets:
     file: ${SECRETS_DIR-.secrets}/aws_mail_account_access_key_id
   aws_mail_account_secret_access_key:
     file: ${SECRETS_DIR-.secrets}/aws_mail_account_secret_access_key
-
-  telemetry_s3_access_key_id:
-    file: ${SECRETS_DIR-.secrets}/telemetry_s3_access_key_id
-  telemetry_s3_secret_access_key:
-    file: ${SECRETS_DIR-.secrets}/telemetry_s3_secret_access_key
 
   # If using clevercloud
   clevercloud_sso_salt:
