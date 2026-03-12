@@ -47,6 +47,11 @@ spec:
                 configMapKeyRef:
                   name: avatar-web-config
                   key: AVATAR_WEB_CLIENT_URL
+            - name: AVATAR_AUTHENTIK_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: avatar-web-config
+                  key: AVATAR_AUTHENTIK_URL
             - name: ENV_NAME
               valueFrom:
                 configMapKeyRef:
