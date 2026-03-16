@@ -18,7 +18,7 @@ Integrate the **official SeaweedFS helm chart** (v4.17.0 from `https://seaweedfs
 | S3 gateway | Separate `s3` component | Standalone `s3` deployment or embedded in filer |
 | IAM service | Dedicated `iam` pod (separate endpoint) | **Embedded in S3 pod** (`-iam=true`, default). Same port 8333, standard AWS IAM API. |
 | Dynamic user creation | Init container hack via `weed shell s3.configure` (users lost on restart) | Native: embedded IAM API + filer-persisted identities (survive restarts). Static + dynamic configs now **coexist** via `MergeS3ApiConfiguration()`. |
-| Filer DB | MariaDB sub-chart | LevelDB2 (default, embedded) or external DB via env vars |
+| Filer DB | MariaDB sub-chart (Bitnami) | **Keep MariaDB** — configure via `WEED_MYSQL_*` env vars on filer. Deploy MariaDB separately or as sub-chart. |
 | Admin pod | Not available | New `admin` component (monitoring/management) |
 | Worker pod | Not available | New `worker` component (vacuum, volume balance, erasure coding) |
 | Volume config | `dataVolumes[]` array | `dataDirs[]` array |
@@ -28,7 +28,7 @@ Integrate the **official SeaweedFS helm chart** (v4.17.0 from `https://seaweedfs
 
 ### Critical Migration Decisions
 
-1. **Filer backend**: Drop MariaDB entirely, use **LevelDB2** (default, zero-dependency). The filer metadata store doesn't need a full RDBMS.
+1. **Filer backend**: Keep **MariaDB** to avoid data loss during migration. The official chart supports MySQL/MariaDB via `WEED_MYSQL_*` environment variables on the filer. However, since the Bitnami chart bundled MariaDB as a sub-chart, we'll need to either: (a) deploy a standalone MariaDB (e.g., via a separate Helm release or existing cluster DB), or (b) add a MariaDB dependency to our chart. The existing MariaDB PVC and data will be preserved.
 2. **IAM / Dynamic Credential Management** (see detailed analysis below)
 3. **Super user creation**: Use `s3.credentials.admin.accessKey/secretKey` for the static admin + embedded IAM for dynamic users.
 4. **CORS**: Set via `s3.extraArgs: ["-allowedOrigins=..."]` and `filer.extraArgs: ["-allowedOrigins=..."]`.
@@ -89,11 +89,11 @@ Add a `seaweedfs:` section to `services-api-helm-chart/values.yaml` with:
 - **Global**: Custom image (quay.io/octopize/seaweedfs if still needed), pull secrets
 - **Master**: 1 replica, `volumeSizeLimitMB` matching current (100MB), nano resources, PVC storage
 - **Volume**: 1 replica, PVC-based `dataDirs` with configurable size (replaces `dataVolumes`), resource limits matching current (256m-375m CPU, 512Mi-1Gi memory)
-- **Filer**: 1 replica, LevelDB2 (default — drop MariaDB), resource limits matching current, CORS via extraArgs
+- **Filer**: 1 replica, **MariaDB backend** (kept for data continuity) configured via `WEED_MYSQL_*` env vars in `filer.extraEnvironmentVars`, resource limits matching current, CORS via extraArgs
 - **S3**: enabled, `enableAuth: true`, credentials from values (admin access/secret key), CORS via extraArgs
 - **Admin**: enabled, connects to master for monitoring/management
-- **Worker**: enabled, jobs: vacuum + volume_balance + erasure_coding (automated maintenance)
-- **Disabled**: sftp, cosi, allInOne, certificates/security (not currently used)
+- **Worker**: enabled, jobs: vacuum + volume_balance (automated maintenance)
+- **Disabled**: sftp, cosi, allInOne, certificates/security, erasure coding (not needed)
 
 ### 3. Update Pulumi integration (avatar.ts / storage.ts values)
 Update the Pulumi values passed to the Avatar helm chart to include the new `seaweedfs:` sub-chart configuration:
@@ -132,8 +132,8 @@ Update all references in:
 
 ### 7. Add admin and worker pods (modernization)
 - **Admin** (`admin.enabled: true`): Management UI/API for SeaweedFS cluster health, volume balancing, etc.
-- **Worker** (`worker.enabled: true`): Automated maintenance — vacuum (reclaim space), volume balance (distribute data evenly), erasure coding
-- Configure worker job types and concurrency limits
+- **Worker** (`worker.enabled: true`): Automated maintenance — vacuum (reclaim space), volume balance (distribute data evenly)
+- Configure worker job types: `jobType: "vacuum,volume_balance"` (no erasure coding)
 
 ### 8. Validate and test
 - Run `just lint` to validate the chart renders correctly
@@ -144,9 +144,9 @@ Update all references in:
 ## Risk Assessment
 
 - **Avatar API IAM client compatibility**: The Avatar API calls `accessControlEndpointHost` for IAM operations. Need to verify it uses standard AWS IAM API calls (CreateUser, CreateAccessKey, AttachUserPolicy) which the embedded IAM supports. If it uses SeaweedFS-specific `s3.configure` shell commands instead, the API code would need updating.
-- **Filer PVC for IAM persistence**: Dynamic identities are stored in the filer under `/etc/iam/`. With LevelDB2, this lives on the filer PVC. Must ensure `filer.enablePVC: true` with adequate storage and backup strategy.
+- **MariaDB continuity**: The Bitnami chart bundled MariaDB as a sub-chart. Options for keeping it: (a) add a standalone MariaDB Helm chart as another sub-chart dependency, (b) use an existing cluster-level DB, or (c) keep the existing MariaDB PVC and deploy a minimal MariaDB alongside. The filer connects via `WEED_MYSQL_*` env vars — the DB just needs to be reachable.
+- **Filer IAM persistence**: Dynamic identities are stored in the filer under `/etc/iam/`. With MariaDB as the filer backend, this data is persisted in the DB. Ensure MariaDB storage is properly backed up.
 - **Service name changes**: All internal references (storageEndpointHost, accessControlEndpointHost, etc.) must be updated to the new sub-chart naming convention.
-- **LevelDB2 migration**: If the filer currently has data in MariaDB, we need a data migration strategy. For fresh deployments this is a non-issue.
 - **Chart version pinning**: Pin to `4.17.0` initially, but the official chart moves fast — we'll need a strategy for staying current.
 - **`-iam.readOnly=false` security**: Enabling writable IAM on the S3 endpoint means any client with admin credentials can create/modify users. This is the intended behavior for Avatar but should be documented.
 
