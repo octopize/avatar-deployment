@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from .base import DeploymentStep
+from .base import DeploymentStep, PromptConfig, parse_bool
 
 
 class TelemetryStep(DeploymentStep):
@@ -16,15 +16,16 @@ class TelemetryStep(DeploymentStep):
         """Collect telemetry configuration."""
         config = {}
 
-        default_sentry_enabled = self.get_default_value("application.sentry_enabled")
-        sentry_enabled = (
-            self.prompt_yes_no(
-                "Enable Sentry error monitoring?",
-                default=default_sentry_enabled == "true",
-                key="telemetry.enable_sentry",
+        default_sentry_enabled = self.get_default_value("application.sentry_enabled") == "true"
+        sentry_enabled = self.get_config_or_prompt_generic(
+            PromptConfig(
+                config_key="IS_SENTRY_ENABLED",
+                prompt_message="Enable Sentry error monitoring?",
+                default_value=default_sentry_enabled,
+                prompt_key="telemetry.enable_sentry",
+                prompt_function=self.prompt_yes_no,
+                parse_and_validate=parse_bool,
             )
-            if self.interactive
-            else default_sentry_enabled == "true"
         )
 
         config["IS_SENTRY_ENABLED"] = "true" if sentry_enabled else "false"
