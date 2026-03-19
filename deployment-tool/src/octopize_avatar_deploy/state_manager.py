@@ -6,15 +6,18 @@ Manages deployment configuration state to support resuming interrupted configura
 """
 
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import yaml
+
+if TYPE_CHECKING:
+    from octopize_avatar_deploy.printer import Printer
 
 
 class DeploymentState:
     """Manages the state of a deployment configuration."""
 
-    def __init__(self, state_file: Path, steps: list[str]):
+    def __init__(self, state_file: Path, steps: list[str]) -> None:
         """
         Initialize the state manager.
 
@@ -116,7 +119,7 @@ class DeploymentState:
         total = len(self.steps)
         return f"{completed}/{total} steps completed"
 
-    def print_status(self, printer=None) -> None:
+    def print_status(self, printer: "Printer | None" = None) -> None:
         """
         Print current status.
 

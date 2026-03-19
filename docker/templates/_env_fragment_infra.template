@@ -1,0 +1,44 @@
+# =====================
+# Avatar API - Environment Configuration
+# Template Version: 1.0.0
+# Compatible with octopize-avatar-deploy: >=1.0.0,<2.0.0
+# =====================
+
+# --- Project/Organization ---
+ENV_NAME={{ ENV_NAME }}
+
+# --- Paths & Storage ---
+SECRETS_DIR=.secrets
+DB_VOLUME=avatar_postgres_data
+SEAWEEDFS_VOLUME=avatar_seaweedfs_data
+NGINX_TLS_ENABLED={{ NGINX_TLS_ENABLED }}
+NGINX_SSL_CERTIFICATE_PATH={{ NGINX_SSL_CERTIFICATE_PATH }}
+NGINX_SSL_CERTIFICATE_KEY_PATH={{ NGINX_SSL_CERTIFICATE_KEY_PATH }}
+{% if not NGINX_TLS_ENABLED %}
+NGINX_HTTP_PORT={{ NGINX_HTTP_PORT }}
+{% endif %}
+
+# --- Service Versions ---
+AVATAR_API_VERSION={{ AVATAR_API_VERSION }}
+AVATAR_PDFGENERATOR_VERSION={{ AVATAR_PDFGENERATOR_VERSION }}
+AVATAR_WEB_VERSION={{ AVATAR_WEB_VERSION }}
+AVATAR_SEAWEEDFS_REGISTRY=quay.io/octopize
+AVATAR_SEAWEEDFS_VERSION={{ AVATAR_SEAWEEDFS_VERSION }}
+
+AVATAR_SEAWEEDFS_LOG_VERBOSITY=0
+
+AVATAR_AUTHENTIK_VERSION={{ AVATAR_AUTHENTIK_VERSION }}
+AVATAR_AUTHENTIK_REPOSITORY=ghcr.io/goauthentik
+
+# --- Authentik Bootstrap Configuration ---
+# These credentials are used for automated installation (skip OOBE)
+AUTHENTIK_BOOTSTRAP_EMAIL={{ AUTHENTIK_BOOTSTRAP_EMAIL }}
+AUTHENTIK_BOOTSTRAP_PASSWORD={{ AUTHENTIK_BOOTSTRAP_PASSWORD }}
+AUTHENTIK_BOOTSTRAP_TOKEN={{ AUTHENTIK_BOOTSTRAP_TOKEN }}
+
+# --- Service URLs ---
+AVATAR_DOMAIN={{ PUBLIC_URL }}
+# Defines the URL where the web client is served.
+AVATAR_WEB_CLIENT_URL=https://{{ PUBLIC_URL }}
+# Defines the URL where the PDF generator is served.
+AVATAR_PDFGENERATOR_URL=http://pdfgenerator:8000

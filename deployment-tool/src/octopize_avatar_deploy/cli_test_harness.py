@@ -9,6 +9,7 @@ This enables automated end-to-end testing of the entire CLI workflow.
 import os
 import sys
 from pathlib import Path
+from types import TracebackType
 
 from octopize_avatar_deploy.configure import main
 from octopize_avatar_deploy.input_gatherer import MockInputGatherer
@@ -31,7 +32,7 @@ class CLITestHarness:
         args: list[str] | None = None,
         silent: bool = False,
         log_file: Path | str | None = None,
-    ):
+    ) -> None:
         """
         Initialize CLI test harness.
 
@@ -50,13 +51,13 @@ class CLITestHarness:
         self._original_argv = None
         self._original_env: dict[str, str | None] = {}
 
-    def __enter__(self):
+    def __enter__(self) -> "CLITestHarness":
         """Set up test environment."""
         # Save original argv
         self._original_argv = sys.argv.copy()
 
         # Set new argv (program name + args)
-        sys.argv = ["octopize-avatar-deploy"] + self.args
+        sys.argv = ["octopize-deploy-tool"] + self.args
 
         # Save and set environment variables
         env_vars = [
@@ -78,7 +79,12 @@ class CLITestHarness:
 
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         """Clean up test environment."""
         # Restore original argv
         sys.argv = self._original_argv
@@ -133,7 +139,7 @@ class CLITestHarness:
         return json.loads(serialized)
 
 
-def get_test_input_gatherer():
+def get_test_input_gatherer() -> MockInputGatherer | None:
     """
     Get MockInputGatherer if in test mode, otherwise None.
 
@@ -151,7 +157,7 @@ def get_test_input_gatherer():
     return MockInputGatherer(responses)
 
 
-def get_test_printer():
+def get_test_printer() -> FilePrinter | SilentPrinter | None:
     """
     Get appropriate printer for test mode.
 
@@ -191,7 +197,7 @@ def run_cli_test(
         >>> # Test with file logging
         >>> exit_code = run_cli_test(
         ...     responses={"required_config.public_url": "api.example.com"},
-        ...     args=["--output-dir", "/tmp/test"],
+        ...     args=["deploy", "--output-dir", "/tmp/test"],
         ...     log_file="/tmp/test/deployment.log"
         ... )
         >>> # Check log file if test failed

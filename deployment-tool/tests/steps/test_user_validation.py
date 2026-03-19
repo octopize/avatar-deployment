@@ -82,9 +82,7 @@ class TestEmailValidation:
 
     def test_invalid_email_in_list(self):
         """Test validation rejects list with one invalid email."""
-        result = validate_comma_separated_emails(
-            "admin@example.com,invalid-email,user@test.org"
-        )
+        result = validate_comma_separated_emails("admin@example.com,invalid-email,user@test.org")
         assert isinstance(result, ValidationError)
         assert "Invalid email" in result.message
         assert "invalid-email" in result.message

@@ -8,7 +8,16 @@ or from a local directory (for testing).
 import shutil
 import urllib.request
 from abc import ABC, abstractmethod
+from collections.abc import Iterator
 from pathlib import Path
+from typing import TypedDict
+
+
+# Typed structure for the required file manifest.
+class ManifestEntry(TypedDict):
+    category: str
+    files: list[str]
+
 
 # GitHub raw content URL base
 GITHUB_RAW_BASE = "https://raw.githubusercontent.com/octopize/avatar-deployment"
@@ -16,11 +25,16 @@ DEFAULT_BRANCH = "main"
 
 # Hardcoded manifest of required files with source roots and categories.
 # The configurator should stay opaque and rely on provider verification.
-REQUIRED_FILE_MANIFEST: dict[str, dict[str, object]] = {
+REQUIRED_FILE_MANIFEST: dict[str, ManifestEntry] = {
     "templates": {
         "category": "template",
         "files": [
             ".env.template",
+            "_env_fragment_infra.template",
+            "_env_fragment_api.template",
+            "_env_fragment_web.template",
+            "api.env.template",
+            "web.env.template",
             "nginx.conf.template",
             "docker-compose.yml.template",
             "compose.override.yaml.template",  # Dev mode override (optional in production)
@@ -45,7 +59,7 @@ REQUIRED_FILE_MANIFEST: dict[str, dict[str, object]] = {
 }
 
 
-def iter_required_files():
+def iter_required_files() -> Iterator[dict[str, str]]:
     """Iterate required files with source keys and category names."""
     for source_key, entry in REQUIRED_FILE_MANIFEST.items():
         category = str(entry["category"])
@@ -88,7 +102,7 @@ def verify_required_files(output_dir: Path) -> tuple[bool, str | None, int]:
 class TemplateProvider(ABC):
     """Abstract base class for template providers."""
 
-    def __init__(self, verbose: bool = False):
+    def __init__(self, verbose: bool = False) -> None:
         """
         Initialize template provider.
 
@@ -183,7 +197,7 @@ class TemplateProvider(ABC):
 class GitHubTemplateProvider(TemplateProvider):
     """Downloads deployment templates from GitHub."""
 
-    def __init__(self, branch: str = DEFAULT_BRANCH, verbose: bool = False):
+    def __init__(self, branch: str = DEFAULT_BRANCH, verbose: bool = False) -> None:
         """
         Initialize GitHub template provider.
 
@@ -276,7 +290,7 @@ class GitHubTemplateProvider(TemplateProvider):
 class LocalTemplateProvider(TemplateProvider):
     """Provides templates from a local directory (for testing)."""
 
-    def __init__(self, source_dir: Path | str, verbose: bool = False):
+    def __init__(self, source_dir: Path | str, verbose: bool = False) -> None:
         """
         Initialize local template provider.
 

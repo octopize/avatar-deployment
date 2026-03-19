@@ -9,14 +9,14 @@ This script coordinates the deployment configuration process by:
 4. Managing deployment state for resumption
 
 Usage:
-    # Interactive mode
-    python configure.py
+    # Interactive Docker deployment configuration
+    octopize-deploy-tool deploy --output-dir /app/avatar
 
-    # Non-interactive mode with config file
-    python configure.py --config config.yaml
+    # Non-interactive deployment configuration
+    octopize-deploy-tool deploy --config config.yaml --non-interactive
 
-    # Specify output directory
-    python configure.py --output-dir /app/avatar
+    # Generate local component env files
+    octopize-deploy-tool generate-env --output-dir ./local-envs
 """
 
 import argparse
@@ -27,7 +27,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 from octopize_avatar_deploy.deployment_mode import DeploymentMode
 from octopize_avatar_deploy.download_templates import (
@@ -41,12 +41,14 @@ from octopize_avatar_deploy.input_gatherer import (
     InputGatherer,
     RichInputGatherer,
 )
+from octopize_avatar_deploy.output_spec import OutputSpec
 from octopize_avatar_deploy.printer import ConsolePrinter, Printer, RichPrinter
 from octopize_avatar_deploy.state_manager import DeploymentState
 from octopize_avatar_deploy.steps import (
     ApiLocalSourceStep,
     AuthentikBlueprintStep,
     AuthentikStep,
+    ComponentSelectionStep,
     DatabaseStep,
     DeploymentStep,
     EmailStep,
@@ -90,6 +92,13 @@ class DeploymentConfigurator:
         ApiLocalSourceStep,  # Dev mode only - prompts for API local source paths
         TelemetryStep,
         LoggingStep,
+        ComponentSelectionStep,  # Dev mode only - generates per-component .env files
+    ]
+
+    DEFAULT_OUTPUT_SPECS: list[OutputSpec] = [
+        OutputSpec(".env.template", ".env"),
+        OutputSpec("nginx.conf.template", "nginx/nginx.conf"),
+        OutputSpec("docker-compose.yml.template", "docker-compose.yml"),
     ]
 
     def __init__(
@@ -103,7 +112,10 @@ class DeploymentConfigurator:
         input_gatherer: InputGatherer | None = None,
         step_classes: list[type[DeploymentStep]] | None = None,
         mode: DeploymentMode = DeploymentMode.PRODUCTION,
-    ):
+        output_specs: list[OutputSpec] | None = None,
+        include_deployment_assets: bool = True,
+        strict_templates: bool = False,
+    ) -> None:
         """
         Initialize the configurator.
 
@@ -117,12 +129,22 @@ class DeploymentConfigurator:
             input_gatherer: Optional input gatherer (defaults to ConsoleInputGatherer)
             step_classes: Optional list of step classes to use (defaults to DEFAULT_STEP_CLASSES)
             mode: Deployment mode (DeploymentMode.PRODUCTION or DeploymentMode.DEV)
+            output_specs: Optional list of OutputSpec for template rendering
+                (defaults to DEFAULT_OUTPUT_SPECS)
+            include_deployment_assets: Whether to generate deployment-specific
+                supporting files such as the blueprint, branding assets, and
+                compose override.
+            strict_templates: Whether the primary configured outputs should fail
+                fast on missing template variables.
         """
         self.templates_dir = Path(templates_dir)
         self.output_dir = Path(output_dir)
         self.config = config or {}
         self.use_state = use_state
         self.mode = mode
+        self.output_specs = output_specs or self.DEFAULT_OUTPUT_SPECS
+        self.include_deployment_assets = include_deployment_assets
+        self.strict_templates = strict_templates
 
         # Add deployment mode to config early so steps can access it
         self.config["deployment_mode"] = str(mode)
@@ -166,12 +188,23 @@ class DeploymentConfigurator:
         self.defaults = self._load_defaults(defaults_file)
 
         # Initialize Jinja2 environment
+        env_kwargs = {
+            "loader": FileSystemLoader(self.templates_dir),
+            "variable_start_string": "{{",
+            "variable_end_string": "}}",
+            "trim_blocks": True,
+            "lstrip_blocks": True,
+        }
         self.env = Environment(
+            **env_kwargs,
+        )
+        self.strict_env = Environment(
             loader=FileSystemLoader(self.templates_dir),
             variable_start_string="{{",
             variable_end_string="}}",
             trim_blocks=True,
             lstrip_blocks=True,
+            undefined=StrictUndefined,
         )
 
     def _load_defaults(self, defaults_file: Path | None = None) -> dict[str, Any]:
@@ -191,7 +224,7 @@ class DeploymentConfigurator:
                     f"defaults.yaml not found at {defaults_file} or {default_defaults}"
                 )
 
-    def render_template(self, template_name: str, output_name: str) -> None:
+    def render_template(self, template_name: str, output_name: str, strict: bool = False) -> None:
         """
         Render a template file with configuration values.
 
@@ -200,7 +233,8 @@ class DeploymentConfigurator:
             output_name: Name of the output file
         """
         try:
-            template = self.env.get_template(template_name)
+            env = self.strict_env if strict else self.env
+            template = env.get_template(template_name)
             rendered = template.render(**self.config)
 
             output_path = self.output_dir / output_name
@@ -218,67 +252,65 @@ class DeploymentConfigurator:
 
         self.printer.print_header("Generating Configuration Files")
 
-        # Generate .env file
-        self.render_template(".env.template", ".env")
+        # Render templates from output_specs
+        for spec in self.output_specs:
+            output_path = Path(spec.output_path)
+            if output_path.parent != Path("."):
+                (self.output_dir / output_path.parent).mkdir(parents=True, exist_ok=True)
+            self.render_template(
+                spec.template_name,
+                spec.output_path,
+                strict=self.strict_templates,
+            )
 
-        # Generate nginx.conf
-        nginx_dir = self.output_dir / "nginx"
-        nginx_dir.mkdir(parents=True, exist_ok=True)
-        self.render_template("nginx.conf.template", "nginx/nginx.conf")
+        if self.include_deployment_assets:
+            # Generate Authentik blueprint (copy as-is; uses !Env tags resolved at runtime)
+            authentik_dir = self.output_dir / "authentik"
+            authentik_dir.mkdir(parents=True, exist_ok=True)
+            blueprint_src = self.templates_dir / "authentik" / "octopize-avatar-blueprint.yaml"
+            blueprint_dst = authentik_dir / "octopize-avatar-blueprint.yaml"
+            shutil.copy2(blueprint_src, blueprint_dst)
+            self.printer.print_success(f"Copied: {blueprint_dst}")
 
-        # Generate Authentik blueprint (copy as-is; uses !Env tags resolved at runtime)
-        authentik_dir = self.output_dir / "authentik"
-        authentik_dir.mkdir(parents=True, exist_ok=True)
-        blueprint_src = self.templates_dir / "authentik" / "octopize-avatar-blueprint.yaml"
-        blueprint_dst = authentik_dir / "octopize-avatar-blueprint.yaml"
-        shutil.copy2(blueprint_src, blueprint_dst)
-        self.printer.print_success(f"Copied: {blueprint_dst}")
+            # Generate compose.override.yaml for dev mode
+            if self.mode == DeploymentMode.DEV:
+                override_template = self.templates_dir / "compose.override.yaml.template"
+                if override_template.exists():
+                    self.render_template("compose.override.yaml.template", "compose.override.yaml")
+                else:
+                    self.printer.print_warning(
+                        "Dev mode enabled but compose.override.yaml.template not found. "
+                        "Skipping override file generation."
+                    )
 
-        # Generate docker-compose.yml from template
-        self.render_template("docker-compose.yml.template", "docker-compose.yml")
+            # Copy authentik custom templates (email templates)
+            custom_templates_src = self.templates_dir / "authentik" / "custom-templates"
+            custom_templates_dst = self.output_dir / "authentik" / "custom-templates"
+            if custom_templates_src.exists():
+                custom_templates_dst.mkdir(parents=True, exist_ok=True)
+                for template_file in custom_templates_src.glob("*.html"):
+                    shutil.copy2(template_file, custom_templates_dst / template_file.name)
+                self.printer.print_success(f"Copied: email templates to {custom_templates_dst}")
 
-        # Generate compose.override.yaml for dev mode
-        if self.mode == DeploymentMode.DEV:
-            override_template = self.templates_dir / "compose.override.yaml.template"
-            if override_template.exists():
-                self.render_template("compose.override.yaml.template", "compose.override.yaml")
-            else:
-                self.printer.print_warning(
-                    "Dev mode enabled but compose.override.yaml.template not found. "
-                    "Skipping override file generation."
-                )
+            # Copy authentik branding files
+            branding_src = self.templates_dir / "authentik" / "branding"
+            branding_dst = self.output_dir / "authentik" / "branding"
+            if branding_src.exists():
+                branding_dst.mkdir(parents=True, exist_ok=True)
+                for branding_file in branding_src.glob("*"):
+                    if branding_file.is_file():
+                        shutil.copy2(branding_file, branding_dst / branding_file.name)
+                self.printer.print_success(f"Copied: branding files to {branding_dst}")
 
-        # Copy authentik custom templates (email templates)
-        custom_templates_src = self.templates_dir / "authentik" / "custom-templates"
-        custom_templates_dst = self.output_dir / "authentik" / "custom-templates"
-        if custom_templates_src.exists():
-            custom_templates_dst.mkdir(parents=True, exist_ok=True)
-            for template_file in custom_templates_src.glob("*.html"):
-                shutil.copy2(template_file, custom_templates_dst / template_file.name)
-            self.printer.print_success(f"Copied: email templates to {custom_templates_dst}")
-
-        # Copy authentik branding files
-        branding_src = self.templates_dir / "authentik" / "branding"
-        branding_dst = self.output_dir / "authentik" / "branding"
-        if branding_src.exists():
-            branding_dst.mkdir(parents=True, exist_ok=True)
-            for branding_file in branding_src.glob("*"):
-                if branding_file.is_file():
-                    shutil.copy2(branding_file, branding_dst / branding_file.name)
-            self.printer.print_success(f"Copied: branding files to {branding_dst}")
-
-        # Copy authentik custom CSS
-        css_src = self.templates_dir / "authentik" / "css"
-        css_dst = self.output_dir / "authentik" / "css"
-        if css_src.exists():
-            css_dst.mkdir(parents=True, exist_ok=True)
-            for css_file in css_src.glob("*"):
-                if css_file.is_file():
-                    shutil.copy2(css_file, css_dst / css_file.name)
-            self.printer.print_success(f"Copied: custom CSS to {css_dst}")
-
-        self.printer.print()
-        self.printer.print_success("Configuration files generated successfully!")
+            # Copy authentik custom CSS
+            css_src = self.templates_dir / "authentik" / "css"
+            css_dst = self.output_dir / "authentik" / "css"
+            if css_src.exists():
+                css_dst.mkdir(parents=True, exist_ok=True)
+                for css_file in css_src.glob("*"):
+                    if css_file.is_file():
+                        shutil.copy2(css_file, css_dst / css_file.name)
+                self.printer.print_success(f"Copied: custom CSS to {css_dst}")
 
     def save_config_to_file(self, config_file: Path) -> None:
         """Save current configuration to a YAML file."""
@@ -400,6 +432,18 @@ class DeploymentConfigurator:
         # Generate configuration files
         self.generate_configs()
 
+        for step in steps:
+            step.after_config_generation(
+                lambda template_name, output_name: self.render_template(
+                    template_name,
+                    output_name,
+                    strict=True,
+                )
+            )
+
+        self.printer.print()
+        self.printer.print_success("Configuration files generated successfully!")
+
         # Write all secrets
         if all_secrets:
             self.printer.print()
@@ -443,7 +487,7 @@ class DeploymentRunner:
         printer: Printer | None = None,
         input_gatherer: InputGatherer | None = None,
         mode: DeploymentMode = DeploymentMode.PRODUCTION,
-    ):
+    ) -> None:
         """
         Initialize the deployment runner.
 
@@ -663,20 +707,14 @@ class DeploymentRunner:
         )
 
 
-def main():
-    """CLI entry point for Avatar deployment configuration."""
-    parser = argparse.ArgumentParser(
-        description="Avatar Deployment Configuration Tool",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-
+def _add_shared_cli_args(parser: argparse.ArgumentParser) -> None:
+    """Add CLI arguments shared across deploy and generate-env."""
     parser.add_argument(
         "--output-dir",
         type=Path,
         default=Path.cwd(),
         help="Output directory for generated files (default: current directory)",
     )
-
     parser.add_argument(
         "--template-from",
         type=str,
@@ -684,31 +722,31 @@ def main():
         help="Template source: 'github' to download from repo, or path to local templates "
         "directory (default: github)",
     )
-
     parser.add_argument(
         "--config",
         type=Path,
         help="YAML configuration file to load",
     )
-
     parser.add_argument(
         "--non-interactive",
         action="store_true",
         help="Run in non-interactive mode (use defaults or config file)",
     )
-
-    parser.add_argument(
-        "--save-config",
-        action="store_true",
-        help="Save configuration to deployment-config.yaml",
-    )
-
     parser.add_argument(
         "--verbose",
         action="store_true",
         help="Verbose output",
     )
 
+
+def _add_deploy_cli_args(parser: argparse.ArgumentParser) -> None:
+    """Add CLI arguments for the deploy subcommand."""
+    _add_shared_cli_args(parser)
+    parser.add_argument(
+        "--save-config",
+        action="store_true",
+        help="Save configuration to deployment-config.yaml",
+    )
     parser.add_argument(
         "--mode",
         type=str,
@@ -717,10 +755,68 @@ def main():
         help="Deployment mode: production (default) or dev",
     )
 
-    args = parser.parse_args()
 
-    # Convert mode string to enum
-    mode = DeploymentMode(args.mode)
+def _add_generate_env_cli_args(parser: argparse.ArgumentParser) -> None:
+    """Add CLI arguments for the generate-env subcommand."""
+    _add_shared_cli_args(parser)
+    parser.add_argument(
+        "--component",
+        action="append",
+        dest="components",
+        metavar="NAME",
+        help="Component to generate .env for (repeatable: api, web). If omitted, generates all.",
+    )
+    parser.add_argument(
+        "--target",
+        type=str,
+        help="Named environment preset from config file (e.g., prod, staging, local)",
+    )
+    parser.add_argument(
+        "--api-url",
+        type=str,
+        help="Override API URL",
+    )
+    parser.add_argument(
+        "--storage-url",
+        type=str,
+        help="Override storage public URL",
+    )
+    parser.add_argument(
+        "--sso-url",
+        type=str,
+        help="Override SSO provider URL",
+    )
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    """Build the top-level CLI parser."""
+    parser = argparse.ArgumentParser(
+        description="Avatar Deployment Configuration Tool",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    deploy_parser = subparsers.add_parser(
+        "deploy",
+        help="Generate Docker deployment configuration",
+    )
+    _add_deploy_cli_args(deploy_parser)
+
+    gen_parser = subparsers.add_parser(
+        "generate-env",
+        help="Generate per-component .env files for local development",
+    )
+    _add_generate_env_cli_args(gen_parser)
+
+    return parser
+
+
+def main() -> None:
+    """CLI entry point for Avatar deployment configuration."""
+    parser = _build_parser()
+
+    args = parser.parse_args()
 
     # Check if we're in test mode
     test_printer = None
@@ -734,22 +830,13 @@ def main():
         test_printer = get_test_printer()
         test_input_gatherer = get_test_input_gatherer()
 
-    # Create deployment runner
-    runner = DeploymentRunner(
-        output_dir=args.output_dir,
-        template_from=args.template_from,
-        verbose=args.verbose,
-        printer=test_printer,
-        input_gatherer=test_input_gatherer,
-        mode=mode,
-    )
-
     try:
-        runner.run(
-            interactive=not args.non_interactive,
-            config_file=args.config,
-            save_config=args.save_config,
-        )
+        if args.command == "deploy":
+            _run_deploy(args, test_printer, test_input_gatherer)
+        elif args.command == "generate-env":
+            _run_generate_env(args, test_printer, test_input_gatherer)
+        else:
+            raise RuntimeError(f"Unsupported command: {args.command}")
     except KeyboardInterrupt:
         print("\n\nConfiguration cancelled by user.")
         sys.exit(1)
@@ -762,6 +849,60 @@ def main():
 
         traceback.print_exc()
         sys.exit(1)
+
+
+def _run_deploy(
+    args: argparse.Namespace,
+    printer: Printer | None,
+    input_gatherer: InputGatherer | None,
+) -> None:
+    """Run the deploy subcommand."""
+    mode = DeploymentMode(getattr(args, "mode", "production"))
+
+    runner = DeploymentRunner(
+        output_dir=args.output_dir,
+        template_from=args.template_from,
+        verbose=args.verbose,
+        printer=printer,
+        input_gatherer=input_gatherer,
+        mode=mode,
+    )
+
+    runner.run(
+        interactive=not args.non_interactive,
+        config_file=args.config,
+        save_config=getattr(args, "save_config", False),
+    )
+
+
+def _run_generate_env(
+    args: argparse.Namespace,
+    printer: Printer | None,
+    input_gatherer: InputGatherer | None,
+) -> None:
+    """Run the generate-env subcommand."""
+    from octopize_avatar_deploy.components import get_all_components
+    from octopize_avatar_deploy.generate_env import GenerateEnvRunner
+
+    components = args.components or list(get_all_components().keys())
+
+    runner = GenerateEnvRunner(
+        output_dir=args.output_dir,
+        components=components,
+        template_from=args.template_from,
+        verbose=args.verbose,
+        printer=printer,
+        input_gatherer=input_gatherer,
+    )
+
+    runner.run(
+        interactive=not args.non_interactive,
+        config_file=args.config,
+        target=args.target,
+        api_url=args.api_url,
+        storage_url=args.storage_url,
+        sso_url=args.sso_url,
+    )
 
 
 if __name__ == "__main__":

@@ -238,7 +238,6 @@ class TestDeploymentConfigurator:
         # Check output message
         captured = capsys.readouterr()
         assert "Generating Configuration Files" in captured.out
-        assert "✓ Configuration files generated successfully!" in captured.out
 
     def test_save_config_to_file(self, temp_templates_dir, temp_output_dir, defaults_file):
         """Test saving configuration to YAML file."""

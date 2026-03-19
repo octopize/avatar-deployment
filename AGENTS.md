@@ -190,27 +190,22 @@ See [docker/deploying-on-single-instance.md](docker/deploying-on-single-instance
 
 ---
 
-## Docker Deployment Tool Testing
+## Docker Deployment Tool
 
-**Trigger**: Working with tests in `deployment-tool/tests/`  
-**Quick Reference**: [deployment-tool/tests/QUICK_REFERENCE.md](deployment-tool/tests/QUICK_REFERENCE.md)
+**Full guide**: [deployment-tool/AGENTS.md](deployment-tool/AGENTS.md) — architecture, steps, and development workflow.  
+**Code patterns**: [deployment-tool/DEVELOPMENT.md](deployment-tool/DEVELOPMENT.md) — conventions, testing patterns, and step implementation guide.
 
-### Testing Workflow
+### Testing
 
-When adding or modifying tests for the deployment tool, **always consult QUICK_REFERENCE.md** first for:
+**Trigger**: Working with tests in `deployment-tool/tests/`
 
-- Running tests (`just test-deploy-tool` or `uv run pytest`)
-- Creating new test cases with fixtures
-- Updating expected output fixtures
-- Using CLITestHarness for integration tests
-- Available pytest fixtures and utilities
+```bash
+cd deployment-tool
+just test-all  # Or: uv run pytest
+```
 
-**Key Points**:
-
-- Use `--template-from <path>` argument (not `--skip-download` or `--templates-dir`)
-- Templates are always stored at `output-dir/.avatar-templates`
-- Update fixtures with `AVATAR_DEPLOY_UPDATE_FIXTURES=1 uv run pytest`
-- Test patterns documented in QUICK_REFERENCE.md with working examples
+Consult these docs in the deployment-tool directory:
+- [tests/TESTING.md](deployment-tool/tests/TESTING.md) — running tests, fixtures, CLITestHarness, debugging, adding steps
 
 ---
 
@@ -233,7 +228,9 @@ When adding or modifying tests for the deployment tool, **always consult QUICK_R
 │   ├── Makefile                       ← Secret generation targets
 │   ├── docker-compose.yml             ← Service definitions
 │   └── authentik/custom-templates/    ← Synced from common/ (DO NOT EDIT)
-├── deployment-tool/                   ← Deployment configuration tool
+├── deployment-tool/                   ← Deployment configuration tool (see deployment-tool/AGENTS.md)
+│   ├── AGENTS.md                      ← Deployment tool agent guide
+│   ├── DEVELOPMENT.md                 ← Code patterns & development guidelines
 │   ├── src/octopize_avatar_deploy/    ← Source code
 │   │   ├── steps/                     ← Deployment steps (add new steps here)
 │   │   ├── configure.py               ← Main configurator (DEFAULT_STEP_CLASSES)
@@ -241,7 +238,7 @@ When adding or modifying tests for the deployment tool, **always consult QUICK_R
 │   ├── tests/                         ← Test suite with fixtures
 │   │   ├── steps/                     ← Unit tests for steps
 │   │   ├── integration/               ← Integration tests
-│   │   └── QUICK_REFERENCE.md         ← Testing guide (READ THIS FIRST)
+│   │   └── TESTING.md                 ← Testing guide
 │   └── .avatar-templates/             ← Template files
 │       ├── .env.template              ← Environment variables template
 │       └── docker-compose.yml         ← Docker compose template

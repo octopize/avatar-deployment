@@ -15,6 +15,7 @@ class RequiredConfigStep(DeploymentStep):
     def collect_config(self) -> dict[str, Any]:
         """Collect required configuration."""
         config = {}
+        is_generate_env = bool(self.config.get("_generate_env_mode"))
 
         # Public URL - Required
         public_url = self.get_config_or_prompt(
@@ -27,6 +28,8 @@ class RequiredConfigStep(DeploymentStep):
         # Normalize PUBLIC_URL to strip protocol and store just the domain
         if public_url:
             public_url = public_url.replace("https://", "").replace("http://", "").rstrip("/")
+        if not public_url:
+            raise ValueError("PUBLIC_URL is required and cannot be empty.")
         config["PUBLIC_URL"] = public_url
 
         # Environment name - Required
@@ -71,6 +74,18 @@ class RequiredConfigStep(DeploymentStep):
         config["AVATAR_AUTHENTIK_VERSION"] = self.get_config(
             "AVATAR_AUTHENTIK_VERSION", DefaultKey("images.authentik")
         )
+
+        # Full deployment uses PUBLIC_URL-derived service URLs. The generate-env flow
+        # collects these explicitly via TargetEnvironmentStep instead.
+        if not is_generate_env:
+            if "AVATAR_API_URL" not in self.config:
+                config["AVATAR_API_URL"] = f"https://{config['PUBLIC_URL']}/api"
+            if "AVATAR_STORAGE_ENDPOINT_PUBLIC_URL" not in self.config:
+                config["AVATAR_STORAGE_ENDPOINT_PUBLIC_URL"] = (
+                    f"https://{config['PUBLIC_URL']}/storage"
+                )
+            if "AVATAR_STORAGE_ENDPOINT_INTERNAL_URL" not in self.config:
+                config["AVATAR_STORAGE_ENDPOINT_INTERNAL_URL"] = "http://s3:8333"
 
         # Update self.config so generate_secrets() can access these values
         self.config.update(config)

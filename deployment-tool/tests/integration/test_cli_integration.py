@@ -6,9 +6,9 @@ focusing on successful execution rather than output comparison.
 """
 
 # Import fixture utilities
+import contextlib
 import io
 import os
-import sys
 import tempfile
 import uuid
 from pathlib import Path
@@ -26,29 +26,115 @@ from tests.fixtures import FixtureManager
 FIXTURES_DIR = Path(__file__).parent.parent / "fixtures"
 fixture_manager = FixtureManager(FIXTURES_DIR)
 
+ResponseMap = dict[str, str | bool]
+
+
+def _create_cli_harness(
+    *,
+    responses: ResponseMap | None = None,
+    args: list[str] | None = None,
+    silent: bool = False,
+    log_file: Path | str | None = None,
+) -> CLITestHarness:
+    """Create a CLI test harness with normalized defaults."""
+    return CLITestHarness(
+        responses=responses or {},
+        args=args or [],
+        silent=silent,
+        log_file=log_file,
+    )
+
+
+def _build_deploy_args(
+    output_dir: Path | str,
+    template_from: Path | str,
+    *extra_args: str,
+) -> list[str]:
+    """Build common deploy CLI arguments with optional extra flags."""
+    return [
+        "deploy",
+        *extra_args,
+        "--output-dir",
+        str(output_dir),
+        "--template-from",
+        str(template_from),
+    ]
+
+
+def _create_deploy_harness(
+    *,
+    output_dir: Path | str,
+    template_from: Path | str,
+    responses: ResponseMap | None = None,
+    log_file: Path | str | None = None,
+    extra_args: list[str] | None = None,
+    silent: bool = False,
+) -> CLITestHarness:
+    """Create a harness for the deploy subcommand."""
+    return _create_cli_harness(
+        responses=responses,
+        args=_build_deploy_args(output_dir, template_from, *(extra_args or [])),
+        silent=silent,
+        log_file=log_file,
+    )
+
+
+def _run_cli_and_capture_output(
+    args: list[str], *, capture_stderr: bool = False
+) -> tuple[int, str]:
+    """Run the CLI and capture stdout or stderr for help/usage assertions."""
+    captured_output = io.StringIO()
+    redirect_stream = contextlib.redirect_stderr if capture_stderr else contextlib.redirect_stdout
+
+    with redirect_stream(captured_output):
+        exit_code = _create_cli_harness(args=args, silent=True).run()
+
+    return exit_code, captured_output.getvalue()
+
+
+def _assert_cli_output_matches_fixture(
+    fixture_name: str,
+    *,
+    args: list[str],
+    expected_exit_code: int,
+    capture_stderr: bool = False,
+) -> None:
+    """Run CLI output through fixture comparison."""
+    exit_code, actual_output = _run_cli_and_capture_output(args, capture_stderr=capture_stderr)
+
+    assert exit_code == expected_exit_code
+
+    expected_output = fixture_manager.load_expected_output(fixture_name)
+    assert fixture_manager.compare_output(actual_output, expected_output, fixture_name=fixture_name)
+
 
 class TestCLIBasicCommands:
     """Test basic CLI commands and arguments."""
 
-    def test_help_flag(self):
-        """Test --help flag."""
+    @pytest.mark.parametrize(
+        ("fixture_name", "args"),
+        [
+            ("help", ["--help"]),
+            ("deploy_help", ["deploy", "--help"]),
+            ("generate_env_help", ["generate-env", "--help"]),
+        ],
+    )
+    def test_help_output(self, fixture_name: str, args: list[str]) -> None:
+        """Each CLI command should expose a stable help message."""
+        _assert_cli_output_matches_fixture(
+            fixture_name,
+            args=args,
+            expected_exit_code=0,
+        )
 
-        # Capture stdout since --help writes to stdout and exits early
-        old_stdout = sys.stdout
-        sys.stdout = captured_output = io.StringIO()
-
-        try:
-            harness = CLITestHarness(responses=[], args=["--help"], silent=True)
-            exit_code = harness.run()
-        finally:
-            sys.stdout = old_stdout
-
-        assert exit_code == 0
-
-        # Compare output
-        actual_output = captured_output.getvalue()
-        expected_output = fixture_manager.load_expected_output("help")
-        assert fixture_manager.compare_output(actual_output, expected_output, fixture_name="help")
+    def test_missing_subcommand_shows_usage_error(self) -> None:
+        """The top-level CLI should require an explicit subcommand."""
+        _assert_cli_output_matches_fixture(
+            "missing_subcommand",
+            args=[],
+            expected_exit_code=2,
+            capture_stderr=True,
+        )
 
 
 class TestCLIDeploymentScenarios:
@@ -68,15 +154,11 @@ class TestCLIDeploymentScenarios:
         """Test various deployment scenarios with different configurations."""
         responses = fixture_manager.load_input_fixture(scenario)
 
-        harness = CLITestHarness(
+        harness = _create_deploy_harness(
             responses=responses,
-            args=[
-                "--output-dir",
-                str(temp_deployment_dir),
-                "--template-from",
-                str(docker_templates_dir),
-            ],
-            log_file=str(log_file),
+            output_dir=temp_deployment_dir,
+            template_from=docker_templates_dir,
+            log_file=log_file,
         )
         exit_code = harness.run()
 
@@ -102,7 +184,7 @@ class TestCLIDeploymentScenarios:
 
         api_dir = api_repo / "services" / "api"
         api_dir.mkdir(parents=True)
-        (api_dir / "main.py").write_text("# API main")
+        (api_dir / "main.py").write_text("# API main\n")
 
         # Create additional contexts
         (api_repo / "avatar").mkdir()
@@ -115,17 +197,12 @@ class TestCLIDeploymentScenarios:
         responses["local_source.npmrc_path"] = str(npmrc_file)
         responses["local_source.api_source_path"] = str(api_dir)
 
-        harness = CLITestHarness(
+        harness = _create_deploy_harness(
             responses=responses,
-            args=[
-                "--mode",
-                "dev",
-                "--output-dir",
-                str(temp_deployment_dir),
-                "--template-from",
-                str(docker_templates_dir),
-            ],
-            log_file=str(log_file),
+            output_dir=temp_deployment_dir,
+            template_from=docker_templates_dir,
+            log_file=log_file,
+            extra_args=["--mode", "dev"],
         )
         exit_code = harness.run()
 
@@ -169,15 +246,11 @@ class TestCLIDeploymentScenarios:
         """Test that the Authentik blueprint is properly copied with !Env tags intact."""
         responses = fixture_manager.load_input_fixture("basic_deployment")
 
-        harness = CLITestHarness(
+        harness = _create_deploy_harness(
             responses=responses,
-            args=[
-                "--output-dir",
-                str(temp_deployment_dir),
-                "--template-from",
-                str(docker_templates_dir),
-            ],
-            log_file=str(log_file),
+            output_dir=temp_deployment_dir,
+            template_from=docker_templates_dir,
+            log_file=log_file,
         )
         exit_code = harness.run()
 
@@ -213,15 +286,10 @@ class TestCLIErrorHandling:
     def test_missing_templates_directory(self, temp_deployment_dir, log_file):
         """Test behavior when template source directory doesn't exist."""
         non_existent = temp_deployment_dir / "non-existent-templates"
-        harness = CLITestHarness(
-            responses=[],
-            args=[
-                "--output-dir",
-                str(temp_deployment_dir),
-                "--template-from",
-                str(non_existent),
-            ],
-            log_file=str(log_file),
+        harness = _create_deploy_harness(
+            output_dir=temp_deployment_dir,
+            template_from=non_existent,
+            log_file=log_file,
         )
         exit_code = harness.run()
         assert exit_code != 0
@@ -235,18 +303,11 @@ class TestCLINonInteractiveMode:
         """Test non-interactive mode with config file."""
         config_file = fixture_manager.get_config_fixture_path("non_interactive_incomplete_config")
 
-        harness = CLITestHarness(
-            responses=[],
-            args=[
-                "--output-dir",
-                str(temp_deployment_dir),
-                "--config",
-                str(config_file),
-                "--non-interactive",
-                "--template-from",
-                str(docker_templates_dir),
-            ],
-            log_file=str(log_file),
+        harness = _create_deploy_harness(
+            output_dir=temp_deployment_dir,
+            template_from=docker_templates_dir,
+            log_file=log_file,
+            extra_args=["--config", str(config_file), "--non-interactive"],
         )
         exit_code = harness.run()
 
@@ -264,17 +325,11 @@ class TestCLINonInteractiveMode:
         """Test error when config file doesn't exist."""
         non_existent_config = temp_deployment_dir / "missing-config.yaml"
 
-        harness = CLITestHarness(
-            responses=[],
-            args=[
-                "--config",
-                str(non_existent_config),
-                "--output-dir",
-                str(temp_deployment_dir),
-                "--template-from",
-                str(docker_templates_dir),
-            ],
-            log_file=str(log_file),
+        harness = _create_deploy_harness(
+            output_dir=temp_deployment_dir,
+            template_from=docker_templates_dir,
+            log_file=log_file,
+            extra_args=["--config", str(non_existent_config)],
         )
         exit_code = harness.run()
 
@@ -287,17 +342,11 @@ class TestCLINonInteractiveMode:
         malformed_config = temp_deployment_dir / "malformed.yaml"
         malformed_config.write_text("base_url: invalid\n\ttabs_not_allowed: true\n  - broken list")
 
-        harness = CLITestHarness(
-            responses=[],
-            args=[
-                "--config",
-                str(malformed_config),
-                "--output-dir",
-                str(temp_deployment_dir),
-                "--template-from",
-                str(docker_templates_dir),
-            ],
-            log_file=str(log_file),
+        harness = _create_deploy_harness(
+            output_dir=temp_deployment_dir,
+            template_from=docker_templates_dir,
+            log_file=log_file,
+            extra_args=["--config", str(malformed_config)],
         )
         exit_code = harness.run()
 
@@ -327,18 +376,11 @@ class TestCLINonInteractiveMode:
         """
         config_file = fixture_manager.get_config_fixture_path(config_fixture)
 
-        harness = CLITestHarness(
-            responses=[],
-            args=[
-                "--config",
-                str(config_file),
-                "--non-interactive",
-                "--output-dir",
-                str(temp_deployment_dir),
-                "--template-from",
-                str(docker_templates_dir),
-            ],
-            log_file=str(log_file),
+        harness = _create_deploy_harness(
+            output_dir=temp_deployment_dir,
+            template_from=docker_templates_dir,
+            log_file=log_file,
+            extra_args=["--config", str(config_file), "--non-interactive"],
         )
         exit_code = harness.run()
 
@@ -384,6 +426,7 @@ class TestNonInteractiveModeCompleteness:
           values or fail
         """
         args = [
+            "deploy",
             "--non-interactive",
             "--output-dir",
             str(temp_deployment_dir),
@@ -395,11 +438,7 @@ class TestNonInteractiveModeCompleteness:
             config_file = fixture_manager.get_config_fixture_path(config_fixture)
             args.extend(["--config", str(config_file)])
 
-        harness = CLITestHarness(
-            responses=[],
-            args=args,
-            log_file=str(log_file),
-        )
+        harness = _create_cli_harness(args=args, log_file=log_file)
         exit_code = harness.run()
 
         if expected_exit_code is not None:
@@ -416,16 +455,12 @@ class TestNonInteractiveModeCompleteness:
         """Test --save-config saves configuration correctly after interactive responses."""
         responses = fixture_manager.load_input_fixture("basic_deployment")
 
-        harness = CLITestHarness(
+        harness = _create_deploy_harness(
             responses=responses,
-            args=[
-                "--output-dir",
-                str(temp_deployment_dir),
-                "--template-from",
-                str(docker_templates_dir),
-                "--save-config",
-            ],
-            log_file=str(log_file),
+            output_dir=temp_deployment_dir,
+            template_from=docker_templates_dir,
+            log_file=log_file,
+            extra_args=["--save-config"],
         )
         exit_code = harness.run()
 
@@ -453,18 +488,12 @@ class TestNonInteractiveModeCompleteness:
         existing_config = fixture_manager.get_config_fixture_path("save_config_with_existing")
         responses = fixture_manager.load_input_fixture("save_config_with_existing")
 
-        harness = CLITestHarness(
+        harness = _create_deploy_harness(
             responses=responses,
-            args=[
-                "--config",
-                str(existing_config),
-                "--output-dir",
-                str(temp_deployment_dir),
-                "--template-from",
-                str(docker_templates_dir),
-                "--save-config",
-            ],
-            log_file=str(log_file),
+            output_dir=temp_deployment_dir,
+            template_from=docker_templates_dir,
+            log_file=log_file,
+            extra_args=["--config", str(existing_config), "--save-config"],
         )
         exit_code = harness.run()
 
@@ -489,16 +518,12 @@ class TestNonInteractiveModeCompleteness:
         first_dir.mkdir()
         first_log = first_dir / "output.log"
 
-        harness1 = CLITestHarness(
+        harness1 = _create_deploy_harness(
             responses=responses,
-            args=[
-                "--output-dir",
-                str(first_dir),
-                "--template-from",
-                str(docker_templates_dir),
-                "--save-config",
-            ],
-            log_file=str(first_log),
+            output_dir=first_dir,
+            template_from=docker_templates_dir,
+            log_file=first_log,
+            extra_args=["--save-config"],
         )
         exit_code1 = harness1.run()
         assert exit_code1 == 0
@@ -511,18 +536,11 @@ class TestNonInteractiveModeCompleteness:
         second_dir.mkdir()
         second_log = second_dir / "output.log"
 
-        harness2 = CLITestHarness(
-            responses=[],
-            args=[
-                "--config",
-                str(saved_config),
-                "--non-interactive",
-                "--output-dir",
-                str(second_dir),
-                "--template-from",
-                str(docker_templates_dir),
-            ],
-            log_file=str(second_log),
+        harness2 = _create_deploy_harness(
+            output_dir=second_dir,
+            template_from=docker_templates_dir,
+            log_file=second_log,
+            extra_args=["--config", str(saved_config), "--non-interactive"],
         )
         exit_code2 = harness2.run()
         assert exit_code2 == 0
@@ -544,15 +562,11 @@ class TestNonInteractiveModeCompleteness:
                 os.chdir(tmpdir)
                 responses = fixture_manager.load_input_fixture("basic_deployment")
 
-                harness = CLITestHarness(
+                harness = _create_deploy_harness(
                     responses=responses,
-                    args=[
-                        "--output-dir",
-                        ".",
-                        "--template-from",
-                        str(docker_templates_dir),
-                    ],
-                    log_file=str(log_file),
+                    output_dir=".",
+                    template_from=docker_templates_dir,
+                    log_file=log_file,
                 )
                 exit_code = harness.run()
 
@@ -572,15 +586,11 @@ class TestNonInteractiveModeCompleteness:
         )
         responses = fixture_manager.load_input_fixture("basic_deployment")
 
-        harness = CLITestHarness(
+        harness = _create_deploy_harness(
             responses=responses,
-            args=[
-                "--output-dir",
-                str(nested_dir),
-                "--template-from",
-                str(docker_templates_dir),
-            ],
-            log_file=str(log_file),
+            output_dir=nested_dir,
+            template_from=docker_templates_dir,
+            log_file=log_file,
         )
         exit_code = harness.run()
 
@@ -594,15 +604,11 @@ class TestNonInteractiveModeCompleteness:
         dir_with_spaces = temp_deployment_dir / "path with spaces"
         responses = fixture_manager.load_input_fixture("basic_deployment")
 
-        harness = CLITestHarness(
+        harness = _create_deploy_harness(
             responses=responses,
-            args=[
-                "--output-dir",
-                str(dir_with_spaces),
-                "--template-from",
-                str(docker_templates_dir),
-            ],
-            log_file=str(log_file),
+            output_dir=dir_with_spaces,
+            template_from=docker_templates_dir,
+            log_file=log_file,
         )
         exit_code = harness.run()
 
@@ -621,15 +627,11 @@ class TestNonInteractiveModeCompleteness:
             # Use a unique directory name to avoid conflicts between test runs
             unique_dir = f"relative-{uuid.uuid4().hex[:8]}"
 
-            harness = CLITestHarness(
+            harness = _create_deploy_harness(
                 responses=responses,
-                args=[
-                    "--output-dir",
-                    f"../{unique_dir}/path",
-                    "--template-from",
-                    str(docker_templates_dir),
-                ],
-                log_file=str(log_file),
+                output_dir=f"../{unique_dir}/path",
+                template_from=docker_templates_dir,
+                log_file=log_file,
             )
             exit_code = harness.run()
 
@@ -657,15 +659,11 @@ class TestNonInteractiveModeCompleteness:
             target_dir = readonly_parent / "cannot_create"
             responses = fixture_manager.load_input_fixture("basic_deployment")
 
-            harness = CLITestHarness(
+            harness = _create_deploy_harness(
                 responses=responses,
-                args=[
-                    "--output-dir",
-                    str(target_dir),
-                    "--template-from",
-                    str(docker_templates_dir),
-                ],
-                log_file=str(log_file),
+                output_dir=target_dir,
+                template_from=docker_templates_dir,
+                log_file=log_file,
             )
             exit_code = harness.run()
 
@@ -687,15 +685,11 @@ class TestNonInteractiveModeCompleteness:
         non_existent = temp_deployment_dir / "nonexistent-templates"
         responses = fixture_manager.load_input_fixture("basic_deployment")
 
-        harness = CLITestHarness(
+        harness = _create_deploy_harness(
             responses=responses,
-            args=[
-                "--output-dir",
-                str(temp_deployment_dir),
-                "--template-from",
-                str(non_existent),
-            ],
-            log_file=str(log_file),
+            output_dir=temp_deployment_dir,
+            template_from=non_existent,
+            log_file=log_file,
         )
         exit_code = harness.run()
 
@@ -711,15 +705,11 @@ class TestNonInteractiveModeCompleteness:
 
         responses = fixture_manager.load_input_fixture("basic_deployment")
 
-        harness = CLITestHarness(
+        harness = _create_deploy_harness(
             responses=responses,
-            args=[
-                "--output-dir",
-                str(temp_deployment_dir),
-                "--template-from",
-                str(empty_dir),
-            ],
-            log_file=str(log_file),
+            output_dir=temp_deployment_dir,
+            template_from=empty_dir,
+            log_file=log_file,
         )
         exit_code = harness.run()
 
@@ -738,15 +728,11 @@ class TestNonInteractiveModeCompleteness:
 
         responses = fixture_manager.load_input_fixture("basic_deployment")
 
-        harness = CLITestHarness(
+        harness = _create_deploy_harness(
             responses=responses,
-            args=[
-                "--output-dir",
-                str(temp_deployment_dir),
-                "--template-from",
-                str(partial_dir),
-            ],
-            log_file=str(log_file),
+            output_dir=temp_deployment_dir,
+            template_from=partial_dir,
+            log_file=log_file,
         )
         exit_code = harness.run()
 
@@ -762,16 +748,12 @@ class TestNonInteractiveModeCompleteness:
         """Test --template-from with local path and --verbose shows copy progress."""
         responses = fixture_manager.load_input_fixture("basic_deployment")
 
-        harness = CLITestHarness(
+        harness = _create_deploy_harness(
             responses=responses,
-            args=[
-                "--output-dir",
-                str(temp_deployment_dir),
-                "--template-from",
-                str(docker_templates_dir),
-                "--verbose",
-            ],
-            log_file=str(log_file),
+            output_dir=temp_deployment_dir,
+            template_from=docker_templates_dir,
+            log_file=log_file,
+            extra_args=["--verbose"],
         )
         exit_code = harness.run()
 
@@ -804,15 +786,11 @@ class TestCLIResumeWorkflow:
         # We expect the first run to fail/exit because we don't have enough responses
         # But it should save state for completed steps
         first_run_log = temp_deployment_dir / "output_first_run.log"
-        harness1 = CLITestHarness(
+        harness1 = _create_deploy_harness(
             responses=first_run_responses,
-            args=[
-                "--output-dir",
-                str(temp_deployment_dir),
-                "--template-from",
-                str(docker_templates_dir),
-            ],
-            log_file=str(first_run_log),
+            output_dir=temp_deployment_dir,
+            template_from=docker_templates_dir,
+            log_file=first_run_log,
         )
         exit_code1 = harness1.run()
 
@@ -843,15 +821,11 @@ class TestCLIResumeWorkflow:
 
         # Use separate log file for resume run
         resume_log = temp_deployment_dir / "output_resume.log"
-        harness2 = CLITestHarness(
+        harness2 = _create_deploy_harness(
             responses=resume_responses,
-            args=[
-                "--output-dir",
-                str(temp_deployment_dir),
-                "--template-from",
-                str(docker_templates_dir),
-            ],
-            log_file=str(resume_log),
+            output_dir=temp_deployment_dir,
+            template_from=docker_templates_dir,
+            log_file=resume_log,
         )
         exit_code2 = harness2.run()
 

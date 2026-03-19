@@ -1,4 +1,4 @@
-Loading configuration from /home/tom/Documents/dev/octopize/avatar-deployment/deployment-tool/tests/fixtures/invalid_url_config/config.yaml...
+Loading configuration from /home/tom/Documents/dev/octopize/worktrees/deploy-tool-dev-mode-separate-env-files-6kq/deployment-tool/tests/fixtures/invalid_url_config/config.yaml...
 
 ============================================================
 Avatar Deployment Configuration
@@ -32,8 +32,8 @@ Generating Configuration Files
 ============================================================
 ✓ Generated: {{OUTPUT_DIR}}/.env
 ✓ Generated: {{OUTPUT_DIR}}/nginx/nginx.conf
-✓ Copied: {{OUTPUT_DIR}}/authentik/octopize-avatar-blueprint.yaml
 ✓ Generated: {{OUTPUT_DIR}}/docker-compose.yml
+✓ Copied: {{OUTPUT_DIR}}/authentik/octopize-avatar-blueprint.yaml
 ✓ Copied: email templates to {{OUTPUT_DIR}}/authentik/custom-templates
 ✓ Copied: branding files to {{OUTPUT_DIR}}/authentik/branding
 

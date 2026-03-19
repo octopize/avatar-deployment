@@ -13,6 +13,10 @@ default:
 install:
     uv sync --all-extras
 
+# Install the CLI into the local project virtualenv
+install-tool: install
+    uv pip install --editable . --no-deps
+
 # Run all tests (excluding integration tests by default)
 test *ARGS:
     uv run pytest tests/unit {{ARGS}}
@@ -39,9 +43,9 @@ format:
 # Format and lint
 lint-fix: format lint
 
-# Check types with mypy
+# Check types with pyright
 typecheck:
-    uv run mypy {{PATHS}}
+    uv run pyright
 
 lci: lint-fix typecheck test-all
 
@@ -51,28 +55,53 @@ build:
     rm -rf dist/
     uv build
 
-# Run the tool interactively in a test directory
-run-interactive-github:
-    #!/usr/bin/env bash3
+# Run the deploy command with GitHub templates in a test directory
+run-interactive-github *ARGS: install-tool
+    #!/usr/bin/env bash
+    set -- {{ARGS}}
+    if [ "${1:-}" = "--" ]; then
+        shift
+    fi
     TEST_DIR=$(mktemp -d)
     echo "Running in temporary directory: $TEST_DIR"
-    uv run octopize-avatar-deploy --output-dir "$TEST_DIR" --verbose
+    uv run octopize-deploy-tool deploy --output-dir "$TEST_DIR" --verbose "$@"
     echo "\nGenerated files in: $TEST_DIR"
     ls -la "$TEST_DIR"
 
-run-interactive-local *ARGS:
+# Run the deploy command with local templates in a test directory
+run-local-deploy *ARGS: install-tool
     #!/usr/bin/env bash
+    set -- {{ARGS}}
+    if [ "${1:-}" = "--" ]; then
+        shift
+    fi
     TEST_DIR=$(mktemp -d)
     echo "Running in temporary directory: $TEST_DIR"
-    uv run octopize-avatar-deploy --output-dir "$TEST_DIR" --template-from ../docker/templates --verbose {{ARGS}}
+    uv run octopize-deploy-tool deploy --output-dir "$TEST_DIR" --template-from ../docker/templates --verbose "$@"
     echo "\nGenerated files in: $TEST_DIR"
     ls -la "$TEST_DIR"
+
+# Run the generate-env command with local templates in a test directory
+run-local-generate-env *ARGS: install-tool
+    #!/usr/bin/env bash
+    set -- {{ARGS}}
+    if [ "${1:-}" = "--" ]; then
+        shift
+    fi
+    TEST_DIR=$(mktemp -d)
+    echo "Running in temporary directory: $TEST_DIR"
+    uv run octopize-deploy-tool generate-env --output-dir "$TEST_DIR" --template-from ../docker/templates --verbose "$@"
+    echo "\nGenerated files in: $TEST_DIR"
+    find "$TEST_DIR" -maxdepth 2 -type f | sort
+
+run-interactive-local *ARGS:
+    just run-local-deploy {{ARGS}}
 
 
 
 # Run the help command
 help:
-    uv run octopize-avatar-deploy --help
+    uv run octopize-deploy-tool --help
 
 # Show defaults.yaml content
 show-defaults:

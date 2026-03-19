@@ -39,13 +39,20 @@ Additional contexts (avatar, core, dp) will be derived automatically.
 
 --- Configure application logging settings ---
 
+--- Select components to run outside Docker ---
+
+--- Component .env Generation ---
+Generate .env files for components you want to run outside Docker.
+This is useful for hot-reload development of specific services.
+No components selected for external .env generation.
+
 ============================================================
 Generating Configuration Files
 ============================================================
 ✓ Generated: {{OUTPUT_DIR}}/.env
 ✓ Generated: {{OUTPUT_DIR}}/nginx/nginx.conf
-✓ Copied: {{OUTPUT_DIR}}/authentik/octopize-avatar-blueprint.yaml
 ✓ Generated: {{OUTPUT_DIR}}/docker-compose.yml
+✓ Copied: {{OUTPUT_DIR}}/authentik/octopize-avatar-blueprint.yaml
 ✓ Generated: {{OUTPUT_DIR}}/compose.override.yaml
 ✓ Copied: email templates to {{OUTPUT_DIR}}/authentik/custom-templates
 ✓ Copied: branding files to {{OUTPUT_DIR}}/authentik/branding

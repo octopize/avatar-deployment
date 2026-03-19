@@ -178,7 +178,7 @@ class MockInputGatherer:
     interactive flows without manual input.
     """
 
-    def __init__(self, responses: dict[str, str | bool]):
+    def __init__(self, responses: dict[str, str | bool]) -> None:
         """
         Initialize mock input gatherer.
 
@@ -249,7 +249,9 @@ class MockInputGatherer:
 
             result = validate(value)
             if isinstance(result, ValidationError):
-                raise ValueError(f"MockInputGatherer: Validation failed for '{value}': {result.message}")
+                raise ValueError(
+                    f"MockInputGatherer: Validation failed for '{value}': {result.message}"
+                )
 
         return value
 
@@ -298,7 +300,7 @@ class RichInputGatherer:
     - Input validation
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize RichInputGatherer with a Console instance."""
         self.console = Console()
 

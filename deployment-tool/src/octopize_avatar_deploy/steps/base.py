@@ -30,6 +30,7 @@ T = TypeVar("T")
 
 # Type alias for new-style validators
 Validator = Callable[[str], "ValidationSuccess[Any] | ValidationError"]
+TemplateRenderer = Callable[[str, str], None]
 
 
 @dataclass(frozen=True)
@@ -231,7 +232,7 @@ class DeploymentStep(ABC):
         interactive: bool = True,
         printer: "Printer | None" = None,
         input_gatherer: "InputGatherer | None" = None,
-    ):
+    ) -> None:
         """
         Initialize the step.
 
@@ -312,6 +313,18 @@ class DeploymentStep(ABC):
             Human-readable summary string
         """
         return f"{self.name}: Configured"
+
+    def after_config_generation(self, render_template: TemplateRenderer) -> None:
+        """
+        Run optional follow-up work after the main configuration files are generated.
+
+        Steps should keep ``collect_config()`` focused on gathering values. Side effects
+        such as rendering additional files belong here.
+
+        Args:
+            render_template: Callback for rendering a template to an output path.
+        """
+        return None
 
     # Helper methods for prompting user input
 

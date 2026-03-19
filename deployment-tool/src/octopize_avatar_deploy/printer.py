@@ -113,7 +113,7 @@ class RichPrinter:
     - Better formatting
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize RichPrinter with a Console instance."""
         self.console = Console()
 
@@ -163,7 +163,7 @@ class FilePrinter:
     the log file to see what happened.
     """
 
-    def __init__(self, log_file: Path | str, append: bool = False):
+    def __init__(self, log_file: Path | str, append: bool = False) -> None:
         """
         Initialize FilePrinter.
 

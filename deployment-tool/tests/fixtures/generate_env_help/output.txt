@@ -1,0 +1,28 @@
+usage: octopize-deploy-tool generate-env [-h] [--output-dir OUTPUT_DIR]
+                                         [--template-from TEMPLATE_FROM]
+                                         [--config CONFIG] [--non-interactive]
+                                         [--verbose] [--component NAME]
+                                         [--target TARGET] [--api-url API_URL]
+                                         [--storage-url STORAGE_URL]
+                                         [--sso-url SSO_URL]
+
+options:
+  -h, --help            show this help message and exit
+  --output-dir OUTPUT_DIR
+                        Output directory for generated files (default: current
+                        directory)
+  --template-from TEMPLATE_FROM
+                        Template source: 'github' to download from repo, or
+                        path to local templates directory (default: github)
+  --config CONFIG       YAML configuration file to load
+  --non-interactive     Run in non-interactive mode (use defaults or config
+                        file)
+  --verbose             Verbose output
+  --component NAME      Component to generate .env for (repeatable: api, web).
+                        If omitted, generates all.
+  --target TARGET       Named environment preset from config file (e.g., prod,
+                        staging, local)
+  --api-url API_URL     Override API URL
+  --storage-url STORAGE_URL
+                        Override storage public URL
+  --sso-url SSO_URL     Override SSO provider URL

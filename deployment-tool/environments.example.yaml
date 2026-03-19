@@ -1,0 +1,29 @@
+# Example environments configuration for generate-env subcommand.
+#
+# Usage:
+#   octopize-deploy-tool generate-env --config environments.yaml --target prod --component web
+#
+# Each environment defines the URLs where services are running.
+# These are used to generate per-component .env files for local development.
+
+environments:
+  prod:
+    api_url: https://avatar.example.com/api
+    storage_public_url: https://avatar.example.com/storage
+    storage_internal_url: https://avatar.example.com/storage
+    sso_url: https://avatar.example.com/sso
+    db_host: avatar-db.example.com
+
+  staging:
+    api_url: https://staging.avatar.example.com/api
+    storage_public_url: https://staging.avatar.example.com/storage
+    storage_internal_url: https://staging.avatar.example.com/storage
+    sso_url: https://staging.avatar.example.com/sso
+    db_host: staging-db.example.com
+
+  local:
+    api_url: http://localhost:8000
+    storage_public_url: http://localhost:8333
+    storage_internal_url: http://localhost:8333
+    sso_url: http://localhost:9000/sso
+    db_host: localhost

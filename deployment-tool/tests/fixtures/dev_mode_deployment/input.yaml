@@ -17,3 +17,5 @@ responses:
   local_source.api_source_path: __TEMP_API_SOURCE__
   telemetry.enable_sentry: false
   telemetry.enable_telemetry: false
+  component_selection.api: false
+  component_selection.web: false

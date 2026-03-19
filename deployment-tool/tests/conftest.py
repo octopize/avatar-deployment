@@ -164,6 +164,7 @@ def compare_generated_files(output_dir: Path, fixture_name: str, fixtures_dir: P
         override_file = expected_dir / "compose.override.yaml"
         if override_file.exists():
             import re
+
             content = override_file.read_text()
             # Normalize all /tmp/tmpXXXXXX/ patterns to /tmp/TEMP_DIR/
             content = re.sub(r"/tmp/tmp[a-zA-Z0-9_-]+/", "/tmp/TEMP_DIR/", content)

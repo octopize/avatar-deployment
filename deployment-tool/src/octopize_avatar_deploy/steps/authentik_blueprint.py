@@ -71,6 +71,10 @@ class AuthentikBlueprintStep(DeploymentStep):
         )
         config["AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE"] = license_type
 
+        # Set SSO_PROVIDER_URL from domain (used by env template fragments)
+        if "SSO_PROVIDER_URL" not in self.config:
+            config["SSO_PROVIDER_URL"] = f"https://{domain}/sso"
+
         # Update self.config for generate_secrets()
         self.config.update(config)
 

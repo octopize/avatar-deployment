@@ -1,78 +1,150 @@
 # Octopize Avatar Deployment Tool
 
-Automated configuration tool for deploying Octopize Avatar platform using Docker Compose.
+`octopize-deploy-tool` generates the configuration files needed to run the Octopize Avatar platform with Docker Compose. It can also generate component-specific `.env` files for local development workflows.
+
+## Installation
+
+Install the published package:
+
+```bash
+pip install octopize-deploy-tool
+```
+
+Then verify the CLI is available:
+
+```bash
+octopize-deploy-tool --help
+```
 
 ## Quick Start
 
+Generate a Docker deployment configuration interactively:
+
 ```bash
-# Install
-pip install octopize-avatar-deploy
+octopize-deploy-tool deploy --output-dir /app/avatar
+```
 
-# Run interactive configuration
-octopize-avatar-deploy --output-dir /app/avatar
+Then start the deployment:
 
-# Deploy
+```bash
 cd /app/avatar
-docker compose down --volumes --remove-orphans  # Clean old containers if redeploying
+docker compose down --volumes --remove-orphans
 docker compose up -d
 ```
 
-## Usage Options
+## Commands
 
-### Interactive Mode (Default)
+The CLI has two explicit subcommands:
 
-```bash
-octopize-avatar-deploy --output-dir /app/avatar
+```text
+octopize-deploy-tool deploy [options]
+octopize-deploy-tool generate-env [options]
 ```
 
-### Non-Interactive Mode
+Running the CLI without a subcommand is not supported.
+
+### `deploy`
+
+Use `deploy` to generate a full Docker Compose deployment.
+
+Example:
 
 ```bash
-# Create config file
-cat > config.yaml << EOF
+octopize-deploy-tool deploy --output-dir /app/avatar
+```
+
+Common `deploy` options:
+
+```text
+--output-dir DIR           Output directory for generated files
+--config FILE              YAML configuration file to load
+--non-interactive          Run without prompts, using config/defaults
+--template-from PATH       Use a local template directory instead of the default source
+--save-config              Save the resolved configuration to deployment-config.yaml
+--verbose                  Show detailed progress output
+--mode {production,dev}    Generate production or dev deployment assets
+```
+
+### `generate-env`
+
+Use `generate-env` to create per-component `.env` files for local development without generating the full deployment bundle.
+
+Example:
+
+```bash
+octopize-deploy-tool generate-env \
+  --output-dir ./avatar-local \
+  --component api \
+  --component web
+```
+
+Common `generate-env` options:
+
+```text
+--output-dir DIR           Output directory for generated files
+--config FILE              YAML configuration file to load
+--non-interactive          Run without prompts, using config/defaults
+--template-from PATH       Use a local template directory instead of the default source
+--verbose                  Show detailed progress output
+--component NAME           Generate only the selected component (repeatable)
+--target NAME              Load named URLs from the environments config section
+--api-url URL              Override the API URL
+--storage-url URL          Override the storage public URL
+--sso-url URL              Override the SSO provider URL
+```
+
+## Non-Interactive Usage
+
+You can provide configuration through a YAML file:
+
+```yaml
 PUBLIC_URL: avatar.example.com
 ENV_NAME: prod
 ORGANIZATION_NAME: MyCompany
-EOF
-
-# Run with config
-octopize-avatar-deploy --output-dir /app/avatar --config config.yaml --non-interactive
 ```
 
-## Command Line Options
+Then run:
 
-```
---output-dir DIR           Output directory (default: current directory)
---config FILE              YAML configuration file
---non-interactive          Non-interactive mode (requires config file)
---template-from PATH       Use local templates instead of downloading from GitHub
---save-config              Save configuration to deployment-config.yaml
---verbose                  Show detailed output
+```bash
+octopize-deploy-tool deploy \
+  --output-dir /app/avatar \
+  --config config.yaml \
+  --non-interactive
 ```
 
-## What Gets Generated
+## Generated Files
 
-```
+The `deploy` command typically writes:
+
+```text
 /app/avatar/
-├── .env                            # Environment configuration
-├── docker-compose.yml              # Docker services
-├── nginx/nginx.conf                # Nginx config
+├── .env
+├── docker-compose.yml
+├── nginx/nginx.conf
 ├── authentik/
 │   ├── octopize-avatar-blueprint.yaml
-│   ├── custom-templates/           # Email templates
-│   └── branding/                   # Logo, favicon, background
-└── .secrets/                       # Generated secrets (22 files)
+│   ├── custom-templates/
+│   └── branding/
+└── .secrets/
 ```
 
-## Deployment Steps
+The `generate-env` command writes component env files such as:
 
-1. **Generate configuration:**
+```text
+./avatar-local/
+├── api/.env
+└── web/.env
+```
+
+## Typical Deployment Workflow
+
+1. Generate configuration:
 
    ```bash
-   octopize-avatar-deploy --output-dir /app/avatar
+   octopize-deploy-tool deploy --output-dir /app/avatar
    ```
 
-2. **Review generated files:**
+2. Review the generated files:
 
    ```bash
    cd /app/avatar
@@ -80,60 +152,41 @@ octopize-avatar-deploy --output-dir /app/avatar --config config.yaml --non-inter
    ls -la .secrets/
    ```
 
-3. **Add TLS certificates (production):**
+3. Add any required TLS certificates for production.
+
+4. Start the services:
 
    ```bash
-   mkdir -p tls
-   cp /path/to/fullchain.pem tls/
-   cp /path/to/privkey.pem tls/
-   ```
-
-4. **Start services:**
-
-   ```bash
-   docker compose down --volumes --remove-orphans
    docker compose up -d
    ```
 
-5. **Verify deployment:**
+5. Verify the deployment:
 
    ```bash
    docker compose ps
    docker compose logs -f
-   curl https://avatar.example.com/api/health
    ```
 
 ## Troubleshooting
 
-### "bind source path does not exist" error
+### Templates fail to download or validate
 
-Old containers from previous deployment. Solution:
+Retry with verbose output:
+
+```bash
+octopize-deploy-tool deploy --output-dir /app/avatar --verbose
+```
+
+### Existing containers cause bind-mount or startup issues
+
+Clean up old containers and volumes before retrying:
 
 ```bash
 docker compose down --volumes --remove-orphans
 docker compose up -d
 ```
 
-### Templates not downloading
+## Further Information
 
-```bash
-rm -rf .avatar-templates/
-octopize-avatar-deploy --output-dir /app/avatar --verbose
-```
-
-## Development
-
-```bash
-# Clone
-git clone https://github.com/octopize/avatar-deployment
-cd avatar-deployment/deployment-tool
-
-# Install dependencies
-just install
-
-# Run tests
-just test-all
-
-# Run locally
-just run-interactive-local
-```
+- Project repository: <https://github.com/octopize/avatar-deployment>
+- Deployment documentation: <https://docs.octopize.io/docs/deploying/self-hosted>

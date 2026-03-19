@@ -12,6 +12,7 @@ steps:
   step_9_api_local_source: completed
   step_10_telemetry: completed
   step_11_logging: completed
+  step_12_component_selection: completed
 config:
   deployment_mode: dev
   PUBLIC_URL: avatar-dev.example.com
@@ -22,6 +23,9 @@ config:
   AVATAR_PDFGENERATOR_VERSION: 0.2.3
   AVATAR_SEAWEEDFS_VERSION: 0.4.0
   AVATAR_AUTHENTIK_VERSION: 2026.2.1
+  AVATAR_API_URL: https://avatar-dev.example.com/api
+  AVATAR_STORAGE_ENDPOINT_PUBLIC_URL: https://avatar-dev.example.com/storage
+  AVATAR_STORAGE_ENDPOINT_INTERNAL_URL: http://s3:8333
   NGINX_TLS_ENABLED: true
   NGINX_SSL_CERTIFICATE_PATH: ./tls/server.fullchain.crt
   NGINX_SSL_CERTIFICATE_KEY_PATH: ./tls/private/server.decrypted.key
@@ -31,13 +35,14 @@ config:
   AUTHENTIK_DATABASE_NAME: authentik
   AUTHENTIK_DATABASE_USER: authentik
   AUTHENTIK_BOOTSTRAP_EMAIL: dev@example.com
-  AUTHENTIK_BOOTSTRAP_PASSWORD: 7nJfPL12V6351fNsFO1vH4Bw2L_LgZH7HNCJCW6PPeE
-  AUTHENTIK_BOOTSTRAP_TOKEN: azWUBzP27pnIb76cPtTjWo4LlLgHPrubPxg_ftU6gx8
+  AUTHENTIK_BOOTSTRAP_PASSWORD: y4rIaxragrUYR53eUY0naVFay4EaeJL_zYERs706wRg
+  AUTHENTIK_BOOTSTRAP_TOKEN: r2aWh5dxfAKU_upDNj3Hg_zGH3R7lZqR30Lhkds813Y
   AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN: avatar-dev.example.com
-  AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID: 61df036d648e960175299e5ac4eca4fd3b8e33af8ec7110e9a542b833e376ae1
-  AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET: 8f033a705e6f747ed505b7dff50496dc19227c8479aecfa14473895cffeff7db
+  AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID: f3f836726a2ac1462dcb12fe27e197a44502e2e096a612a49d94b21e1f56e146
+  AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET: 9131d1fbc230fdce23da7384288ee00f23e9a702f8245f08acab6686cfb9109b
   AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI: https://avatar-dev.example.com/api/login/sso/auth
   AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE: demo
+  SSO_PROVIDER_URL: https://avatar-dev.example.com/sso
   MAIL_PROVIDER: smtp
   SMTP_HOST: smtp.example.com
   SMTP_PORT: '587'
@@ -47,12 +52,12 @@ config:
   SMTP_SENDER_EMAIL: dev@example.com
   USE_EMAIL_AUTHENTICATION: 'true'
   ADMIN_EMAILS: dev@example.com
-  WEB_SOURCE_PATH: /tmp/tmpvfywxwwu/test-avatar-website
-  NPMRC_PATH: /tmp/tmpvfywxwwu/test-.npmrc
-  API_SOURCE_PATH: /tmp/tmpvfywxwwu/test-avatar-repo/services/api
-  API_CONTEXT_AVATAR: /tmp/tmpvfywxwwu/test-avatar-repo/avatar
-  API_CONTEXT_CORE: /tmp/tmpvfywxwwu/test-avatar-repo/core
-  API_CONTEXT_DP: /tmp/tmpvfywxwwu/test-avatar-repo/dp
+  WEB_SOURCE_PATH: /tmp/tmp1rk_kff2/test-avatar-website
+  NPMRC_PATH: /tmp/tmp1rk_kff2/test-.npmrc
+  API_SOURCE_PATH: /tmp/tmp1rk_kff2/test-avatar-repo/services/api
+  API_CONTEXT_AVATAR: /tmp/tmp1rk_kff2/test-avatar-repo/avatar
+  API_CONTEXT_CORE: /tmp/tmp1rk_kff2/test-avatar-repo/core
+  API_CONTEXT_DP: /tmp/tmp1rk_kff2/test-avatar-repo/dp
   IS_SENTRY_ENABLED: 'false'
   TELEMETRY_S3_ENDPOINT_URL: ''
   TELEMETRY_S3_REGION: ''
