@@ -1,16 +1,20 @@
-usage: octopize-deploy-tool generate-env [-h] [--output-dir OUTPUT_DIR]
-                                         [--template-from TEMPLATE_FROM]
+usage: octopize-deploy-tool generate-env [-h] [--template-from TEMPLATE_FROM]
                                          [--config CONFIG] [--non-interactive]
                                          [--verbose] [--component NAME]
+                                         [--api-output-path API_OUTPUT_PATH]
+                                         [--web-output-path WEB_OUTPUT_PATH]
+                                         [--python-client-output-path PYTHON_CLIENT_OUTPUT_PATH]
+                                         [--output-path COMPONENT=PATH]
                                          [--target TARGET] [--api-url API_URL]
                                          [--storage-url STORAGE_URL]
                                          [--sso-url SSO_URL]
 
+Generate per-component .env files using each component's default output path,
+or override specific destinations with --*-output-path / --output-path
+COMPONENT=PATH.
+
 options:
   -h, --help            show this help message and exit
-  --output-dir OUTPUT_DIR
-                        Output directory for generated files (default: current
-                        directory)
   --template-from TEMPLATE_FROM
                         Template source: 'github' to download from repo, or
                         path to local templates directory (default: github)
@@ -18,8 +22,22 @@ options:
   --non-interactive     Run in non-interactive mode (use defaults or config
                         file)
   --verbose             Verbose output
-  --component NAME      Component to generate .env for (repeatable: api, web).
-                        If omitted, generates all.
+  --component NAME      Component to generate .env for (repeatable: api, web,
+                        python_client). If omitted, generates all registered
+                        components into their default paths.
+  --api-output-path API_OUTPUT_PATH
+                        Write the API env file to this path instead of the
+                        default component path
+  --web-output-path WEB_OUTPUT_PATH
+                        Write the web env file to this path instead of the
+                        default component path
+  --python-client-output-path PYTHON_CLIENT_OUTPUT_PATH
+                        Write the python_client env file to this path instead
+                        of the default component path
+  --output-path COMPONENT=PATH
+                        Repeatable component output override in COMPONENT=PATH
+                        form. Use this for future components or to override
+                        convenience flags.
   --target TARGET       Named environment preset from config file (e.g., prod,
                         staging, local)
   --api-url API_URL     Override API URL

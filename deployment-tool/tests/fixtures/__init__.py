@@ -7,6 +7,7 @@ and updating expected outputs when needed.
 
 import difflib
 import os
+import re
 from pathlib import Path
 
 import yaml
@@ -140,6 +141,9 @@ class FixtureManager:
             If AVATAR_DEPLOY_UPDATE_FIXTURES is set and fixture_name is provided,
             this will save the actual output to the fixture file and return True.
         """
+        actual = normalize_output(actual)
+        expected = normalize_output(expected)
+
         # If updating fixtures and we have a name, save and pass
         if should_update_fixtures() and fixture_name:
             self.save_output(fixture_name, actual)
@@ -199,8 +203,26 @@ def normalize_output(output: str) -> str:
     Returns:
         Normalized output string
     """
+    normalized = output
+
+    normalized = re.sub(
+        r"Loading configuration from .*/tests/fixtures/([^/]+)/config\.yaml\.\.\.",
+        r"Loading configuration from {{FIXTURES_DIR}}/\1/config.yaml...",
+        normalized,
+    )
+    normalized = re.sub(
+        r"Copying templates from .*/docker/templates",
+        "Copying templates from {{DOCKER_TEMPLATES_DIR}}",
+        normalized,
+    )
+    normalized = re.sub(
+        r"Template version is compatible with script version \d+\.\d+\.\d+",
+        "Template version is compatible with script version {{SCRIPT_VERSION}}",
+        normalized,
+    )
+
     # Remove trailing whitespace from each line
-    lines = [line.rstrip() for line in output.splitlines()]
+    lines = [line.rstrip() for line in normalized.splitlines()]
 
     # Remove empty lines at the end
     while lines and not lines[-1]:

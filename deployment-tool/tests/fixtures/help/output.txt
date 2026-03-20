@@ -5,8 +5,8 @@ Avatar Deployment Configuration Tool
 positional arguments:
   {deploy,generate-env}
     deploy              Generate Docker deployment configuration
-    generate-env        Generate per-component .env files for local
-                        development
+    generate-env        Generate per-component .env files using component
+                        output paths
 
 options:
   -h, --help            show this help message and exit

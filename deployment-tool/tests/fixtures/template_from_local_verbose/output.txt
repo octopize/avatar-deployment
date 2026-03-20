@@ -1,6 +1,6 @@
-Copying templates from /home/tom/Documents/dev/octopize/worktrees/deploy-tool-dev-mode-separate-env-files-6kq/docker/templates
-✓ Found all 20 required template files
-✓ Template version is compatible with script version 2.21.0
+Copying templates from {{DOCKER_TEMPLATES_DIR}}
+✓ Found all 21 required template files
+✓ Template version is compatible with script version {{SCRIPT_VERSION}}
 
 ============================================================
 Avatar Deployment Configuration

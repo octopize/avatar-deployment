@@ -25,6 +25,15 @@ class TestComponentRegistry:
         assert len(spec.output_specs) == 1
         assert spec.output_specs[0] == OutputSpec("web.env.template", "web/.env")
 
+    def test_python_client_component_exists(self):
+        spec = get_component("python_client")
+        assert spec.name == "python_client"
+        assert len(spec.step_classes) > 0
+        assert len(spec.output_specs) == 1
+        assert spec.output_specs[0] == OutputSpec(
+            "python_client.env.template", "python_client/.env"
+        )
+
     def test_unknown_component_raises(self):
         with pytest.raises(ValueError, match="Unknown component"):
             get_component("nonexistent")
@@ -33,7 +42,8 @@ class TestComponentRegistry:
         components = get_all_components()
         assert "api" in components
         assert "web" in components
-        assert len(components) == 2
+        assert "python_client" in components
+        assert len(components) == 3
 
     def test_api_has_more_steps_than_web(self):
         """API component needs more config steps than web."""

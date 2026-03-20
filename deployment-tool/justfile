@@ -90,7 +90,14 @@ run-local-generate-env *ARGS: install-tool
     fi
     TEST_DIR=$(mktemp -d)
     echo "Running in temporary directory: $TEST_DIR"
-    uv run octopize-deploy-tool generate-env --output-dir "$TEST_DIR" --template-from ../docker/templates --verbose "$@"
+    mkdir -p "$TEST_DIR/api" "$TEST_DIR/web" "$TEST_DIR/python_client"
+    uv run octopize-deploy-tool generate-env \
+        --api-output-path "$TEST_DIR/api/.env" \
+        --web-output-path "$TEST_DIR/web/.env" \
+        --python-client-output-path "$TEST_DIR/python_client/.env" \
+        --template-from ../docker/templates \
+        --verbose \
+        "$@"
     echo "\nGenerated files in: $TEST_DIR"
     find "$TEST_DIR" -maxdepth 2 -type f | sort
 

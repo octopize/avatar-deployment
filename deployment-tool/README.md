@@ -73,20 +73,26 @@ Example:
 
 ```bash
 octopize-deploy-tool generate-env \
-  --output-dir ./avatar-local \
   --component api \
-  --component web
+  --api-output-path ./avatar-local/api/.env \
+  --component web \
+  --web-output-path ./avatar-local/web/.env
 ```
 
 Common `generate-env` options:
 
 ```text
---output-dir DIR           Output directory for generated files
 --config FILE              YAML configuration file to load
 --non-interactive          Run without prompts, using config/defaults
 --template-from PATH       Use a local template directory instead of the default source
 --verbose                  Show detailed progress output
---component NAME           Generate only the selected component (repeatable)
+--component NAME           Generate only the selected component (repeatable; defaults to all)
+--api-output-path PATH     Override the API env output path for this run
+--web-output-path PATH     Override the web env output path for this run
+--python-client-output-path PATH
+                           Override the python_client env output path for this run
+--output-path COMPONENT=PATH
+                           Repeatable generic output-path override
 --target NAME              Load named URLs from the environments config section
 --api-url URL              Override the API URL
 --storage-url URL          Override the storage public URL
@@ -128,7 +134,7 @@ The `deploy` command typically writes:
 └── .secrets/
 ```
 
-The `generate-env` command writes component env files such as:
+The `generate-env` command writes component env files directly to their resolved destinations, for example:
 
 ```text
 ./avatar-local/

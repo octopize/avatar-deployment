@@ -15,8 +15,8 @@ Usage:
     # Non-interactive deployment configuration
     octopize-deploy-tool deploy --config config.yaml --non-interactive
 
-    # Generate local component env files
-    octopize-deploy-tool generate-env --output-dir ./local-envs
+    # Generate local component env files in component-specific paths
+    octopize-deploy-tool generate-env --api-output-path ./api/.env --web-output-path ./web/.env
 """
 
 import argparse
@@ -456,6 +456,10 @@ class DeploymentConfigurator:
             config_output = self.output_dir / "deployment-config.yaml"
             self.save_config_to_file(config_output)
 
+        if self.config.get("_generate_env_mode", False):
+            self.printer.print_header("Generate-env Complete!")
+            return
+
         # Success message
         self.printer.print_header("Configuration Complete!")
         self.printer.print(f"\nConfiguration files generated in: {self.output_dir}")
@@ -710,12 +714,6 @@ class DeploymentRunner:
 def _add_shared_cli_args(parser: argparse.ArgumentParser) -> None:
     """Add CLI arguments shared across deploy and generate-env."""
     parser.add_argument(
-        "--output-dir",
-        type=Path,
-        default=Path.cwd(),
-        help="Output directory for generated files (default: current directory)",
-    )
-    parser.add_argument(
         "--template-from",
         type=str,
         default="github",
@@ -743,6 +741,12 @@ def _add_deploy_cli_args(parser: argparse.ArgumentParser) -> None:
     """Add CLI arguments for the deploy subcommand."""
     _add_shared_cli_args(parser)
     parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path.cwd(),
+        help="Output directory for generated files (default: current directory)",
+    )
+    parser.add_argument(
         "--save-config",
         action="store_true",
         help="Save configuration to deployment-config.yaml",
@@ -756,15 +760,69 @@ def _add_deploy_cli_args(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def _parse_component_output_path(value: str) -> tuple[str, Path]:
+    """Parse a COMPONENT=PATH output override from the CLI."""
+    from octopize_avatar_deploy.components import get_component
+
+    component, separator, raw_path = value.partition("=")
+    if not separator or not component or not raw_path:
+        raise argparse.ArgumentTypeError(
+            "Output path overrides must use COMPONENT=PATH syntax"
+        )
+
+    try:
+        get_component(component)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from exc
+
+    return component, Path(raw_path)
+
+
 def _add_generate_env_cli_args(parser: argparse.ArgumentParser) -> None:
     """Add CLI arguments for the generate-env subcommand."""
+    from octopize_avatar_deploy.components import get_all_components
+
+    component_names = ", ".join(get_all_components().keys())
+
     _add_shared_cli_args(parser)
     parser.add_argument(
         "--component",
         action="append",
         dest="components",
         metavar="NAME",
-        help="Component to generate .env for (repeatable: api, web). If omitted, generates all.",
+        help=(
+            f"Component to generate .env for (repeatable: {component_names}). "
+            "If omitted, generates all registered components into their default paths."
+        ),
+    )
+    parser.add_argument(
+        "--api-output-path",
+        type=Path,
+        help="Write the API env file to this path instead of the default component path",
+    )
+    parser.add_argument(
+        "--web-output-path",
+        type=Path,
+        help="Write the web env file to this path instead of the default component path",
+    )
+    parser.add_argument(
+        "--python-client-output-path",
+        type=Path,
+        help=(
+            "Write the python_client env file to this path instead of the default "
+            "component path"
+        ),
+    )
+    parser.add_argument(
+        "--output-path",
+        action="append",
+        dest="output_paths",
+        metavar="COMPONENT=PATH",
+        type=_parse_component_output_path,
+        help=(
+            "Repeatable component output override in COMPONENT=PATH form. "
+            "Use this for future components or to override convenience flags."
+        ),
     )
     parser.add_argument(
         "--target",
@@ -805,7 +863,12 @@ def _build_parser() -> argparse.ArgumentParser:
 
     gen_parser = subparsers.add_parser(
         "generate-env",
-        help="Generate per-component .env files for local development",
+        help="Generate per-component .env files using component output paths",
+        description=(
+            "Generate per-component .env files using each component's default output "
+            "path, or override specific destinations with --*-output-path / "
+            "--output-path COMPONENT=PATH."
+        ),
     )
     _add_generate_env_cli_args(gen_parser)
 
@@ -885,9 +948,19 @@ def _run_generate_env(
     from octopize_avatar_deploy.generate_env import GenerateEnvRunner
 
     components = args.components or list(get_all_components().keys())
+    output_path_overrides = {
+        component: path
+        for component, path in (
+            ("api", args.api_output_path),
+            ("web", args.web_output_path),
+            ("python_client", args.python_client_output_path),
+        )
+        if path is not None
+    }
+    output_path_overrides.update(dict(args.output_paths or []))
 
     runner = GenerateEnvRunner(
-        output_dir=args.output_dir,
+        output_dir=Path.cwd(),
         components=components,
         template_from=args.template_from,
         verbose=args.verbose,
@@ -902,6 +975,7 @@ def _run_generate_env(
         api_url=args.api_url,
         storage_url=args.storage_url,
         sso_url=args.sso_url,
+        output_path_overrides=output_path_overrides,
     )
 
 

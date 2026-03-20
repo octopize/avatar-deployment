@@ -113,12 +113,24 @@ just run-interactive-local   # Run with local templates
 ### CLI Options
 
 ```
---output-dir DIR       Output directory for generated files
---config FILE          YAML configuration file
---non-interactive      Non-interactive mode (requires --config)
---template-from PATH   Use local templates instead of downloading
---save-config          Save configuration to YAML
---verbose              Verbose output
+deploy:
+  --output-dir DIR       Output directory for generated files
+  --config FILE          YAML configuration file
+  --non-interactive      Non-interactive mode (requires --config)
+  --template-from PATH   Use local templates instead of downloading
+  --save-config          Save configuration to YAML
+  --verbose              Verbose output
+
+generate-env:
+  --config FILE                     YAML configuration file
+  --non-interactive                 Non-interactive mode
+  --template-from PATH              Use local templates instead of downloading
+  --verbose                         Verbose output
+  --component NAME                  Generate only selected components (defaults to all)
+  --api-output-path PATH            Override API env destination for this run
+  --web-output-path PATH            Override web env destination for this run
+  --python-client-output-path PATH  Override python_client env destination for this run
+  --output-path COMPONENT=PATH      Repeatable generic output-path override
 ```
 
 ## Configuration Presets

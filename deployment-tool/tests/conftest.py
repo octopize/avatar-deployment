@@ -157,7 +157,7 @@ def compare_generated_files(output_dir: Path, fixture_name: str, fixtures_dir: P
         shutil.copytree(
             output_dir,
             expected_dir,
-            ignore=shutil.ignore_patterns("*.log", "__pycache__", ".avatar-templates"),
+            ignore=shutil.ignore_patterns("*.log", "__pycache__", ".avatar-templates", ".secrets"),
         )
 
         # Normalize temp paths in compose.override.yaml fixture
@@ -191,13 +191,20 @@ def _compare_directories(actual_dir: Path, expected_dir: Path) -> bool:
     Returns:
         bool: True if directories match
     """
+    expected_files = {p.relative_to(expected_dir) for p in expected_dir.rglob("*") if p.is_file()}
+    expect_secret_files = any(
+        rel_path.parts and rel_path.parts[0] == ".secrets" for rel_path in expected_files
+    )
+
     # Get all files relative to their respective roots
     actual_files = {
         p.relative_to(actual_dir)
         for p in actual_dir.rglob("*")
-        if p.is_file() and not p.name.endswith(".log") and ".avatar-templates" not in str(p)
+        if p.is_file()
+        and not p.name.endswith(".log")
+        and ".avatar-templates" not in str(p)
+        and (expect_secret_files or ".secrets" not in str(p))
     }
-    expected_files = {p.relative_to(expected_dir) for p in expected_dir.rglob("*") if p.is_file()}
 
     # Check for missing or extra files
     missing = expected_files - actual_files

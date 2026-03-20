@@ -66,22 +66,6 @@ entries:
     model: authentik_flows.flow
     state: present
   - attrs:
-      authentication: require_unauthenticated
-      background: ''
-      compatibility_mode: false
-      denied_action: message_continue
-      designation: recovery
-      layout: stacked
-      name: Default recovery flow
-      policy_engine_mode: any
-      slug: avatar-recovery-flow
-      title: Reset your password
-    id: avatar-recovery-flow
-    identifiers:
-      slug: avatar-recovery-flow
-    model: authentik_flows.flow
-    state: present
-  - attrs:
       authentication: none
       background: ''
       compatibility_mode: true
@@ -95,6 +79,22 @@ entries:
     id: avatar-authentication-flow
     identifiers:
       slug: avatar-authentication-flow
+    model: authentik_flows.flow
+    state: present
+  - attrs:
+      authentication: require_unauthenticated
+      background: ''
+      compatibility_mode: false
+      denied_action: message_continue
+      designation: recovery
+      layout: stacked
+      name: Avatar recovery flow
+      policy_engine_mode: any
+      slug: avatar-recovery-flow
+      title: Reset your password
+    id: avatar-recovery-flow
+    identifiers:
+      slug: avatar-recovery-flow
     model: authentik_flows.flow
     state: present
 
@@ -155,10 +155,57 @@ entries:
       name: avatar-initial-setup-field-password
     model: authentik_stages_prompt.prompt
     state: present
+  - attrs:
+      field_key: migration_consent
+      initial_value: Your account needs migration, we will proceed to a password reset. Click continue to validate.
+      initial_value_expression: false
+      label: Migration consent
+      name: avatar-needs-migration-prompt
+      order: 0
+      placeholder: ''
+      placeholder_expression: false
+      required: true
+      sub_text: ''
+      type: static
+    id: migration_consent
+    identifiers:
+      field_key: migration_consent
+      name: avatar-needs-migration-prompt
+    model: authentik_stages_prompt.prompt
+    state: present
 
 # ============================================================
 # POLICIES
 # ============================================================
+  - attrs:
+      execution_logging: false
+      expression: |-
+        if not request.user:
+            return False
+
+        must_reset_password = request.user.attributes.get('must_reset_password')
+
+        return bool(must_reset_password)
+      name: avatar-is-existing-non-migrated-account
+    id: avatar-is-existing-non-migrated-account
+    identifiers:
+      name: avatar-is-existing-non-migrated-account
+    model: authentik_policies_expression.expressionpolicy
+    state: present
+  - attrs:
+      execution_logging: false
+      expression: |-
+        user = request.user
+        if user and "must_reset_password" in user.attributes:
+            del user.attributes["must_reset_password"]
+            user.save()
+        return True
+      name: avatar-clear-must-reset-password-flag
+    id: avatar-clear-must-reset-password-flag
+    identifiers:
+      name: avatar-clear-must-reset-password-flag
+    model: authentik_policies_expression.expressionpolicy
+    state: present
   - attrs:
       execution_logging: false
       expression: |-
@@ -224,6 +271,15 @@ entries:
 # ============================================================
 # STAGES
 # ============================================================
+  - attrs:
+      consent_expire_in: weeks=4
+      mode: permanent
+      name: avatar-should-migrate-account
+    id: avatar-should-migrate-account
+    identifiers:
+      name: avatar-should-migrate-account
+    model: authentik_stages_consent.consentstage
+    state: present
   - attrs:
       activate_user_on_success: false
       from_address: system@authentik.local
@@ -366,6 +422,26 @@ entries:
     model: authentik_stages_prompt.promptstage
     state: present
   - attrs:
+      fields:
+      - !KeyOf 'migration_consent'
+      name: avatar-migration-stage
+    id: avatar-migration-stage
+    identifiers:
+      name: avatar-migration-stage
+    model: authentik_stages_prompt.promptstage
+    state: present
+  - attrs:
+      keep_context: false
+      mode: flow
+      name: avatar-redirect-to-recovery-flow
+      target_flow: !KeyOf 'avatar-recovery-flow'
+      target_static: ''
+    id: avatar-redirect-to-recovery-flow
+    identifiers:
+      name: avatar-redirect-to-recovery-flow
+    model: authentik_stages_redirect.redirectstage
+    state: present
+  - attrs:
       geoip_binding: no_binding
       name: default-recovery-user-login
       network_binding: no_binding
@@ -376,6 +452,19 @@ entries:
     id: default-recovery-user-login
     identifiers:
       name: default-recovery-user-login
+    model: authentik_stages_user_login.userloginstage
+    state: present
+  - attrs:
+      geoip_binding: bind_continent
+      name: avatar-recovery-user-login
+      network_binding: bind_asn
+      remember_device: days=30
+      remember_me_offset: seconds=0
+      session_duration: seconds=0
+      terminate_other_sessions: false
+    id: avatar-recovery-user-login
+    identifiers:
+      name: avatar-recovery-user-login
     model: authentik_stages_user_login.userloginstage
     state: present
   - attrs:
@@ -422,6 +511,36 @@ entries:
     identifiers:
       order: 10
       stage: !KeyOf 'avatar-authentication-stage'
+      target: !KeyOf 'avatar-authentication-flow'
+    model: authentik_flows.flowstagebinding
+    state: present
+  - attrs:
+      evaluate_on_plan: false
+      invalid_response_action: retry
+      order: 11
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: !KeyOf 'avatar-migration-stage'
+      target: !KeyOf 'avatar-authentication-flow'
+    id: avatar-authentication-flow-bind-avatar-migration-stage-order-11
+    identifiers:
+      order: 11
+      stage: !KeyOf 'avatar-migration-stage'
+      target: !KeyOf 'avatar-authentication-flow'
+    model: authentik_flows.flowstagebinding
+    state: present
+  - attrs:
+      evaluate_on_plan: false
+      invalid_response_action: retry
+      order: 12
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: !KeyOf 'avatar-redirect-to-recovery-flow'
+      target: !KeyOf 'avatar-authentication-flow'
+    id: avatar-authentication-flow-bind-avatar-redirect-to-recovery-flow-order-12
+    identifiers:
+      order: 12
+      stage: !KeyOf 'avatar-redirect-to-recovery-flow'
       target: !KeyOf 'avatar-authentication-flow'
     model: authentik_flows.flowstagebinding
     state: present
@@ -505,7 +624,7 @@ entries:
     model: authentik_flows.flowstagebinding
     state: present
   - attrs:
-      evaluate_on_plan: true
+      evaluate_on_plan: false
       invalid_response_action: retry
       order: 40
       policy_engine_mode: any
@@ -520,17 +639,17 @@ entries:
     model: authentik_flows.flowstagebinding
     state: present
   - attrs:
-      evaluate_on_plan: true
+      evaluate_on_plan: false
       invalid_response_action: retry
       order: 100
       policy_engine_mode: any
       re_evaluate_policies: true
-      stage: !KeyOf 'default-recovery-user-login'
+      stage: !KeyOf 'avatar-recovery-user-login'
       target: !KeyOf 'avatar-recovery-flow'
-    id: avatar-recovery-flow-bind-default-recovery-user-login-order-100
+    id: avatar-recovery-flow-bind-avatar-recovery-user-login-order-100
     identifiers:
       order: 100
-      stage: !KeyOf 'default-recovery-user-login'
+      stage: !KeyOf 'avatar-recovery-user-login'
       target: !KeyOf 'avatar-recovery-flow'
     model: authentik_flows.flowstagebinding
     state: present
@@ -651,6 +770,74 @@ entries:
       target: !KeyOf 'avatar-self-service-signup-flow-bind-avatar-self-service-userinfo-write-order-20'
     model: authentik_policies.policybinding
     state: present
+  - attrs:
+      enabled: true
+      failure_result: false
+      group: null
+      negate: false
+      order: 10
+      policy: !KeyOf 'avatar-is-existing-non-migrated-account'
+      target: !KeyOf 'avatar-authentication-flow-bind-avatar-migration-stage-order-11'
+      timeout: 30
+      user: null
+    id: avatar-is-existing-non-migrated-account-bind-avatar-authentication-flow-bind-avatar-migration-stage-order-11-order-10
+    identifiers:
+      order: 10
+      policy: !KeyOf 'avatar-is-existing-non-migrated-account'
+      target: !KeyOf 'avatar-authentication-flow-bind-avatar-migration-stage-order-11'
+    model: authentik_policies.policybinding
+    state: present
+  - attrs:
+      enabled: true
+      failure_result: false
+      group: null
+      negate: false
+      order: 10
+      policy: !KeyOf 'avatar-is-existing-non-migrated-account'
+      target: !KeyOf 'avatar-authentication-flow-bind-avatar-redirect-to-recovery-flow-order-12'
+      timeout: 30
+      user: null
+    id: avatar-is-existing-non-migrated-account-bind-avatar-authentication-flow-bind-avatar-redirect-to-recovery-flow-order-12-order-10
+    identifiers:
+      order: 10
+      policy: !KeyOf 'avatar-is-existing-non-migrated-account'
+      target: !KeyOf 'avatar-authentication-flow-bind-avatar-redirect-to-recovery-flow-order-12'
+    model: authentik_policies.policybinding
+    state: present
+  - attrs:
+      enabled: true
+      failure_result: false
+      group: null
+      negate: true
+      order: 0
+      policy: !KeyOf 'avatar-is-existing-non-migrated-account'
+      target: !KeyOf 'avatar-authentication-flow-bind-avatar-password-stage-order-20'
+      timeout: 30
+      user: null
+    id: avatar-is-existing-non-migrated-account-bind-avatar-authentication-flow-bind-avatar-password-stage-order-20-order-0
+    identifiers:
+      order: 0
+      policy: !KeyOf 'avatar-is-existing-non-migrated-account'
+      target: !KeyOf 'avatar-authentication-flow-bind-avatar-password-stage-order-20'
+    model: authentik_policies.policybinding
+    state: present
+  - attrs:
+      enabled: true
+      failure_result: false
+      group: null
+      negate: false
+      order: 0
+      policy: !KeyOf 'avatar-clear-must-reset-password-flag'
+      target: !KeyOf 'avatar-recovery-flow-bind-avatar-recovery-user-login-order-100'
+      timeout: 30
+      user: null
+    id: avatar-clear-must-reset-password-flag-bind-avatar-recovery-flow-bind-avatar-recovery-user-login-order-100-order-0
+    identifiers:
+      order: 0
+      policy: !KeyOf 'avatar-clear-must-reset-password-flag'
+      target: !KeyOf 'avatar-recovery-flow-bind-avatar-recovery-user-login-order-100'
+    model: authentik_policies.policybinding
+    state: present
 
 # ============================================================
 # SCOPE MAPPINGS
@@ -753,12 +940,7 @@ entries:
 # BRAND
 # ============================================================
   - attrs:
-      branding_default_flow_background: background.png
-      # branding_custom_css is loaded both as a light DOM <style> tag and as adopted
-      # stylesheets injected into every shadow root in the flow. All CSS rules here
-      # reach both light DOM and shadow DOM elements.
-      # See: common/authentik-css/SHADOW-DOM-CSS-NOTES.md for architecture details.
-      branding_custom_css: |
+      branding_custom_css: |-
         /*
          * Octopize Brand CSS for authentik SSO
          * Source of truth: common/authentik-blueprint/octopize-avatar-blueprint.yaml
@@ -856,6 +1038,7 @@ entries:
           overflow: hidden;
           display: block;
         }
+      branding_default_flow_background: background.png
       branding_favicon: favicon.ico
       branding_logo: brand_logo.png
       branding_title: Avatar

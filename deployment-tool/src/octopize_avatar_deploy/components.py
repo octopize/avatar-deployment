@@ -53,6 +53,15 @@ def _build_registry() -> dict[str, ComponentEnvSpec]:
             ],
             output_specs=[OutputSpec("web.env.template", "web/.env")],
         ),
+        "python_client": ComponentEnvSpec(
+            name="python_client",
+            description="Python client environment (API URL, storage URL)",
+            step_classes=[
+                RequiredConfigStep,
+                TargetEnvironmentStep,
+            ],
+            output_specs=[OutputSpec("python_client.env.template", "python_client/.env")],
+        ),
     }
 
 

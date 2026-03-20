@@ -49,10 +49,12 @@ class TestAuthentikBlueprintStep:
     def test_collect_config_domain_extraction(self, tmp_path):
         """Test domain extraction from various PUBLIC_URL formats."""
         test_cases = [
+            ("avatar.example.com", "avatar.example.com"),
             ("https://avatar.example.com", "avatar.example.com"),
             ("https://avatar.example.com/", "avatar.example.com"),
             ("http://staging.octopize.tech", "staging.octopize.tech"),
             ("http://staging.octopize.tech/", "staging.octopize.tech"),
+            ("https://avatar.example.com:8443/", "avatar.example.com:8443"),
         ]
 
         for public_url, expected_domain in test_cases:
@@ -60,6 +62,20 @@ class TestAuthentikBlueprintStep:
             step = AuthentikBlueprintStep(tmp_path, {}, config, interactive=False)
             result = step.collect_config()
             assert result["AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN"] == expected_domain
+
+    def test_collect_config_can_derive_from_api_url(self, tmp_path):
+        """generate-env flows can derive blueprint settings without PUBLIC_URL."""
+        config = {"AVATAR_API_URL": "http://localhost:8080/api"}
+        step = AuthentikBlueprintStep(tmp_path, {}, config, interactive=False)
+
+        result = step.collect_config()
+
+        assert result["AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN"] == "localhost:8080"
+        assert (
+            result["AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI"]
+            == "http://localhost:8080/api/login/sso/auth"
+        )
+        assert result["SSO_PROVIDER_URL"] == "http://localhost:8080/sso"
 
     def test_collect_config_empty_public_url(self, tmp_path):
         """Test that empty PUBLIC_URL raises ValueError."""
@@ -75,6 +91,16 @@ class TestAuthentikBlueprintStep:
         step = AuthentikBlueprintStep(tmp_path, {}, config, interactive=False)
 
         with pytest.raises(ValueError, match="PUBLIC_URL .* is not set or invalid"):
+            step.collect_config()
+
+    def test_collect_config_rejects_malformed_public_url(self, tmp_path):
+        """Test that malformed PUBLIC_URL values are rejected."""
+        config = {"PUBLIC_URL": "https://avatar.example.com/app"}
+        step = AuthentikBlueprintStep(tmp_path, {}, config, interactive=False)
+
+        with pytest.raises(
+            ValueError, match="PUBLIC_URL .* is not set or invalid: PUBLIC_URL must not include"
+        ):
             step.collect_config()
 
     def test_collect_config_custom_values(self, tmp_path):

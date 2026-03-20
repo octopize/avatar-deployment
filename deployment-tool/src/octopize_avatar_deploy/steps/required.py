@@ -3,6 +3,8 @@
 import secrets
 from typing import Any
 
+from octopize_avatar_deploy.public_url import normalize_public_url
+
 from .base import DefaultKey, DeploymentStep
 
 
@@ -17,20 +19,15 @@ class RequiredConfigStep(DeploymentStep):
         config = {}
         is_generate_env = bool(self.config.get("_generate_env_mode"))
 
-        # Public URL - Required
-        public_url = self.get_config_or_prompt(
-            "PUBLIC_URL",
-            "Public URL (domain name, e.g., avatar.example.com)",
-            "",
-            prompt_key="required_config.public_url",
-        )
-
-        # Normalize PUBLIC_URL to strip protocol and store just the domain
-        if public_url:
-            public_url = public_url.replace("https://", "").replace("http://", "").rstrip("/")
-        if not public_url:
-            raise ValueError("PUBLIC_URL is required and cannot be empty.")
-        config["PUBLIC_URL"] = public_url
+        if "PUBLIC_URL" in self.config or not is_generate_env:
+            public_url = self.get_config_or_prompt(
+                "PUBLIC_URL",
+                "Public URL (e.g., avatar.example.com or https://avatar.example.com)",
+                "",
+                prompt_key="required_config.public_url",
+                parse_and_validate=normalize_public_url,
+            )
+            config["PUBLIC_URL"] = public_url
 
         # Environment name - Required
         config["ENV_NAME"] = self.get_config_or_prompt(

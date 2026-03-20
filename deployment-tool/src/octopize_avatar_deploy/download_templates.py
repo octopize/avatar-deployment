@@ -28,17 +28,18 @@ DEFAULT_BRANCH = "main"
 REQUIRED_FILE_MANIFEST: dict[str, ManifestEntry] = {
     "templates": {
         "category": "template",
-        "files": [
-            ".env.template",
-            "_env_fragment_infra.template",
-            "_env_fragment_api.template",
-            "_env_fragment_web.template",
-            "api.env.template",
-            "web.env.template",
-            "nginx.conf.template",
-            "docker-compose.yml.template",
-            "compose.override.yaml.template",  # Dev mode override (optional in production)
-            ".template-version",
+            "files": [
+                ".env.template",
+                "_env_fragment_infra.template",
+                "_env_fragment_api.template",
+                "_env_fragment_web.template",
+                "api.env.template",
+                "python_client.env.template",
+                "web.env.template",
+                "nginx.conf.template",
+                "docker-compose.yml.template",
+                "compose.override.yaml.template",  # Dev mode override (optional in production)
+                ".template-version",
             "authentik/octopize-avatar-blueprint.yaml",
         ],
     },

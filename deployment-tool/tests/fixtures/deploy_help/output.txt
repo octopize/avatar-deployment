@@ -1,14 +1,10 @@
-usage: octopize-deploy-tool deploy [-h] [--output-dir OUTPUT_DIR]
-                                   [--template-from TEMPLATE_FROM]
+usage: octopize-deploy-tool deploy [-h] [--template-from TEMPLATE_FROM]
                                    [--config CONFIG] [--non-interactive]
-                                   [--verbose] [--save-config]
-                                   [--mode {production,dev}]
+                                   [--verbose] [--output-dir OUTPUT_DIR]
+                                   [--save-config] [--mode {production,dev}]
 
 options:
   -h, --help            show this help message and exit
-  --output-dir OUTPUT_DIR
-                        Output directory for generated files (default: current
-                        directory)
   --template-from TEMPLATE_FROM
                         Template source: 'github' to download from repo, or
                         path to local templates directory (default: github)
@@ -16,6 +12,9 @@ options:
   --non-interactive     Run in non-interactive mode (use defaults or config
                         file)
   --verbose             Verbose output
+  --output-dir OUTPUT_DIR
+                        Output directory for generated files (default: current
+                        directory)
   --save-config         Save configuration to deployment-config.yaml
   --mode {production,dev}
                         Deployment mode: production (default) or dev

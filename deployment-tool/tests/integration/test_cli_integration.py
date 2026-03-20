@@ -136,6 +136,15 @@ class TestCLIBasicCommands:
             capture_stderr=True,
         )
 
+    def test_generate_env_rejects_output_dir(self) -> None:
+        """generate-env should no longer accept deploy's --output-dir flag."""
+        _assert_cli_output_matches_fixture(
+            "generate_env_output_dir_error",
+            args=["generate-env", "--output-dir", "./out"],
+            expected_exit_code=2,
+            capture_stderr=True,
+        )
+
 
 class TestCLIDeploymentScenarios:
     """Test complete deployment scenarios."""
@@ -354,25 +363,29 @@ class TestCLINonInteractiveMode:
         assert compare_output(log_file, temp_deployment_dir, "malformed_yaml", fixture_manager)
 
     @pytest.mark.parametrize(
-        "config_fixture",
+        ("config_fixture", "expected_exit_code"),
         [
-            "invalid_url_config",
-            "invalid_port_config",
-            "type_mismatch_config",
+            ("invalid_url_config", 1),
+            ("invalid_port_config", 0),
+            ("type_mismatch_config", 0),
         ],
     )
     def test_invalid_config_handling(
-        self, config_fixture, temp_deployment_dir, log_file, docker_templates_dir
+        self,
+        config_fixture,
+        expected_exit_code,
+        temp_deployment_dir,
+        log_file,
+        docker_templates_dir,
     ):
         """Test behavior when config contains invalid values.
 
         This tests various config validation scenarios:
-        - invalid_url_config: Invalid URL format (currently accepted)
+        - invalid_url_config: Invalid PUBLIC_URL format (rejected)
         - invalid_port_config: Port as string instead of int (currently accepted)
         - type_mismatch_config: Type mismatches in config values (currently accepted)
 
-        Note: The tool currently does not validate these inputs, so they succeed.
-        These tests document current behavior - validation may be added in the future.
+        These tests document the current validation contract for config-file inputs.
         """
         config_file = fixture_manager.get_config_fixture_path(config_fixture)
 
@@ -384,10 +397,9 @@ class TestCLINonInteractiveMode:
         )
         exit_code = harness.run()
 
-        # Currently these all succeed - no validation implemented yet
-        assert exit_code == 0
+        assert exit_code == expected_exit_code
 
-        # Document actual behavior in fixture
+        # Document current behavior in fixture
         assert compare_output(log_file, temp_deployment_dir, config_fixture, fixture_manager)
 
 
