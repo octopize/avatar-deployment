@@ -153,6 +153,14 @@ api:
   ssoProviderAppName: ""
   ssoProviderUrl: ""
 
+syncTables:
+  # Set to true to enable the sync_tables CronJob.
+  enabled: false
+  # Cron schedule expression.
+  schedule: "0 1 * * *"
+  # Email address to notify on failure. Required when enabled is true.
+  failureEmail: ""
+
 authentik:
   enabled: true
 

@@ -1,0 +1,51 @@
+{{- if and .Values.syncTables.schedule .Values.syncTables.failureEmail }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: avatar-sync-tables
+  labels:
+    {{- include "avatar.labels" . | nindent 4 }}
+    app.kubernetes.io/component: sync-tables
+spec:
+  schedule: {{ .Values.syncTables.schedule | quote }}
+  concurrencyPolicy: Forbid
+  suspend: {{ not .Values.syncTables.enabled }}
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 30
+  startingDeadlineSeconds: 1800
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      ttlSecondsAfterFinished: 604800  # 7 days
+      template:
+        metadata:
+          labels:
+            {{- include "avatar.labels" . | nindent 12 }}
+            app.kubernetes.io/component: sync-tables
+        spec:
+          restartPolicy: Never
+          imagePullSecrets:
+            - name: docker-local-pull-secret
+          containers:
+            - name: sync-tables
+              image: {{ .Values.image.repository }}:{{ .Values.avatarServiceApiVersion }}
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command: ["bash", "-c"]
+              args:
+                - |
+                  set -euo pipefail
+                  cd /app/avatar
+                  python bin/sync_tables_with_notification.py
+              env:
+                {{- include "avatar.app_env" . }}
+                - name: SYNC_TABLES_FAILURE_EMAIL
+                  value: {{ .Values.syncTables.failureEmail | quote }}
+              volumeMounts:
+                - mountPath: /var/run/secrets
+                  name: secrets
+                  readOnly: true
+          volumes:
+            - name: secrets
+              secret:
+                secretName: api
+{{- end }}
