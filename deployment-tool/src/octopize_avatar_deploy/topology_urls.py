@@ -138,7 +138,8 @@ def resolve_generate_env_urls(topology: GenerateEnvTopology) -> ResolvedTopology
         if topology.web_runtime is ServiceLocation.DOCKER and not topology.public_base_url
         else (
             LOCAL_HOST_WEB_URL
-            if topology.web_runtime is ServiceLocation.HOST and not topology.requires_public_base_url()
+            if topology.web_runtime is ServiceLocation.HOST
+            and not topology.requires_public_base_url()
             else join_base_url(public_base_url, "/web")
         )
     )
@@ -169,9 +170,7 @@ def resolve_generate_env_urls(topology: GenerateEnvTopology) -> ResolvedTopology
     )
 
 
-def resolve_host_client_storage_url(
-    topology: GenerateEnvTopology, public_storage_url: str
-) -> str:
+def resolve_host_client_storage_url(topology: GenerateEnvTopology, public_storage_url: str) -> str:
     """Return the default storage URL for host-side generated clients."""
     if topology.public_base_url or topology.requires_public_base_url():
         return public_storage_url

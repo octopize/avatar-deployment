@@ -766,9 +766,7 @@ def _parse_component_output_path(value: str) -> tuple[str, Path]:
 
     component, separator, raw_path = value.partition("=")
     if not separator or not component or not raw_path:
-        raise argparse.ArgumentTypeError(
-            "Output path overrides must use COMPONENT=PATH syntax"
-        )
+        raise argparse.ArgumentTypeError("Output path overrides must use COMPONENT=PATH syntax")
 
     try:
         get_component(component)
@@ -809,8 +807,7 @@ def _add_generate_env_cli_args(parser: argparse.ArgumentParser) -> None:
         "--python-client-output-path",
         type=Path,
         help=(
-            "Write the python_client env file to this path instead of the default "
-            "component path"
+            "Write the python_client env file to this path instead of the default component path"
         ),
     )
     parser.add_argument(

@@ -31,9 +31,7 @@ class TestTargetEnvironmentStep:
         assert result["PUBLIC_URL"] == "localhost:8080"
         assert result["DB_HOST"] == "localhost"
 
-    def test_host_web_with_docker_dependencies_keeps_local_dev_entrypoint(
-        self, tmp_path, defaults
-    ):
+    def test_host_web_with_docker_dependencies_keeps_local_dev_entrypoint(self, tmp_path, defaults):
         """Host web keeps its localhost dev URL when dependencies sit behind the gateway."""
         config = {
             "_generate_env_components": ["web"],
@@ -85,9 +83,7 @@ class TestTargetEnvironmentStep:
         assert result["AVATAR_STORAGE_ENDPOINT_PUBLIC_URL"] == "http://localhost:8080/storage"
         assert result["AVATAR_STORAGE_ENDPOINT_INTERNAL_URL"] == "http://s3:8333"
 
-    def test_python_client_defaults_to_host_storage_when_api_runs_on_host(
-        self, tmp_path, defaults
-    ):
+    def test_python_client_defaults_to_host_storage_when_api_runs_on_host(self, tmp_path, defaults):
         """Python client env should point straight at SeaweedFS for host-local API."""
         config = {"_generate_env_components": ["python_client"]}
         step = TargetEnvironmentStep(tmp_path, defaults, config, interactive=False)
@@ -97,9 +93,7 @@ class TestTargetEnvironmentStep:
         assert result["AVATAR_BASE_API_URL"] == "http://localhost:8080/api"
         assert result["AVATAR_STORAGE_ENDPOINT_URL"] == "http://localhost:8333"
 
-    def test_python_client_uses_gateway_storage_when_api_runs_in_docker(
-        self, tmp_path, defaults
-    ):
+    def test_python_client_uses_gateway_storage_when_api_runs_in_docker(self, tmp_path, defaults):
         """Python client env should use the gateway storage URL for docker-backed API."""
         config = {
             "_generate_env_components": ["python_client"],

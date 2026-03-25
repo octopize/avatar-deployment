@@ -14,8 +14,8 @@ from octopize_avatar_deploy.topology_urls import (
     parse_service_location,
     public_base_url_from_service_url,
     public_domain_from_url,
-    resolve_host_client_storage_url,
     resolve_generate_env_urls,
+    resolve_host_client_storage_url,
 )
 
 from .base import DeploymentStep

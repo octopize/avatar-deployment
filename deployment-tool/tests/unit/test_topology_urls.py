@@ -3,8 +3,8 @@
 from octopize_avatar_deploy.topology_urls import (
     GenerateEnvTopology,
     ServiceLocation,
-    resolve_host_client_storage_url,
     resolve_generate_env_urls,
+    resolve_host_client_storage_url,
 )
 
 

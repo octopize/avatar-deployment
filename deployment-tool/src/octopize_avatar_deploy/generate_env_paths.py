@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 import yaml
 
@@ -37,7 +38,9 @@ def resolve_generate_env_output_paths(
     missing_components: list[str] = []
 
     for component in selected_components:
-        override_path = None if output_path_overrides is None else output_path_overrides.get(component)
+        override_path = (
+            None if output_path_overrides is None else output_path_overrides.get(component)
+        )
         if override_path is not None:
             resolved_path = _resolve_output_path(override_path, base_dir=Path.cwd())
             _validate_output_path(component, resolved_path)
@@ -59,7 +62,8 @@ def resolve_generate_env_output_paths(
             missing_list = ", ".join(missing_components)
             raise ValueError(
                 "Missing output path for selected component(s): "
-                f"{missing_list}. Configure generate_env.output_paths or provide output_path_overrides."
+                f"{missing_list}. Configure generate_env.output_paths or "
+                "provide output_path_overrides."
             )
 
         prompt_base_dir = config_base_dir or Path.cwd()
@@ -124,7 +128,9 @@ def _get_configured_output_paths(config: Mapping[str, Any]) -> dict[str, str]:
     normalized: dict[str, str] = {}
     for component, raw_path in output_paths.items():
         if not isinstance(component, str):
-            raise ValueError("Config key 'generate_env.output_paths' must use string component names")
+            raise ValueError(
+                "Config key 'generate_env.output_paths' must use string component names"
+            )
         if isinstance(raw_path, Path):
             normalized[component] = str(raw_path)
             continue

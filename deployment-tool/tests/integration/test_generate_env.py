@@ -739,7 +739,9 @@ class TestGenerateEnvErrors:
 class TestGenerateEnvOutputPaths:
     """Test configurable output path resolution behavior."""
 
-    def test_relative_paths_resolve_from_config_directory(self, docker_templates_dir, temp_deployment_dir):
+    def test_relative_paths_resolve_from_config_directory(
+        self, docker_templates_dir, temp_deployment_dir
+    ):
         """Relative configured paths should resolve from the config file directory."""
         config_dir = temp_deployment_dir / "configs"
         config_dir.mkdir()
@@ -871,7 +873,9 @@ class TestGenerateEnvOutputPaths:
             input_gatherer=MockInputGatherer({}),
         )
 
-        with pytest.raises(ValueError, match="Missing output path for selected component\\(s\\): web"):
+        with pytest.raises(
+            ValueError, match="Missing output path for selected component\\(s\\): web"
+        ):
             runner.run(interactive=False, config_file=config_file)
 
     def test_missing_parent_directory_is_rejected(self, docker_templates_dir, temp_deployment_dir):
@@ -934,7 +938,9 @@ class TestGenerateEnvOutputPaths:
         assert (temp_deployment_dir / "web" / ".env").exists()
         assert not (temp_deployment_dir / "future.env").exists()
 
-    def test_output_path_overrides_beat_configured_paths(self, docker_templates_dir, temp_deployment_dir):
+    def test_output_path_overrides_beat_configured_paths(
+        self, docker_templates_dir, temp_deployment_dir
+    ):
         """Runner path overrides should win over configured output paths."""
         configured_path = _component_env_path(temp_deployment_dir, "web")
         override_dir = temp_deployment_dir / "override"
