@@ -19,6 +19,11 @@ import subprocess
 import sys
 from pathlib import Path
 
+VERSION_ONLY_PATTERNS = (
+    re.compile(r'__version__\s*=\s*["\']([^"\']+)["\']'),
+    re.compile(r'VERSION\s*=\s*["\']([^"\']+)["\']'),
+)
+
 
 def run_git_command(args: list[str]) -> str:
     """Run a git command and return the output."""
@@ -89,6 +94,21 @@ def is_version_changed(filepath: Path, diff: str) -> bool:
     return False
 
 
+def is_version_only_python_change(diff: str) -> bool:
+    """Return True when a Python diff only changes common release version markers."""
+    changed_lines: list[str] = []
+    for line in diff.split("\n"):
+        if line.startswith(("+++", "---", "@@")):
+            continue
+        if line.startswith(("+", "-")):
+            changed_lines.append(line[1:].strip())
+
+    if not changed_lines:
+        return False
+
+    return all(any(pattern.fullmatch(line) for pattern in VERSION_ONLY_PATTERNS) for line in changed_lines)
+
+
 def check_template_version_bump(staged_files: list[str]) -> tuple[bool, str | None]:
     """
     Check if template version needs to be bumped.
@@ -133,13 +153,20 @@ def check_script_version_bump(staged_files: list[str]) -> tuple[bool, str | None
     Returns:
         (needs_bump, error_message)
     """
-    script_files = [
-        f for f in staged_files
-        if f.startswith("deployment-tool/src/")
-        and f.endswith(".py")
-        and "version_compat.py" not in f
-        and "__pycache__" not in f
-    ]
+    script_files = []
+    for filepath in staged_files:
+        if (
+            not filepath.startswith("deployment-tool/src/")
+            or not filepath.endswith(".py")
+            or "version_compat.py" in filepath
+            or "__pycache__" in filepath
+        ):
+            continue
+
+        if is_version_only_python_change(get_file_diff(filepath)):
+            continue
+
+        script_files.append(filepath)
 
     if not script_files:
         return True, None
