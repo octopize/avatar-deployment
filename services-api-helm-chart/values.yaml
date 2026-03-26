@@ -155,11 +155,11 @@ api:
 
 syncTables:
   # Set to true to enable the sync_tables CronJob.
-  enabled: false
+  enabled: true
   # Cron schedule expression.
   schedule: "0 1 * * *"
   # Email address to notify on failure. Required when enabled is true.
-  failureEmail: ""
+  failureEmail: "noreply@octopize.io"
 
 authentik:
   enabled: true
