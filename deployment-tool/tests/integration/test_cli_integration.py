@@ -218,7 +218,9 @@ class TestCLIDeploymentScenarios:
         assert exit_code == 0
 
         # Verify output and generated files (like other deployment tests)
-        assert compare_output(log_file, temp_deployment_dir, "dev_mode_deployment", fixture_manager)
+        assert compare_output(
+            log_file, temp_deployment_dir, "dev_mode_deployment", fixture_manager
+        )
         assert compare_generated_files(temp_deployment_dir, "dev_mode_deployment", FIXTURES_DIR)
 
         # Verify compose.override.yaml was generated
@@ -275,7 +277,8 @@ class TestCLIDeploymentScenarios:
         # Verify !Env tags are present (not rendered away by Jinja2)
         # Note: Tags may be with or without quotes (both are valid YAML)
         assert (
-            "!Env" in blueprint_content and "AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN" in blueprint_content
+            "!Env" in blueprint_content
+            and "AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN" in blueprint_content
         )
         assert "AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID" in blueprint_content
         assert "AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET" in blueprint_content
@@ -308,7 +311,9 @@ class TestCLIErrorHandling:
 class TestCLINonInteractiveMode:
     """Test non-interactive mode."""
 
-    def test_non_interactive_with_config(self, temp_deployment_dir, log_file, docker_templates_dir):
+    def test_non_interactive_with_config(
+        self, temp_deployment_dir, log_file, docker_templates_dir
+    ):
         """Test non-interactive mode with config file."""
         config_file = fixture_manager.get_config_fixture_path("non_interactive_incomplete_config")
 
