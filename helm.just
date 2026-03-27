@@ -14,10 +14,10 @@ OCI_IMAGE_NAME := "helm" + "/" + RELEASE_NAME
 
 
 render:
-    just template {{PATH_TO_CHART}}
+    just template
 
-template *PATHS:
-    @helm template {{RELEASE_NAME}} {{PATHS}} --namespace {{NAMESPACE}}
+template *ARGS:
+    @helm template {{RELEASE_NAME}} {{PATH_TO_CHART}} --namespace {{NAMESPACE}} {{ARGS}}
 
 lint *ARGS:
     @uv run scripts/lint-helm-templates.py {{ARGS}}

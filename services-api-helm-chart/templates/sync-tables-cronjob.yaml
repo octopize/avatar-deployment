@@ -37,7 +37,7 @@ spec:
                   cd /app/avatar
                   python bin/sync_tables_with_notification.py
               env:
-                {{- include "avatar.app_env" . }}
+                {{- include "avatar.app_env" . | nindent 16 }}
                 - name: SYNC_TABLES_FAILURE_EMAIL
                   value: {{ .Values.syncTables.failureEmail | quote }}
               volumeMounts:

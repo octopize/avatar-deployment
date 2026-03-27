@@ -57,132 +57,132 @@ Create the name of the service account to use
 {{/*
 Define the default app env variables
 */}}
-{{- define "avatar.app_env" }}
-            - name: ENV_NAME
-              valueFrom:
-                configMapKeyRef:
-                  name: avatar-api-config
-                  key: ENV_NAME
-            - name: AVATAR_API_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: avatar-api-config
-                  key: AVATAR_API_URL
-            - name: AVATAR_WEB_CLIENT_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: avatar-api-config
-                  key: AVATAR_WEB_CLIENT_URL
-            - name: IS_SENTRY_ENABLED
-              valueFrom:
-                configMapKeyRef:
-                  name: avatar-api-config
-                  key: IS_SENTRY_ENABLED
-            - name: IS_TELEMETRY_ENABLED
-              valueFrom:
-                configMapKeyRef:
-                  name: avatar-api-config
-                  key: IS_TELEMETRY_ENABLED
-            - name: DB_HOST
-              valueFrom:
-                configMapKeyRef:
-                  name: avatar-api-config
-                  key: DB_HOST
-            - name: DB_PORT
-              valueFrom:
-                configMapKeyRef:
-                  name: avatar-api-config
-                  key: DB_PORT
-            - name: SHARED_STORAGE_PATH
-              valueFrom:
-                configMapKeyRef:
-                  name: avatar-api-config
-                  key: SHARED_STORAGE_PATH
-            - name: STORAGE_ENDPOINT_HOST
-              valueFrom:
-                configMapKeyRef:
-                  name: avatar-api-config
-                  key: STORAGE_ENDPOINT_HOST
-            - name: STORAGE_ENDPOINT_PORT
-              valueFrom:
-                configMapKeyRef:
-                  name: avatar-api-config
-                  key: STORAGE_ENDPOINT_PORT
-            - name: AWS_DEFAULT_REGION
-              value: 'us-east-1'
-            - name: ACCESS_CONTROL_ENDPOINT_HOST
-              valueFrom:
-                configMapKeyRef:
-                  name: avatar-api-config
-                  key: ACCESS_CONTROL_ENDPOINT_HOST
-            - name: ACCESS_CONTROL_ENDPOINT_PORT
-              valueFrom:
-                configMapKeyRef:
-                  name: avatar-api-config
-                  key: ACCESS_CONTROL_ENDPOINT_PORT
-            - name: AVATAR_PDFGENERATOR_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: avatar-api-config
-                  key: AVATAR_PDFGENERATOR_URL
-            - name: MAX_ALLOWED_DIMENSIONS_PER_DATASET
-              valueFrom:
-                configMapKeyRef:
-                  name: avatar-api-config
-                  key: MAX_ALLOWED_DIMENSIONS_PER_DATASET
-            - name: MAX_ALLOWED_LINES_PER_DATASET
-              valueFrom:
-                configMapKeyRef:
-                  name: avatar-api-config
-                  key: MAX_ALLOWED_LINES_PER_DATASET
-            - name: LOG_LEVEL
-              valueFrom:
-                configMapKeyRef:
-                  name: avatar-api-config
-                  key: LOG_LEVEL
-            - name: DELETE_FILES_USING_CRONJOB
-              valueFrom:
-                configMapKeyRef:
-                  name: avatar-api-config
-                  key: DELETE_FILES_USING_CRONJOB
-            - name: DASK_SCHEDULER
-              valueFrom:
-                configMapKeyRef:
-                  name: avatar-api-config
-                  key: DASK_SCHEDULER
-            - name: SSO_CLIENT_ID
-              valueFrom:
-                configMapKeyRef:
-                  name: avatar-api-config
-                  key: SSO_CLIENT_ID
-            - name: SSO_CLIENT_SECRET
-              valueFrom:
-                configMapKeyRef:
-                  name: avatar-api-config
-                  key: SSO_CLIENT_SECRET
-            - name: SSO_PROVIDER_APP_NAME
-              valueFrom:
-                configMapKeyRef:
-                  name: avatar-api-config
-                  key: SSO_PROVIDER_APP_NAME
-            - name: SSO_PROVIDER_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: avatar-api-config
-                  key: SSO_PROVIDER_URL
-            - name: TELEMETRY_S3_BUCKET_NAME
-              valueFrom:
-                configMapKeyRef:
-                  name: avatar-api-config
-                  key: TELEMETRY_S3_BUCKET_NAME
-            - name: TELEMETRY_S3_ENDPOINT_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: avatar-api-config
-                  key: TELEMETRY_S3_ENDPOINT_URL
-            - name: TELEMETRY_S3_REGION
-              valueFrom:
-                configMapKeyRef:
-                  name: avatar-api-config
-                  key: TELEMETRY_S3_REGION
+{{- define "avatar.app_env" -}}
+- name: ENV_NAME
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: ENV_NAME
+- name: AVATAR_API_URL
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: AVATAR_API_URL
+- name: AVATAR_WEB_CLIENT_URL
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: AVATAR_WEB_CLIENT_URL
+- name: IS_SENTRY_ENABLED
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: IS_SENTRY_ENABLED
+- name: IS_TELEMETRY_ENABLED
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: IS_TELEMETRY_ENABLED
+- name: DB_HOST
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: DB_HOST
+- name: DB_PORT
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: DB_PORT
+- name: SHARED_STORAGE_PATH
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: SHARED_STORAGE_PATH
+- name: STORAGE_ENDPOINT_HOST
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: STORAGE_ENDPOINT_HOST
+- name: STORAGE_ENDPOINT_PORT
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: STORAGE_ENDPOINT_PORT
+- name: AWS_DEFAULT_REGION
+  value: 'us-east-1'
+- name: ACCESS_CONTROL_ENDPOINT_HOST
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: ACCESS_CONTROL_ENDPOINT_HOST
+- name: ACCESS_CONTROL_ENDPOINT_PORT
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: ACCESS_CONTROL_ENDPOINT_PORT
+- name: AVATAR_PDFGENERATOR_URL
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: AVATAR_PDFGENERATOR_URL
+- name: MAX_ALLOWED_DIMENSIONS_PER_DATASET
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: MAX_ALLOWED_DIMENSIONS_PER_DATASET
+- name: MAX_ALLOWED_LINES_PER_DATASET
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: MAX_ALLOWED_LINES_PER_DATASET
+- name: LOG_LEVEL
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: LOG_LEVEL
+- name: DELETE_FILES_USING_CRONJOB
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: DELETE_FILES_USING_CRONJOB
+- name: DASK_SCHEDULER
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: DASK_SCHEDULER
+- name: SSO_CLIENT_ID
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: SSO_CLIENT_ID
+- name: SSO_CLIENT_SECRET
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: SSO_CLIENT_SECRET
+- name: SSO_PROVIDER_APP_NAME
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: SSO_PROVIDER_APP_NAME
+- name: SSO_PROVIDER_URL
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: SSO_PROVIDER_URL
+- name: TELEMETRY_S3_BUCKET_NAME
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: TELEMETRY_S3_BUCKET_NAME
+- name: TELEMETRY_S3_ENDPOINT_URL
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: TELEMETRY_S3_ENDPOINT_URL
+- name: TELEMETRY_S3_REGION
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: TELEMETRY_S3_REGION
 {{- end }}
