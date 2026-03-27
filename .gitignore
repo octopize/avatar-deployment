@@ -8,6 +8,9 @@ services-api-helm-chart/charts/*/
 **/secrets/
 **/.secrets/
 
+# Node
+.playwright-cli/
+
 # Python
 __pycache__/
 *.py[cod]

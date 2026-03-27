@@ -28,7 +28,8 @@ Source: `../authentik-branding/`
 
 - `favicon.ico` - Browser tab icon
 - `logo.png` - Authentik login page logo
-- `background.png` - Login page background
+
+Flow colours are configured in `../authentik-blueprint/octopize-avatar-blueprint.yaml`.
 
 ## Workflow
 

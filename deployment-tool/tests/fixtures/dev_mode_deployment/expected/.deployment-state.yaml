@@ -35,11 +35,11 @@ config:
   AUTHENTIK_DATABASE_NAME: authentik
   AUTHENTIK_DATABASE_USER: authentik
   AUTHENTIK_BOOTSTRAP_EMAIL: dev@example.com
-  AUTHENTIK_BOOTSTRAP_PASSWORD: xInT4U8Y_AriP_sdFCRddqLB3QTNsdTvEMB2Hub93Og
-  AUTHENTIK_BOOTSTRAP_TOKEN: hwNwFUQCvRg4YM5-lDv-81GVyblZT_keFiVo3EAvXTs
+  AUTHENTIK_BOOTSTRAP_PASSWORD: HXgVA5mp8K9nEGxdSpKiAwKvKh1Prm6iUteidYHFFcU
+  AUTHENTIK_BOOTSTRAP_TOKEN: 1RzHQuVcxcCJJMfvCoZmUX62Rms9JRikyUY6G9REEok
   AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN: avatar-dev.example.com
-  AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID: 4b1980d4b4635bc11e2665b979932f651a5a84ae354ac3dd6d2ac620db9de20f
-  AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET: 8a078dc4b0af2ece9cfd6c12c331a03951ce10a9fa59974153763e8fce98bfd2
+  AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID: 0ad9abeb1b1f68987e05729d2e6c49d8343d47095a3a0b4121213d5923d0f792
+  AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET: 4abcfb044ab1cb186e04e5aa74b8df8a4c1138a73618e3721b4ca6e469bb27b3
   AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI: https://avatar-dev.example.com/api/login/sso/auth
   AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE: demo
   SSO_PROVIDER_URL: https://avatar-dev.example.com/sso
@@ -52,12 +52,12 @@ config:
   SMTP_SENDER_EMAIL: dev@example.com
   USE_EMAIL_AUTHENTICATION: 'true'
   ADMIN_EMAILS: dev@example.com
-  WEB_SOURCE_PATH: /tmp/tmpi9k3na5a/test-avatar-website
-  NPMRC_PATH: /tmp/tmpi9k3na5a/test-.npmrc
-  API_SOURCE_PATH: /tmp/tmpi9k3na5a/test-avatar-repo/services/api
-  API_CONTEXT_AVATAR: /tmp/tmpi9k3na5a/test-avatar-repo/avatar
-  API_CONTEXT_CORE: /tmp/tmpi9k3na5a/test-avatar-repo/core
-  API_CONTEXT_DP: /tmp/tmpi9k3na5a/test-avatar-repo/dp
+  WEB_SOURCE_PATH: /tmp/tmpkgw1u8s8/test-avatar-website
+  NPMRC_PATH: /tmp/tmpkgw1u8s8/test-.npmrc
+  API_SOURCE_PATH: /tmp/tmpkgw1u8s8/test-avatar-repo/services/api
+  API_CONTEXT_AVATAR: /tmp/tmpkgw1u8s8/test-avatar-repo/avatar
+  API_CONTEXT_CORE: /tmp/tmpkgw1u8s8/test-avatar-repo/core
+  API_CONTEXT_DP: /tmp/tmpkgw1u8s8/test-avatar-repo/dp
   IS_SENTRY_ENABLED: 'false'
   TELEMETRY_S3_ENDPOINT_URL: ''
   TELEMETRY_S3_REGION: ''

@@ -29,13 +29,14 @@ This script runs automatically when files in `common/` are modified to ensure te
   - From: `common/authentik-templates/`
   - To: `services-api-helm-chart/static/emails/` and `docker/authentik/custom-templates/`
 
-- **Branding assets** (favicon.ico, logo.png):
+- **Branding assets** (`favicon.ico`, `logo.png`):
   - From: `common/authentik-branding/`
   - To: `services-api-helm-chart/static/branding/` and `docker/authentik/branding/`
 
 - **Blueprint** (octopize-avatar-blueprint.yaml):
   - From: `common/authentik-blueprint/`
   - To: `services-api-helm-chart/static/blueprint/` and `docker/templates/authentik/`
+  - Includes the Authentik flow colour configuration
 
 ---
 

@@ -65,7 +65,6 @@ entries:
     state: present
   - attrs:
       authentication: require_unauthenticated
-      background: /static/dist/assets/images/flow_background.jpg
       denied_action: message_continue
       designation: recovery
       layout: stacked
@@ -646,12 +645,11 @@ entries:
 # BRAND
 # ============================================================
   - attrs:
-      branding_default_flow_background: background.png
       branding_favicon: favicon.ico
       branding_logo: brand_logo.png
       branding_title: Avatar
       default: false
-      default_application: !KeyOf 'avatar-api'
+      default_application: !Find [authentik_core.application, [slug, avatar-api]]
       domain: !Context 'domain'
       flow_authentication: !KeyOf 'avatar-authentication-flow'
       flow_invalidation: !Find [authentik_flows.flow, [slug, default-invalidation-flow]]

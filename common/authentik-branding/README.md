@@ -1,41 +1,31 @@
 # Authentik Branding Assets
 
-This directory contains branding assets for authentik deployments.
+This directory contains the runtime branding assets for Authentik deployments.
 
-**⚠️ SOURCE OF TRUTH**: Edit files HERE, not in deployment-specific directories.
+**⚠️ Source of truth**: edit files here, not in generated or deployment-specific directories.
 
 ## Files
 
-- `favicon.ico` - Browser favicon (recommended: 32x32 or 16x16 pixels)
-- `logo.png` - Authentik UI logo (recommended: max-width 300px, transparent background)
+- `favicon.ico` - Browser favicon, ideally `16x16` or `32x32`
+- `logo.png` - Authentik UI logo, ideally a transparent PNG with modest width
+
+Flow colours are defined in `common/authentik-blueprint/octopize-avatar-blueprint.yaml`, not as branding asset files. The discarded `background_image` asset is no longer part of the setup.
 
 ## Quick Start
 
-1. **Replace assets**: Copy your favicon.ico and logo.png into this directory
-2. **Sync to Helm** (if using Kubernetes): Run `./sync-templates.py` from repo root
-3. **Deploy**:
-   - Docker: `cd docker && docker-compose restart authentik_server authentik_worker`
-   - Helm: `just push-helm-chart`
+1. Replace `favicon.ico` and/or `logo.png` here.
+2. Run `./scripts/sync-templates.py` from the repo root.
+3. Redeploy Authentik:
+   - Docker Compose: restart `authentik_server` and `authentik_worker` in the deployment directory.
+   - Helm: package and deploy the updated chart.
 
-## Full Documentation
+## Synced Targets
 
-See [SETUP.md](./SETUP.md) for complete setup instructions, deployment workflows, and troubleshooting.
+After running `./scripts/sync-templates.py`, these files are copied to:
 
-## File Locations
+- `docker/authentik/branding/`
+- `services-api-helm-chart/static/branding/`
 
-### This Directory (Source)
-```
-common/authentik-branding/
-├── favicon.ico          ← Edit here
-├── logo.png            ← Edit here
-├── README.md           ← This file
-└── SETUP.md            ← Full documentation
-```
+Never edit those copies directly.
 
-### Docker Compose (Direct Mount)
-Files are mounted directly from this directory - no copying needed.
-
-### Helm (Synced Copy)
-Files are copied to `services-api-helm-chart/branding/` via `sync-templates.py`, then packaged into a ConfigMap during `helm package`.
-
-**Important**: Never edit files in `services-api-helm-chart/branding/` - always edit here and sync.
+See [SETUP.md](./SETUP.md) for the full workflow, deployment details, and troubleshooting.

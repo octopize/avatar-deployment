@@ -54,7 +54,6 @@ REQUIRED_FILE_MANIFEST: dict[str, ManifestEntry] = {
             "authentik/custom-templates/email_password_reset.html",
             "authentik/branding/favicon.ico",
             "authentik/branding/logo.png",
-            "authentik/branding/background.png",
         ],
     },
 }

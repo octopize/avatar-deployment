@@ -9,5 +9,4 @@ metadata:
 binaryData:
   favicon.ico: {{ .Files.Get "static/branding/favicon.ico" | b64enc | quote }}
   logo.png: {{ .Files.Get "static/branding/logo.png" | b64enc | quote }}
-  background.png: {{ .Files.Get "static/branding/background.png" | b64enc | quote }}
 {{- end }}

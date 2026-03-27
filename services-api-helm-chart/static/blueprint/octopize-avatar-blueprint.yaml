@@ -963,6 +963,10 @@ entries:
          *   - Issue #19556: 2025.12 CSS regression — use CSS custom properties,
          *     not direct element selectors. Include both pf-c-* and pf-v5-c-* variants.
          *
+         * Flow surface colours:
+         *   - Light theme colour: #F6FAFE
+         *   - Dark theme colour:  #1D1D1B
+         *
          * Octopize brand colours:
          *   Primary teal: hsl(165.3, 65.4%, 53.5%) ≈ #3ecfb2
          *   Hover teal:   hsl(165.3, 65.4%, 42%)   ≈ #2ea88e
@@ -991,8 +995,40 @@ entries:
           --pf-c-form-control--focus--BorderBottomColor:    hsl(165.3, 65.4%, 53.5%);
           --pf-v5-c-form-control--focus--BorderBottomColor: hsl(165.3, 65.4%, 53.5%);
 
-          /* Suppress the right-panel background image at xl (>1200px) viewport widths */
+          /* Disable the right-panel decorative media at xl (>1200px) viewport widths */
           --pf-c-login--xl--BackgroundImage: none;
+          background-position: center;
+          background-repeat: no-repeat;
+          background-size: cover;
+        }
+
+        :root {
+          --octopize-authentik-background-light: #F6FAFE;
+          --octopize-authentik-background-dark: #1D1D1B;
+        }
+
+        html[data-theme="light"] body,
+        html[data-theme="light"] body::before,
+        html[data-theme="light"] ak-flow-executor {
+          --ak-global--background-image: none !important;
+          background-image: none !important;
+          background-color: var(--octopize-authentik-background-light) !important;
+          --pf-c-login--BackgroundImage: none;
+          --pf-c-login--xl--BackgroundImage: none;
+          --pf-v5-c-login--BackgroundImage: none;
+          --pf-v5-c-login--xl--BackgroundImage: none;
+        }
+
+        html[data-theme="dark"] body,
+        html[data-theme="dark"] body::before,
+        html[data-theme="dark"] ak-flow-executor {
+          --ak-global--background-image: none !important;
+          background-image: none !important;
+          background-color: var(--octopize-authentik-background-dark) !important;
+          --pf-c-login--BackgroundImage: none;
+          --pf-c-login--xl--BackgroundImage: none;
+          --pf-v5-c-login--BackgroundImage: none;
+          --pf-v5-c-login--xl--BackgroundImage: none;
         }
 
         /* ── Locale selector ────────────────────────────────────────────────────────── */
@@ -1038,7 +1074,6 @@ entries:
           overflow: hidden;
           display: block;
         }
-      branding_default_flow_background: background.png
       branding_favicon: favicon.ico
       branding_logo: brand_logo.png
       branding_title: Avatar

@@ -5,7 +5,7 @@ Synchronizes authentik assets from common/ source of truth to deployment targets
 
 Syncs:
   - Email templates (*.html files)
-  - Branding assets (favicon.ico, logo.png, background.png)
+  - Branding assets (favicon.ico, logo.png)
   - Blueprint (octopize-avatar-blueprint.yaml)
 
 Usage:
@@ -41,7 +41,6 @@ BLUEPRINT_TARGETS = {
     "Helm chart":         "services-api-helm-chart/static/blueprint",
     "Docker (templates)": "docker/templates/authentik",
 }
-
 
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
@@ -125,6 +124,13 @@ def sync_manual(
         shutil.copy2(file_path, target / file_path.name)
 
 
+def prune_target_files(target: Path, allowed_filenames: set[str], patterns: list[str]) -> None:
+    """Remove files in a target directory that match the category patterns but are no longer desired."""
+    for existing in get_files_by_patterns(target, patterns):
+        if existing.name not in allowed_filenames:
+            existing.unlink()
+
+
 def sync_to_target(
     source: Path,
     target: Path,
@@ -173,7 +179,7 @@ ASSET_CATEGORIES = [
         emoji="🎨",
         source_dir=BRANDING_SOURCE_DIR,
         targets=BRANDING_TARGETS,
-        file_patterns=["*.ico", "*.png"],
+        file_patterns=["favicon.ico", "logo.png"],
     ),
     AssetCategory(
         label="Blueprint",
@@ -251,6 +257,12 @@ def main() -> int:
                 args.dry_run,
                 args.verbose,
             )
+            if category.label == "Branding Assets" and not args.dry_run:
+                prune_target_files(
+                    target_path,
+                    {path.name for path in source_files},
+                    ["*.ico", "*.png", "*.svg"],
+                )
 
     # Report results
     if not args.dry_run and args.verbose:
