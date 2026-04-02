@@ -77,9 +77,6 @@ services:
       - organization_name
       - pepper
       - authjwt_secret_key
-      # If using username-password authentication
-      # - avatar_first_user_name
-      # - avatar_first_user_password
 
       # If using email-password authentication
       - admin_emails
@@ -117,10 +114,6 @@ services:
       - organization_name
       - pepper
       - authjwt_secret_key
-
-      # If using username-password authentication
-      # - avatar_first_user_name
-      # - avatar_first_user_password
 
       # If using email-password authentication
       - admin_emails
@@ -180,9 +173,6 @@ services:
       - organization_name
       - pepper
       - authjwt_secret_key
-      # If using username-password authentication
-      # - avatar_first_user_name
-      # - avatar_first_user_password
       - admin_emails
       # If using AWS
       - aws_mail_account_access_key_id
@@ -215,9 +205,6 @@ services:
       - organization_name
       - pepper
       - authjwt_secret_key
-      # If using username-password authentication
-      # - avatar_first_user_name
-      # - avatar_first_user_password
       - admin_emails
       # If using AWS
       - aws_mail_account_access_key_id
@@ -577,12 +564,6 @@ secrets:
     file: ${SECRETS_DIR-.secrets}/organization_name
   file_jwt_secret_key:
     file: ${SECRETS_DIR-.secrets}/file_jwt_secret_key
-
-  # If using username-password authentication, you should have the following secrets present
-  # avatar_first_user_name:
-  #   file: ${SECRETS_DIR-.secrets}/avatar_first_user_name
-  # avatar_first_user_password:
-  #   file: ${SECRETS_DIR-.secrets}/avatar_first_user_password
 
   storage_admin_access_key_id:
     file: ${SECRETS_DIR-.secrets}/storage_admin_access_key_id

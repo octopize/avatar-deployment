@@ -60,12 +60,6 @@ MAIL_PROVIDER={{ MAIL_PROVIDER }}
 # # =============================
 
 # =============================
-# Email Sending Control
-#
-# To enable authentication for email-based login/registration, set:
-USE_EMAIL_AUTHENTICATION={{ USE_EMAIL_AUTHENTICATION }}
-
-# =============================
 # To enable Telemetry, set the following variables:
 {% if TELEMETRY_S3_ENDPOINT_URL %}
 TELEMETRY_S3_ENDPOINT_URL={{ TELEMETRY_S3_ENDPOINT_URL }}

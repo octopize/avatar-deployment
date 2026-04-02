@@ -108,14 +108,9 @@ api:
   # python -c "import base64; import os; print(str(base64.urlsafe_b64encode(os.urandom(32)), encoding='utf-8'), end='')"
   fileEncryptionKey: TODO
 
-  # If useEmailAuthentication is true, provide only adminEmail. Else, provide
-  # firstUserName and firstUserPassword.
-  useEmailAuthentication: false
   organizationName: ""
   adminEmails:
     - ""
-  firstUserName: ""
-  firstUserPassword: "" # python -c "import secrets; print(secrets.token_hex(), end='')"
 
   # Path to s3:// or gs://
   sharedStoragePath: ""

@@ -14,6 +14,8 @@ class TestNginxTlsStep:
         """Provide defaults with Nginx TLS paths."""
         return {
             "nginx": {
+                "tls_enabled": True,
+                "http_port": "8080",
                 "ssl_certificate_path": "./tls/server.fullchain.crt",
                 "ssl_certificate_key_path": "./tls/private/server.decrypted.key",
             }

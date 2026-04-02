@@ -1,7 +1,7 @@
 version: 1.0.0
 images:
-  api: 2.64.0
-  web: 0.58.0
+  api: 2.66.0
+  web: 0.59.0
   pdfgenerator: 0.2.3
   seaweedfs: 0.4.0
   authentik: 2026.2.1
@@ -22,7 +22,6 @@ application:
   use_console_logging: 'false'
   log_level: INFO
   sentry_enabled: 'true'
-  email_authentication: 'true'
 nginx:
   tls_enabled: true
   http_port: '8080'

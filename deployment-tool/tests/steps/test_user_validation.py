@@ -103,31 +103,21 @@ class TestEmailValidation:
 class TestUserStepWithValidation:
     """Test UserStep using email validation in interactive mode."""
 
-    @pytest.fixture
-    def defaults_email_auth(self):
-        """Provide defaults with email authentication enabled."""
-        return {
-            "application": {
-                "email_authentication": True,
-            },
-        }
-
-    def test_collect_config_valid_email(self, defaults_email_auth, tmp_path, monkeypatch):
+    def test_collect_config_valid_email(self, tmp_path, monkeypatch):
         """Test that valid emails are accepted."""
 
         # Mock user input with valid email
         responses = ["admin@example.com,user@test.org"]
         monkeypatch.setattr("builtins.input", lambda _: responses.pop(0))
 
-        step = UserStep(output_dir=tmp_path, defaults=defaults_email_auth, interactive=True)
-        step.config = {"USE_EMAIL_AUTHENTICATION": "true"}
+        step = UserStep(output_dir=tmp_path, defaults={}, interactive=True)
 
         config = step.collect_config()
 
         assert config["ADMIN_EMAILS"] == "admin@example.com,user@test.org"
 
     def test_collect_config_invalid_then_valid_email(
-        self, defaults_email_auth, tmp_path, monkeypatch
+        self, tmp_path, monkeypatch
     ):
         """Test that invalid emails are rejected and user is re-prompted."""
 
@@ -138,8 +128,7 @@ class TestUserStepWithValidation:
         ]
         monkeypatch.setattr("builtins.input", lambda _: responses.pop(0))
 
-        step = UserStep(output_dir=tmp_path, defaults=defaults_email_auth, interactive=True)
-        step.config = {"USE_EMAIL_AUTHENTICATION": "true"}
+        step = UserStep(output_dir=tmp_path, defaults={}, interactive=True)
 
         config = step.collect_config()
 
@@ -149,7 +138,7 @@ class TestUserStepWithValidation:
         assert len(responses) == 0
 
     def test_collect_config_empty_email_is_accepted(
-        self, defaults_email_auth, tmp_path, monkeypatch
+        self, tmp_path, monkeypatch
     ):
         """Test that empty email list is allowed (optional field)."""
 
@@ -157,8 +146,7 @@ class TestUserStepWithValidation:
         responses = [""]
         monkeypatch.setattr("builtins.input", lambda _: responses.pop(0))
 
-        step = UserStep(output_dir=tmp_path, defaults=defaults_email_auth, interactive=True)
-        step.config = {"USE_EMAIL_AUTHENTICATION": "true"}
+        step = UserStep(output_dir=tmp_path, defaults={}, interactive=True)
 
         config = step.collect_config()
 

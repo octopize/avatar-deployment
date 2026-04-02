@@ -57,12 +57,6 @@ class EmailStep(DeploymentStep):
                 prompt_key="email.smtp_sender_email",
             )
 
-        # Email authentication
-        config["USE_EMAIL_AUTHENTICATION"] = self.get_config(
-            "USE_EMAIL_AUTHENTICATION",
-            DefaultKey("application.email_authentication"),
-        )
-
         self.config.update(config)
 
         return config

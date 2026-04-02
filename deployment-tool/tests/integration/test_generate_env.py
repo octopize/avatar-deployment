@@ -328,7 +328,6 @@ class TestGenerateEnvApiOnly:
                 "IS_SENTRY_ENABLED",
                 "LOG_LEVEL",
                 "MAIL_PROVIDER",
-                "USE_EMAIL_AUTHENTICATION",
             },
         )
         content = api_env.read_text()

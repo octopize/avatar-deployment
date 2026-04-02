@@ -32,11 +32,6 @@ spec:
               readOnly: true
           env:
             {{- include "avatar.app_env" . | nindent 12 }}
-            - name: USE_EMAIL_AUTHENTICATION
-              valueFrom:
-                configMapKeyRef:
-                  name: avatar-api-config
-                  key: USE_EMAIL_AUTHENTICATION
 
       containers:
         - name: avatar-api
@@ -55,11 +50,6 @@ spec:
               cpu: {{ .Values.resources.apiCpuRequest }}
           env:
             {{- include "avatar.app_env" . | nindent 12 }}
-            - name: USE_EMAIL_AUTHENTICATION
-              valueFrom:
-                configMapKeyRef:
-                  name: avatar-api-config
-                  key: USE_EMAIL_AUTHENTICATION
             {{- if .Values.debug.storage.useLocal }}
             - name: USER_ID
               value: "1000"

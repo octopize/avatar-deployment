@@ -4,7 +4,6 @@ import re
 from typing import Any
 
 from .base import (
-    DefaultKey,
     DeploymentStep,
     ValidationError,
     ValidationSuccess,
@@ -49,24 +48,14 @@ class UserStep(DeploymentStep):
         """Collect user authentication configuration."""
         config = {}
 
-        # Check if email authentication is enabled
-        # Get from config, or fallback to defaults
-        use_email_auth = self.get_config(
-            "USE_EMAIL_AUTHENTICATION",
-            DefaultKey("application.email_authentication"),
+        admin_emails = self.get_config_or_prompt(
+            "ADMIN_EMAILS",
+            "Admin email addresses (comma-separated)",
+            "",
+            prompt_key="user.admin_emails",
+            validate=validate_comma_separated_emails,
         )
-        # Convert to string for comparison (defaults might be bool)
-        use_email_auth_str = str(use_email_auth).lower()
-
-        if use_email_auth_str == "true":
-            admin_emails = self.get_config_or_prompt(
-                "ADMIN_EMAILS",
-                "Admin email addresses (comma-separated)",
-                "",
-                prompt_key="user.admin_emails",
-                validate=validate_comma_separated_emails,
-            )
-            config["ADMIN_EMAILS"] = admin_emails
+        config["ADMIN_EMAILS"] = admin_emails
 
         self.config.update(config)
 
@@ -74,19 +63,5 @@ class UserStep(DeploymentStep):
 
     def generate_secrets(self) -> dict[str, str]:
         """Generate user-related secrets."""
-        secrets_dict = {}
-
-        # Admin emails for email-based authentication
-        # USE_EMAIL_AUTHENTICATION comes from EmailStep, so use .get() with fallback
-        use_email_auth = self.get_config(
-            "USE_EMAIL_AUTHENTICATION",
-            DefaultKey("application.email_authentication"),
-        )
-        # Convert to string for comparison
-        use_email_auth_str = str(use_email_auth).lower()
-
-        if use_email_auth_str == "true":
-            admin_emails = self.get_config("ADMIN_EMAILS", "")
-            secrets_dict["admin_emails"] = admin_emails
-
-        return secrets_dict
+        admin_emails = self.get_config("ADMIN_EMAILS", "")
+        return {"admin_emails": admin_emails}
