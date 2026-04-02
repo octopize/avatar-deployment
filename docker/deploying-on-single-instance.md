@@ -68,8 +68,7 @@ This looks like the following
     └── avatar_first_user_password
     If using email authentication
     ├── admin_emails
-    ├── aws_mail_account_access_key_id
-    └── aws_mail_account_secret_access_key
+    └── smtp_password (optional, if SMTP server requires authentication)
 
 ```
 
@@ -105,8 +104,7 @@ If using username based authentication:
 If using email based authentication:
 
 - `admin_emails`
-- `aws_mail_account_access_key_id`. See 1password under the "AWS email sending user" entry.
-- `aws_mail_account_secret_access_key`. See 1password under the "AWS email sending user" entry.
+- `smtp_password` (if your SMTP server requires authentication)
 
 We recommend using `octopize` as the organization name, and an octopize email for the first user.
 Later on, we can add more organizations/users through other command line scripts.

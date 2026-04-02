@@ -16,7 +16,7 @@ config:
   ENV_NAME: production
   ORGANIZATION_NAME: TestOrg
   SMTP_HOST: smtp.complete.com
-  SMTP_PORT: 587
+  SMTP_PORT: '587'
   SMTP_SENDER_EMAIL: noreply@complete.com
   SMTP_USERNAME: smtp-user
   SMTP_PASSWORD: smtp-pass
@@ -51,7 +51,9 @@ config:
   AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI: https://avatar.complete.com/api/login/sso/auth
   AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE: demo
   SSO_PROVIDER_URL: https://avatar.complete.com/sso
-  MAIL_PROVIDER: aws
+  SMTP_USE_TLS: 'true'
+  SMTP_START_TLS: 'false'
+  SMTP_VERIFY: 'true'
   ADMIN_EMAILS: ''
   TELEMETRY_S3_ENDPOINT_URL: https://s3.fr-par.scw.cloud
   TELEMETRY_S3_REGION: fr-par

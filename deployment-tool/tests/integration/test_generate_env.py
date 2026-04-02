@@ -327,7 +327,6 @@ class TestGenerateEnvApiOnly:
                 "USE_CONSOLE_LOGGING",
                 "IS_SENTRY_ENABLED",
                 "LOG_LEVEL",
-                "MAIL_PROVIDER",
             },
         )
         content = api_env.read_text()

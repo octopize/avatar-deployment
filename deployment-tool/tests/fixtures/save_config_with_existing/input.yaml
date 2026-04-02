@@ -3,7 +3,6 @@ responses:
   nginx_tls.ssl_certificate_path: ''
   nginx_tls.ssl_certificate_key_path: ''
   authentik.bootstrap_email: admin@existing.com
-  email.mail_provider: smtp
   email.smtp_host: smtp.existing.com
   email.smtp_port: '587'
   email.smtp_sender_email: noreply@existing.com

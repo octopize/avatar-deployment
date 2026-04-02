@@ -22,7 +22,7 @@ template *ARGS:
 lint *ARGS:
     @uv run scripts/lint-helm-templates.py {{ARGS}}
 
-install:
+install-chart:
     @helm install  \
         {{RELEASE_NAME}} \
         {{PATH_TO_CHART}} \

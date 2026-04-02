@@ -97,6 +97,16 @@ api:
   adminEmails:
     - ""
 
+  # SMTP email configuration
+  smtpHost: ""
+  smtpPort: "587"
+  smtpUseTls: "true"
+  smtpStartTls: "false"
+  smtpVerify: "true"
+  smtpSenderEmail: ""
+  smtpUsername: ""
+  smtpPassword: ""
+
   # Path to s3:// or gs://
   sharedStoragePath: ""
   storageEndpointHost: ""
@@ -108,10 +118,6 @@ api:
 
   awsStorageAccountAccessKeyId: ""
   awsStorageAccountSecretAccessKey: ""
-
-  # AWS Mail account used to send mails for password reset
-  awsMailAccountAccessKeyId: ""
-  awsMailAccountSecretAccessKey: ""
 
   maxAllowedDimensionsPerDataset: "200"
   maxAllowedLinesPerDataset: "2000000"

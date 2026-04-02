@@ -21,7 +21,7 @@ Executing configuration steps...
 
 --- Configure S3-compatible storage (SeaweedFS) credentials ---
 
---- Configure email provider (AWS SES or SMTP) and credentials ---
+--- Configure SMTP email settings and credentials ---
 
 --- Configure user authentication settings ---
 
