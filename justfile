@@ -24,8 +24,7 @@ setup-precommit:
     #/usr/bin/env bash
     set -euo pipefail
 
-    pip install pre-commit
-    pre-commit install
+    uvx pre-commit install
     @echo "✓ Pre-commit hooks installed"
 
 update-image-versions:

@@ -43,12 +43,7 @@ ENV_NAME: company-name-prod
 # Email Configuration
 # ===========================
 
-# Mail provider: 'aws' (Octopize-provided) or 'smtp' (your own SMTP server)
-# Default: aws
-# MAIL_PROVIDER: aws
-
-# SMTP Configuration (only if MAIL_PROVIDER=smtp)
-# These have defaults from defaults.yaml - override if needed:
+# SMTP Configuration - override defaults as needed:
 # SMTP_HOST: mail.mycompany.com
 # SMTP_PORT: 587
 # SMTP_SENDER_EMAIL: noreply@mycompany.com

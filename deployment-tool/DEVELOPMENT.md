@@ -162,20 +162,21 @@ class TestEmailStep:
     @pytest.fixture
     def defaults(self):
         """Provide defaults matching defaults.yaml structure."""
-        return {"email": {"provider": "smtp", "smtp": {"host": "smtp.example.com", ...}}}
+        return {"email": {"smtp": {"host": "smtp.example.com", ...}}}
 
     @pytest.fixture
     def step(self, tmp_path, defaults):
         """Create step in non-interactive mode with config pre-set."""
-        config = {"MAIL_PROVIDER": "smtp"}
+        config = {}
         return EmailStep(tmp_path, defaults, config, interactive=False)
 
     def test_collect_config(self, step):
         config = step.collect_config()
-        assert config["MAIL_PROVIDER"] == "smtp"
         assert "SMTP_HOST" in config
+        assert "MAIL_PROVIDER" not in config
 
     def test_generate_secrets(self, step):
+        step.collect_config()
         secrets = step.generate_secrets()
         assert isinstance(secrets, dict)
 

@@ -163,6 +163,46 @@ Define the default app env variables
     configMapKeyRef:
       name: avatar-api-config
       key: SSO_PROVIDER_URL
+- name: SMTP_HOST
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: SMTP_HOST
+- name: SMTP_PORT
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: SMTP_PORT
+- name: SMTP_USE_TLS
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: SMTP_USE_TLS
+- name: SMTP_START_TLS
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: SMTP_START_TLS
+- name: SMTP_VERIFY
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: SMTP_VERIFY
+- name: SMTP_SENDER_EMAIL
+  valueFrom:
+    configMapKeyRef:
+      name: avatar-api-config
+      key: SMTP_SENDER_EMAIL
+- name: SMTP_USERNAME
+  valueFrom:
+    secretKeyRef:
+      name: api
+      key: smtp_username
+- name: SMTP_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: api
+      key: smtp_password
 - name: TELEMETRY_S3_BUCKET_NAME
   valueFrom:
     configMapKeyRef:

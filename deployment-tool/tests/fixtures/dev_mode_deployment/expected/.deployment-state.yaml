@@ -43,7 +43,6 @@ config:
   AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI: https://avatar-dev.example.com/api/login/sso/auth
   AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE: demo
   SSO_PROVIDER_URL: https://avatar-dev.example.com/sso
-  MAIL_PROVIDER: smtp
   SMTP_HOST: smtp.example.com
   SMTP_PORT: '587'
   SMTP_USE_TLS: 'true'

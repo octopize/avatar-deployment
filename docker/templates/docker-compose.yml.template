@@ -82,8 +82,6 @@ services:
 
       # If using email-password authentication
       - admin_emails
-      - aws_mail_account_access_key_id
-      - aws_mail_account_secret_access_key
 
       - file_jwt_secret_key
       - storage_admin_access_key_id
@@ -120,8 +118,6 @@ services:
 
       # If using email-password authentication
       - admin_emails
-      - aws_mail_account_access_key_id
-      - aws_mail_account_secret_access_key
 
       - file_jwt_secret_key
       - storage_admin_access_key_id
@@ -177,9 +173,6 @@ services:
       - pepper
       - authjwt_secret_key
       - admin_emails
-      # If using AWS
-      - aws_mail_account_access_key_id
-      - aws_mail_account_secret_access_key
       - file_jwt_secret_key
       - storage_admin_access_key_id
       - storage_admin_secret_access_key
@@ -211,9 +204,6 @@ services:
       - pepper
       - authjwt_secret_key
       - admin_emails
-      # If using AWS
-      - aws_mail_account_access_key_id
-      - aws_mail_account_secret_access_key
       - file_jwt_secret_key
       - storage_admin_access_key_id
       - storage_admin_secret_access_key
@@ -564,10 +554,6 @@ secrets:
   # If using email-password authentication, you should have the following secrets present
   admin_emails:
     file: ${SECRETS_DIR-.secrets}/admin_emails
-  aws_mail_account_access_key_id:
-    file: ${SECRETS_DIR-.secrets}/aws_mail_account_access_key_id
-  aws_mail_account_secret_access_key:
-    file: ${SECRETS_DIR-.secrets}/aws_mail_account_secret_access_key
 
   # If using clevercloud
   clevercloud_sso_salt:
