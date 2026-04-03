@@ -10,7 +10,6 @@ x-environment: &api-environment
     ENV_NAME: ${ENV_NAME}
     DB_HOST: db
     STORAGE_ENDPOINT_HOST: http://s3
-    ACCESS_CONTROL_ENDPOINT_HOST: http://iam
     DASK_SCHEDULER: my-dask-scheduler:8786
     SECRETS_DIR: /var/run/secrets
   env_file:
@@ -129,13 +128,11 @@ services:
     depends_on:
       db:
         condition: service_started
-      iam:
-        condition: service_healthy
       s3:
         condition: service_healthy
 
   init-storage:
-    image: &seaweedfs-image ${AVATAR_SEAWEEDFS_REGISTRY-chrislusf}/seaweedfs:${AVATAR_SEAWEEDFS_VERSION-3.97}
+    image: &seaweedfs-image ${AVATAR_SEAWEEDFS_REGISTRY-chrislusf}/seaweedfs:${AVATAR_SEAWEEDFS_VERSION-4.17}
     entrypoint: ["/bin/sh", "-c"]
     command:
       [
@@ -370,34 +367,13 @@ services:
       - ./tls:/etc/seaweedfs/tls
       - seaweedfs-data:/data
 
-  iam:
-    image: *seaweedfs-image
-    logging: *default-logging
-    restart: *default-restart
-    networks:
-      - default
-    command: '-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} -logtostderr iam -filer="filer:8888" -master="master:9333"'
-    healthcheck:
-      test: ["CMD", "echo", "--fail", "--get", "http://localhost:8111"]
-      interval: 5s
-    depends_on:
-      master:
-        condition: service_healthy
-      volume:
-        condition: service_healthy
-      filer:
-        condition: service_healthy
-    tmpfs:
-      - /tmp
-    volumes:
-      - ./tls:/etc/seaweedfs/tls
   s3:
     image: *seaweedfs-image
     logging: *default-logging
     restart: *default-restart
     networks:
       - default
-    command: '-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} -logtostderr s3 -filer="filer:8888" -ip.bind=s3'
+    command: '-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} -logtostderr s3 -filer="filer:8888" -ip.bind=s3 -iam.readOnly=false'
     healthcheck:
       test: ["CMD", "echo", "--fail", "--get", "http://localhost:8333/healthz"]
       interval: 5s

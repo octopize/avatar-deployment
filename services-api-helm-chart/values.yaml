@@ -116,8 +116,6 @@ api:
   sharedStoragePath: ""
   storageEndpointHost: ""
   storageEndpointPort: 8333
-  accessControlEndpointHost: ""
-  accessControlEndpointPort: 8111
   fileJwtSecretKey: TODO
 
   storageAdminAccessKeyId: ""

@@ -110,16 +110,6 @@ Define the default app env variables
       key: STORAGE_ENDPOINT_PORT
 - name: AWS_DEFAULT_REGION
   value: 'us-east-1'
-- name: ACCESS_CONTROL_ENDPOINT_HOST
-  valueFrom:
-    configMapKeyRef:
-      name: avatar-api-config
-      key: ACCESS_CONTROL_ENDPOINT_HOST
-- name: ACCESS_CONTROL_ENDPOINT_PORT
-  valueFrom:
-    configMapKeyRef:
-      name: avatar-api-config
-      key: ACCESS_CONTROL_ENDPOINT_PORT
 - name: AVATAR_PDFGENERATOR_URL
   valueFrom:
     configMapKeyRef:
