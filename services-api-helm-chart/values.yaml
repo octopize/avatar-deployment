@@ -231,12 +231,20 @@ authentik:
       - name: branding-assets
         configMap:
           name: authentik-branding
+      - name: translations
+        configMap:
+          name: authentik-translations
 
     volumeMounts:
       # Mount custom templates directory so authentik can discover them in the UI
       # Templates will appear in the email stage dropdown
       - name: custom-email-templates
         mountPath: /templates/email
+        readOnly: true
+      # Mount translations for i18n prompt expressions
+      - name: translations
+        mountPath: /templates/translations.json
+        subPath: translations.json
         readOnly: true
       # Mount branding assets using subPath to only overwrite specific files
       - name: branding-assets
@@ -258,12 +266,20 @@ authentik:
       - name: branding-assets
         configMap:
           name: authentik-branding
+      - name: translations
+        configMap:
+          name: authentik-translations
 
     volumeMounts:
       # Mount custom templates directory so authentik can discover them in the UI
       # Templates will appear in the email stage dropdown
       - name: custom-email-templates
         mountPath: /templates/email
+        readOnly: true
+      # Mount translations for i18n prompt expressions
+      - name: translations
+        mountPath: /templates/translations.json
+        subPath: translations.json
         readOnly: true
       # Mount branding assets using subPath to only overwrite specific files
       - name: branding-assets

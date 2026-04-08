@@ -101,76 +101,269 @@ entries:
 # ============================================================
 # PROMPTS
 # ============================================================
+
+  # ── Translated input prompts ──────────────────────────────
+  # Each prompt uses a get_translation() helper that reads
+  # /templates/translations.json and selects the string matching
+  # the user's current locale (LANGUAGE_CODE).
+
   - attrs:
       field_key: password
       initial_value: ''
       initial_value_expression: false
-      label: Password
-      name: default-recovery-field-password
-      order: 0
-      placeholder: Password
-      placeholder_expression: false
+      label: '​'
+      name: avatar-translated-input-field-password
+      order: 100
+      placeholder: |-
+        import json, pathlib
+        def get_translation(key, default=""):
+            try:
+                data = json.loads(pathlib.Path("/templates/translations.json").read_text())
+                lang = request.http_request.LANGUAGE_CODE[:2]
+                return data.get(lang, data.get("en", {})).get(key, default)
+            except Exception:
+                return default
+        return get_translation("placeholder_password", "Password")
+      placeholder_expression: true
       required: true
       sub_text: ''
       type: password
-    id: password
+    id: avatar-translated-input-field-password
     identifiers:
       field_key: password
-      name: default-recovery-field-password
+      name: avatar-translated-input-field-password
     model: authentik_stages_prompt.prompt
     state: present
+
   - attrs:
       field_key: password_repeat
       initial_value: ''
       initial_value_expression: false
-      label: Password (repeat)
-      name: default-recovery-field-password-repeat
-      order: 1
-      placeholder: Password (repeat)
-      placeholder_expression: false
+      label: '​'
+      name: avatar-translated-input-field-password-repeat
+      order: 101
+      placeholder: |-
+        import json, pathlib
+        def get_translation(key, default=""):
+            try:
+                data = json.loads(pathlib.Path("/templates/translations.json").read_text())
+                lang = request.http_request.LANGUAGE_CODE[:2]
+                return data.get(lang, data.get("en", {})).get(key, default)
+            except Exception:
+                return default
+        return get_translation("placeholder_password_repeat", "Password (repeat)")
+      placeholder_expression: true
       required: true
       sub_text: ''
       type: password
-    id: password_repeat
+    id: avatar-translated-input-field-password-repeat
     identifiers:
       field_key: password_repeat
-      name: default-recovery-field-password-repeat
+      name: avatar-translated-input-field-password-repeat
     model: authentik_stages_prompt.prompt
     state: present
+
   - attrs:
-      field_key: password
+      field_key: username
       initial_value: ''
       initial_value_expression: false
-      label: Password
-      name: avatar-initial-setup-field-password
-      order: 300
-      placeholder: Password
-      placeholder_expression: false
+      label: '​'
+      name: avatar-translated-input-field-username
+      order: 100
+      placeholder: |-
+        import json, pathlib
+        def get_translation(key, default=""):
+            try:
+                data = json.loads(pathlib.Path("/templates/translations.json").read_text())
+                lang = request.http_request.LANGUAGE_CODE[:2]
+                return data.get(lang, data.get("en", {})).get(key, default)
+            except Exception:
+                return default
+        return get_translation("placeholder_username", "Username")
+      placeholder_expression: true
       required: true
       sub_text: ''
-      type: password
-    id: password
+      type: text
+    id: avatar-translated-input-field-username
     identifiers:
-      field_key: password
-      name: avatar-initial-setup-field-password
+      field_key: username
+      name: avatar-translated-input-field-username
     model: authentik_stages_prompt.prompt
     state: present
+
+  - attrs:
+      field_key: email
+      initial_value: |-
+        try:
+            return request.context.get("prompt_data", {}).get("email", "")
+        except Exception:
+            return ""
+      initial_value_expression: true
+      label: '​'
+      name: avatar-translated-input-field-email
+      order: 101
+      placeholder: |-
+        import json, pathlib
+        def get_translation(key, default=""):
+            try:
+                data = json.loads(pathlib.Path("/templates/translations.json").read_text())
+                lang = request.http_request.LANGUAGE_CODE[:2]
+                return data.get(lang, data.get("en", {})).get(key, default)
+            except Exception:
+                return default
+        return get_translation("placeholder_email", "Email")
+      placeholder_expression: true
+      required: true
+      sub_text: ''
+      type: email
+    id: avatar-translated-input-field-email
+    identifiers:
+      field_key: email
+      name: avatar-translated-input-field-email
+    model: authentik_stages_prompt.prompt
+    state: present
+
   - attrs:
       field_key: migration_consent
-      initial_value: Your account needs migration, we will proceed to a password reset. Click continue to validate.
-      initial_value_expression: false
-      label: Migration consent
-      name: avatar-needs-migration-prompt
+      initial_value: |-
+        import json, pathlib
+        def get_translation(key, default=""):
+            try:
+                data = json.loads(pathlib.Path("/templates/translations.json").read_text())
+                lang = request.http_request.LANGUAGE_CODE[:2]
+                return data.get(lang, data.get("en", {})).get(key, default)
+            except Exception:
+                return default
+        return get_translation("message_migration_consent", "Your account needs migration, we will proceed to a password reset. Click continue to validate.")
+      initial_value_expression: true
+      label: '​'
+      name: avatar-translated-input-field-migration-consent
+      order: 100
+      placeholder: ''
+      placeholder_expression: false
+      required: true
+      sub_text: ''
+      type: static
+    id: avatar-translated-input-field-migration-consent
+    identifiers:
+      field_key: migration_consent
+      name: avatar-translated-input-field-migration-consent
+    model: authentik_stages_prompt.prompt
+    state: present
+
+  # ── Title prompts (static, one per PromptStage) ───────────
+  # These replace the hidden flow .pf-c-title with a translated
+  # heading rendered inside the PromptStage itself.
+
+  - attrs:
+      field_key: title_signup
+      initial_value: |-
+        import json, pathlib
+        def get_translation(key, default=""):
+            try:
+                data = json.loads(pathlib.Path("/templates/translations.json").read_text())
+                lang = request.http_request.LANGUAGE_CODE[:2]
+                return data.get(lang, data.get("en", {})).get(key, default)
+            except Exception:
+                return default
+        return get_translation("title_signup", "Sign up for Avatar")
+      initial_value_expression: true
+      label: '​'
+      name: avatar-title-signup-enrollment
       order: 0
       placeholder: ''
       placeholder_expression: false
       required: true
       sub_text: ''
       type: static
-    id: migration_consent
+    id: avatar-title-signup-enrollment
     identifiers:
-      field_key: migration_consent
-      name: avatar-needs-migration-prompt
+      field_key: title_signup
+      name: avatar-title-signup-enrollment
+    model: authentik_stages_prompt.prompt
+    state: present
+
+  - attrs:
+      field_key: title_password_signup
+      initial_value: |-
+        import json, pathlib
+        def get_translation(key, default=""):
+            try:
+                data = json.loads(pathlib.Path("/templates/translations.json").read_text())
+                lang = request.http_request.LANGUAGE_CODE[:2]
+                return data.get(lang, data.get("en", {})).get(key, default)
+            except Exception:
+                return default
+        return get_translation("title_password_signup", "Choose a password")
+      initial_value_expression: true
+      label: '​'
+      name: avatar-title-password-signup
+      order: 0
+      placeholder: ''
+      placeholder_expression: false
+      required: true
+      sub_text: ''
+      type: static
+    id: avatar-title-password-signup
+    identifiers:
+      field_key: title_password_signup
+      name: avatar-title-password-signup
+    model: authentik_stages_prompt.prompt
+    state: present
+
+  - attrs:
+      field_key: title_password_recovery
+      initial_value: |-
+        import json, pathlib
+        def get_translation(key, default=""):
+            try:
+                data = json.loads(pathlib.Path("/templates/translations.json").read_text())
+                lang = request.http_request.LANGUAGE_CODE[:2]
+                return data.get(lang, data.get("en", {})).get(key, default)
+            except Exception:
+                return default
+        return get_translation("title_password_recovery", "Reset your password")
+      initial_value_expression: true
+      label: '​'
+      name: avatar-title-password-recovery
+      order: 0
+      placeholder: ''
+      placeholder_expression: false
+      required: true
+      sub_text: ''
+      type: static
+    id: avatar-title-password-recovery
+    identifiers:
+      field_key: title_password_recovery
+      name: avatar-title-password-recovery
+    model: authentik_stages_prompt.prompt
+    state: present
+
+  - attrs:
+      field_key: title_migration
+      initial_value: |-
+        import json, pathlib
+        def get_translation(key, default=""):
+            try:
+                data = json.loads(pathlib.Path("/templates/translations.json").read_text())
+                lang = request.http_request.LANGUAGE_CODE[:2]
+                return data.get(lang, data.get("en", {})).get(key, default)
+            except Exception:
+                return default
+        return get_translation("title_migration", "Account migration required")
+      initial_value_expression: true
+      label: '​'
+      name: avatar-title-migration
+      order: 0
+      placeholder: ''
+      placeholder_expression: false
+      required: true
+      sub_text: ''
+      type: static
+    id: avatar-title-migration
+    identifiers:
+      field_key: title_migration
+      name: avatar-title-migration
     model: authentik_stages_prompt.prompt
     state: present
 
@@ -402,8 +595,9 @@ entries:
     state: present
   - attrs:
       fields:
-      - !Find [authentik_stages_prompt.prompt, [field_key, username, name, default-source-enrollment-field-username]]
-      - !Find [authentik_stages_prompt.prompt, [field_key, email, name, default-user-settings-field-email]]
+      - !KeyOf 'avatar-title-signup-enrollment'
+      - !KeyOf 'avatar-translated-input-field-username'
+      - !KeyOf 'avatar-translated-input-field-email'
       name: avatar-source-enrollment-prompt
     id: avatar-source-enrollment-prompt
     identifiers:
@@ -412,18 +606,34 @@ entries:
     state: present
   - attrs:
       fields:
-      - !KeyOf 'password'
-      name: avatar-signup-password-ask
+      - !KeyOf 'avatar-title-password-signup'
+      - !KeyOf 'avatar-translated-input-field-password'
+      - !KeyOf 'avatar-translated-input-field-password-repeat'
+      name: avatar-signup-password-stage
       validation_policies:
       - !KeyOf 'avatar-password-length-policy'
-    id: avatar-signup-password-ask
+    id: avatar-signup-password-stage
     identifiers:
-      name: avatar-signup-password-ask
+      name: avatar-signup-password-stage
     model: authentik_stages_prompt.promptstage
     state: present
   - attrs:
       fields:
-      - !KeyOf 'migration_consent'
+      - !KeyOf 'avatar-title-password-recovery'
+      - !KeyOf 'avatar-translated-input-field-password'
+      - !KeyOf 'avatar-translated-input-field-password-repeat'
+      name: avatar-recovery-password-stage
+      validation_policies:
+      - !KeyOf 'avatar-password-length-policy'
+    id: avatar-recovery-password-stage
+    identifiers:
+      name: avatar-recovery-password-stage
+    model: authentik_stages_prompt.promptstage
+    state: present
+  - attrs:
+      fields:
+      - !KeyOf 'avatar-title-migration'
+      - !KeyOf 'avatar-translated-input-field-migration-consent'
       name: avatar-migration-stage
     id: avatar-migration-stage
     identifiers:
@@ -626,12 +836,12 @@ entries:
       order: 30
       policy_engine_mode: any
       re_evaluate_policies: true
-      stage: !KeyOf 'avatar-signup-password-ask'
+      stage: !KeyOf 'avatar-recovery-password-stage'
       target: !KeyOf 'avatar-recovery-flow'
-    id: avatar-recovery-flow-bind-avatar-signup-password-ask-order-30
+    id: avatar-recovery-flow-bind-avatar-recovery-password-stage-order-30
     identifiers:
       order: 30
-      stage: !KeyOf 'avatar-signup-password-ask'
+      stage: !KeyOf 'avatar-recovery-password-stage'
       target: !KeyOf 'avatar-recovery-flow'
     model: authentik_flows.flowstagebinding
     state: present
@@ -720,12 +930,12 @@ entries:
       order: 35
       policy_engine_mode: any
       re_evaluate_policies: true
-      stage: !KeyOf 'avatar-signup-password-ask'
+      stage: !KeyOf 'avatar-signup-password-stage'
       target: !KeyOf 'avatar-self-service-signup-flow'
-    id: avatar-self-service-signup-flow-bind-avatar-signup-password-ask-order-35
+    id: avatar-self-service-signup-flow-bind-avatar-signup-password-stage-order-35
     identifiers:
       order: 35
-      stage: !KeyOf 'avatar-signup-password-ask'
+      stage: !KeyOf 'avatar-signup-password-stage'
       target: !KeyOf 'avatar-self-service-signup-flow'
     model: authentik_flows.flowstagebinding
     state: present
@@ -977,18 +1187,18 @@ entries:
          *
          */
         ak-flow-executor {
-          /* Octopize teal replaces PatternFly's default blue */
-          --pf-global--primary-color--100: hsl(165.3, 65.4%, 53.5%); /* button bg, badge */
-          --pf-global--primary-color--200: hsl(165.3, 65.4%, 48%);   /* button bg hover */
-          --pf-global--primary-color--300: hsl(165.3, 65.4%, 42%);   /* button bg active */
-          --pf-global--link--Color:        hsl(165.3, 65.4%, 40%);
-          --pf-global--link--Color--hover: hsl(165.3, 65.4%, 32%);
-          --pf-global--active-color--100:  hsl(165.3, 65.4%, 53.5%); /* PF v4 focus ring */
+          /* Octopize teal — matches the banner gradient (hsl 165.3, 65.4%, 28→22%) */
+          --pf-global--primary-color--100: hsl(165.3, 65.4%, 28%);  /* button bg — matches banner top */
+          --pf-global--primary-color--200: hsl(165.3, 65.4%, 24%);  /* button bg hover */
+          --pf-global--primary-color--300: hsl(165.3, 65.4%, 20%);  /* button bg active */
+          --pf-global--link--Color:        hsl(165.3, 65.4%, 28%);
+          --pf-global--link--Color--hover: hsl(165.3, 65.4%, 22%);
+          --pf-global--active-color--100:  hsl(165.3, 65.4%, 28%);  /* PF v4 focus ring */
 
           /* PF v5 variants (introduced in authentik 2025.12) */
-          --pf-v5-global--focus-ring--Color:                hsl(165.3, 65.4%, 53.5%);
-          --pf-c-form-control--focus--BorderBottomColor:    hsl(165.3, 65.4%, 53.5%);
-          --pf-v5-c-form-control--focus--BorderBottomColor: hsl(165.3, 65.4%, 53.5%);
+          --pf-v5-global--focus-ring--Color:                hsl(165.3, 65.4%, 28%);
+          --pf-c-form-control--focus--BorderBottomColor:    hsl(165.3, 65.4%, 28%);
+          --pf-v5-c-form-control--focus--BorderBottomColor: hsl(165.3, 65.4%, 28%);
 
           /* Disable the right-panel decorative media at xl (>1200px) viewport widths */
           --pf-c-login--xl--BackgroundImage: none;
@@ -1034,16 +1244,16 @@ entries:
          * (Issue #19506)
          */
         ak-flow-executor::part(locale-select) {
-          color: hsl(165.3, 65.4%, 30%);
+          color: hsl(165.3, 65.4%, 28%);
         }
 
         ak-flow-executor::part(locale-select-label) {
-          color: hsl(165.3, 65.4%, 30%);
+          color: hsl(165.3, 65.4%, 28%);
         }
 
         ak-flow-executor::part(locale-select-select) {
-          color: hsl(165.3, 65.4%, 30%);
-          border-color: hsl(165.3, 65.4%, 53.5%);
+          color: hsl(165.3, 65.4%, 28%);
+          border-color: hsl(165.3, 65.4%, 28%);
         }
 
         /* ── Shadow DOM element rules ───────────────────────────────────────────────── */
@@ -1053,7 +1263,7 @@ entries:
         select:focus-visible,
         textarea:focus,
         textarea:focus-visible {
-          outline: 2px solid hsl(165.3, 65.4%, 53.5%) !important;
+          outline: 2px solid hsl(165.3, 65.4%, 28%) !important;
           outline-offset: 2px;
           box-shadow: none !important;
         }
@@ -1068,6 +1278,46 @@ entries:
           height: 0;
           overflow: hidden;
           display: block;
+        }
+
+        /* ── i18n: Hide hardcoded flow titles globally ───────────────────────────── */
+        /*
+         * Flow titles (.pf-c-title) are hardcoded English — hide them on all stages.
+         * On PromptStages, translated title-prompts (static type) replace them.
+         * On other stages (Identification, Password), the form is self-explanatory.
+         */
+        .pf-c-title,
+        .pf-v5-c-title {
+          display: none !important;
+        }
+
+        /* Hide labels on PromptStages only (they are hardcoded English).
+         * Other stages (Identification, Password) have natively-translated labels. */
+        ak-stage-prompt .pf-c-form__label,
+        ak-stage-prompt .pf-v5-c-form__label {
+          display: none !important;
+        }
+
+        /* ── i18n: Style translated title prompts ──────────────────────────────────── */
+        /*
+         * Static prompts render as bare <p> tags directly inside .pf-c-form (not
+         * wrapped in .pf-c-form__group).  Target them to look like headings,
+         * replacing the hidden .pf-c-title above.
+         *
+         * NOTE: use descendant selector (space) NOT child combinator (>).
+         * The > char is HTML-escaped by authentik's CSS injection pipeline,
+         * turning "form > p" into "form u003e p" which never matches.
+         */
+        ak-stage-prompt .pf-c-form p,
+        ak-stage-prompt .pf-v5-c-form p {
+          font-family: inherit !important;
+          font-size: 1.25rem !important;
+          font-weight: 500 !important;
+          text-align: left !important;
+          margin: 0 0 1rem !important;
+          padding: 0 !important;
+          line-height: 1.3 !important;
+          color: var(--pf-global--Color--100, #151515) !important;
         }
       branding_favicon: favicon.ico
       branding_logo: brand_logo.png

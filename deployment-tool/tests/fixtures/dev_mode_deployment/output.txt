@@ -53,6 +53,7 @@ Generating Configuration Files
 ✓ Generated: {{OUTPUT_DIR}}/nginx/nginx.conf
 ✓ Generated: {{OUTPUT_DIR}}/docker-compose.yml
 ✓ Copied: {{OUTPUT_DIR}}/authentik/octopize-avatar-blueprint.yaml
+✓ Copied: {{OUTPUT_DIR}}/authentik/translations.json
 ✓ Generated: {{OUTPUT_DIR}}/compose.override.yaml
 ✓ Copied: email templates to {{OUTPUT_DIR}}/authentik/custom-templates
 ✓ Copied: branding files to {{OUTPUT_DIR}}/authentik/branding

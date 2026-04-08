@@ -272,6 +272,13 @@ class DeploymentConfigurator:
             shutil.copy2(blueprint_src, blueprint_dst)
             self.printer.print_success(f"Copied: {blueprint_dst}")
 
+            # Copy translations.json for i18n prompt expressions
+            translations_src = self.templates_dir / "authentik" / "translations.json"
+            translations_dst = authentik_dir / "translations.json"
+            if translations_src.exists():
+                shutil.copy2(translations_src, translations_dst)
+                self.printer.print_success(f"Copied: {translations_dst}")
+
             # Generate compose.override.yaml for dev mode
             if self.mode == DeploymentMode.DEV:
                 override_template = self.templates_dir / "compose.override.yaml.template"

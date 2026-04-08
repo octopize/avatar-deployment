@@ -42,6 +42,13 @@ BLUEPRINT_TARGETS = {
     "Docker (templates)": "docker/templates/authentik",
 }
 
+# ── Translations ─────────────────────────────────────────────────────────────
+TRANSLATIONS_SOURCE_DIR = "common/authentik-translations"
+TRANSLATIONS_TARGETS = {
+    "Helm chart":         "services-api-helm-chart/static/translations",
+    "Docker (templates)": "docker/templates/authentik",
+}
+
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
@@ -187,6 +194,13 @@ ASSET_CATEGORIES = [
         source_dir=BLUEPRINT_SOURCE_DIR,
         targets=BLUEPRINT_TARGETS,
         file_patterns=["*.yaml"],
+    ),
+    AssetCategory(
+        label="Translations",
+        emoji="🌐",
+        source_dir=TRANSLATIONS_SOURCE_DIR,
+        targets=TRANSLATIONS_TARGETS,
+        file_patterns=["*.json"],
     ),
 ]
 

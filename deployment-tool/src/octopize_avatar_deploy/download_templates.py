@@ -41,6 +41,7 @@ REQUIRED_FILE_MANIFEST: dict[str, ManifestEntry] = {
             "compose.override.yaml.template",  # Dev mode override (optional in production)
             ".template-version",
             "authentik/octopize-avatar-blueprint.yaml",
+            "authentik/translations.json",
         ],
     },
     "docker": {

@@ -1,0 +1,11 @@
+{{- if .Values.authentik.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authentik-translations
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "avatar.labels" . | nindent 4 }}
+data:
+  {{- (.Files.Glob "static/translations/*.json").AsConfig | nindent 2 }}
+{{- end }}

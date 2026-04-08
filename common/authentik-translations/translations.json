@@ -1,0 +1,24 @@
+{
+  "en": {
+    "title_signup": "Sign up for Avatar",
+    "title_password_signup": "Choose a password",
+    "title_password_recovery": "Reset your password",
+    "title_migration": "Account migration required",
+    "placeholder_username": "Username",
+    "placeholder_email": "Email",
+    "placeholder_password": "Password",
+    "placeholder_password_repeat": "Password (repeat)",
+    "message_migration_consent": "Your account needs migration, we will proceed to a password reset. Click continue to validate."
+  },
+  "fr": {
+    "title_signup": "Inscription à Avatar",
+    "title_password_signup": "Choisissez un mot de passe",
+    "title_password_recovery": "Réinitialisez votre mot de passe",
+    "title_migration": "Migration du compte requise",
+    "placeholder_username": "Nom d'utilisateur",
+    "placeholder_email": "Adresse e-mail",
+    "placeholder_password": "Mot de passe",
+    "placeholder_password_repeat": "Mot de passe (confirmation)",
+    "message_migration_consent": "Votre compte nécessite une migration, nous allons procéder à une réinitialisation du mot de passe. Cliquez sur continuer pour valider."
+  }
+}

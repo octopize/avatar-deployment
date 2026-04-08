@@ -472,6 +472,8 @@ services:
     volumes:
       # Mount custom email templates (synced from common/authentik-templates)
       - ./authentik/custom-templates:/templates/email:ro
+      # Mount translations for i18n prompt expressions
+      - ./authentik/translations.json:/templates/translations.json:ro
       # Mount custom branding assets (shared source)
       - ./authentik/branding/favicon.ico:/media/public/favicon.ico:ro
       - ./authentik/branding/logo.png:/media/public/brand_logo.png:ro
@@ -501,6 +503,8 @@ services:
     volumes:
       - ./authentik/certs:/certs
       - ./authentik/custom-templates:/templates/email:ro
+      # Mount translations for i18n prompt expressions
+      - ./authentik/translations.json:/templates/translations.json:ro
       - ./authentik/branding/favicon.ico:/media/public/favicon.ico:ro
       - ./authentik/branding/logo.png:/media/public/brand_logo.png:ro
       - ./authentik/octopize-avatar-blueprint.yaml:/blueprints/octopize-avatar-blueprint.yaml:ro
