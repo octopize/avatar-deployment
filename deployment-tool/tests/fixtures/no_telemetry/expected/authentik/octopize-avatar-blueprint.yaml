@@ -470,13 +470,25 @@ entries:
   - attrs:
       create_users_as_inactive: true
       create_users_group: null
-      name: avatar-self-service-userinfo-write
-      user_creation_mode: create_when_required
+      name: avatar-self-service-user-identity-write
+      user_creation_mode: always_create
       user_path_template: users/self-service
       user_type: external
-    id: avatar-self-service-userinfo-write
+    id: avatar-self-service-user-identity-write
     identifiers:
-      name: avatar-self-service-userinfo-write
+      name: avatar-self-service-user-identity-write
+    model: authentik_stages_user_write.userwritestage
+    state: present
+  - attrs:
+      create_users_as_inactive: true
+      create_users_group: null
+      name: avatar-self-service-user-password-write
+      user_creation_mode: never_create
+      user_path_template: users/self-service
+      user_type: external
+    id: avatar-self-service-user-password-write
+    identifiers:
+      name: avatar-self-service-user-password-write
     model: authentik_stages_user_write.userwritestage
     state: present
   - attrs:
@@ -678,12 +690,12 @@ entries:
       order: 20
       policy_engine_mode: all
       re_evaluate_policies: true
-      stage: !KeyOf 'avatar-self-service-userinfo-write'
+      stage: !KeyOf 'avatar-self-service-user-identity-write'
       target: !KeyOf 'avatar-self-service-signup-flow'
-    id: avatar-self-service-signup-flow-bind-avatar-self-service-userinfo-write-order-20
+    id: avatar-self-service-signup-flow-bind-avatar-self-service-user-identity-write-order-20
     identifiers:
       order: 20
-      stage: !KeyOf 'avatar-self-service-userinfo-write'
+      stage: !KeyOf 'avatar-self-service-user-identity-write'
       target: !KeyOf 'avatar-self-service-signup-flow'
     model: authentik_flows.flowstagebinding
     state: present
@@ -723,12 +735,12 @@ entries:
       order: 40
       policy_engine_mode: all
       re_evaluate_policies: true
-      stage: !KeyOf 'avatar-self-service-userinfo-write'
+      stage: !KeyOf 'avatar-self-service-user-password-write'
       target: !KeyOf 'avatar-self-service-signup-flow'
-    id: avatar-self-service-signup-flow-bind-avatar-self-service-userinfo-write-order-40
+    id: avatar-self-service-signup-flow-bind-avatar-self-service-user-password-write-order-40
     identifiers:
       order: 40
-      stage: !KeyOf 'avatar-self-service-userinfo-write'
+      stage: !KeyOf 'avatar-self-service-user-password-write'
       target: !KeyOf 'avatar-self-service-signup-flow'
     model: authentik_flows.flowstagebinding
     state: present
@@ -743,31 +755,14 @@ entries:
       negate: false
       order: 10
       policy: !KeyOf 'avatar-self-service-per-user-organization-creation'
-      target: !KeyOf 'avatar-self-service-signup-flow-bind-avatar-self-service-userinfo-write-order-40'
+      target: !KeyOf 'avatar-self-service-signup-flow-bind-avatar-self-service-user-password-write-order-40'
       timeout: 30
       user: null
-    id: avatar-self-service-per-user-organization-creation-bind-avatar-self-service-signup-flow-bind-avatar-self-service-userinfo-write-order-40-order-10
+    id: avatar-self-service-per-user-organization-creation-bind-avatar-self-service-signup-flow-bind-avatar-self-service-user-password-write-order-40-order-10
     identifiers:
       order: 10
       policy: !KeyOf 'avatar-self-service-per-user-organization-creation'
-      target: !KeyOf 'avatar-self-service-signup-flow-bind-avatar-self-service-userinfo-write-order-40'
-    model: authentik_policies.policybinding
-    state: present
-  - attrs:
-      enabled: true
-      failure_result: true
-      group: null
-      negate: false
-      order: 5
-      policy: !KeyOf 'check-email-exists-silently'
-      target: !KeyOf 'avatar-self-service-signup-flow-bind-avatar-self-service-userinfo-write-order-20'
-      timeout: 30
-      user: null
-    id: check-email-exists-silently-bind-avatar-self-service-signup-flow-bind-avatar-self-service-userinfo-write-order-20-order-5
-    identifiers:
-      order: 5
-      policy: !KeyOf 'check-email-exists-silently'
-      target: !KeyOf 'avatar-self-service-signup-flow-bind-avatar-self-service-userinfo-write-order-20'
+      target: !KeyOf 'avatar-self-service-signup-flow-bind-avatar-self-service-user-password-write-order-40'
     model: authentik_policies.policybinding
     state: present
   - attrs:
