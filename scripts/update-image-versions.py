@@ -67,11 +67,6 @@ IMAGE_CONFIGS = {
         "repository": "octopize/pdfgenerator",
         "pattern": r"^\d+\.\d+\.\d+$",
     },
-    "seaweedfs": {
-        "registry": "quay.io",
-        "repository": "octopize/seaweedfs",
-        "pattern": r"^\d+\.\d+\.\d+$",
-    },
     "authentik": {
         "registry": "ghcr.io",
         "repository": "goauthentik/server",
