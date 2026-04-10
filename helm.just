@@ -51,3 +51,14 @@ push-helm-chart: update-dependencies
 
 login-helm-registry OCI_REPO_USERNAME OCI_PASSWORD:
     @helm registry login {{OCI_IMAGE_REGISTRY}} --username {{OCI_REPO_USERNAME}} --password {{OCI_PASSWORD}}
+
+# Bump the patch segment of the chart version in Chart.yaml and return the new version
+bump-patch:
+    #!/usr/bin/env bash
+    {{SHOPTS}}
+    chart_file="{{PATH_TO_CHART}}/Chart.yaml"
+    current=$(grep '^version:' "$chart_file" | awk '{print $2}')
+    IFS='.' read -r major minor patch <<< "$current"
+    new_version="$major.$minor.$((patch + 1))"
+    sed -i "s/^version: .*/version: $new_version/" "$chart_file"
+    echo "$new_version"

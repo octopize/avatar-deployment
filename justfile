@@ -7,6 +7,19 @@ default:
 tag-helm VERSION:
     @git tag -s services-api-helm-chart-v{{VERSION}} -m "Release new services-api helm chart v{{VERSION}}"
 
+# Bump patch version, commit Chart.yaml, create a signed tag, and push to OCI registry
+ship-helm: release-helm push-helm-chart
+
+# Bump patch version, commit Chart.yaml, and create a signed tag
+release-helm:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    new_version=$(just bump-patch)
+    git add services-api-helm-chart/Chart.yaml
+    git commit -m "chore: bump helm chart version to $new_version"
+    just tag-helm "$new_version"
+    echo "✓ Released services-api-helm-chart v$new_version"
+
 setup-precommit:
     #/usr/bin/env bash
     set -euo pipefail
