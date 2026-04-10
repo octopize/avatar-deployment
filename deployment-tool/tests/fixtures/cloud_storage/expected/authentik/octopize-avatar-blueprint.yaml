@@ -1173,8 +1173,8 @@ entries:
          *   - Dark theme colour:  #1D1D1B
          *
          * Octopize brand colours:
-         *   Primary teal: hsl(165.3, 65.4%, 53.5%) ≈ #3ecfb2
-         *   Hover teal:   hsl(165.3, 65.4%, 42%)   ≈ #2ea88e
+         *   Primary teal: #3bd6b0
+         *   Hover teal:   #30b898
          */
 
         /* ── CSS Custom Properties + inherited properties ───────────────────────────── */
@@ -1187,18 +1187,18 @@ entries:
          *
          */
         ak-flow-executor {
-          /* Octopize teal — matches the banner gradient (hsl 165.3, 65.4%, 28→22%) */
-          --pf-global--primary-color--100: hsl(165.3, 65.4%, 28%);  /* button bg — matches banner top */
-          --pf-global--primary-color--200: hsl(165.3, 65.4%, 24%);  /* button bg hover */
-          --pf-global--primary-color--300: hsl(165.3, 65.4%, 20%);  /* button bg active */
-          --pf-global--link--Color:        hsl(165.3, 65.4%, 28%);
-          --pf-global--link--Color--hover: hsl(165.3, 65.4%, 22%);
-          --pf-global--active-color--100:  hsl(165.3, 65.4%, 28%);  /* PF v4 focus ring */
+          /* Octopize teal — #3bd6b0 */
+          --pf-global--primary-color--100: #3bd6b0;  /* button bg */
+          --pf-global--primary-color--200: #30b898;  /* button bg hover (darker) */
+          --pf-global--primary-color--300: #269a80;  /* button bg active */
+          --pf-global--link--Color:        #3bd6b0;
+          --pf-global--link--Color--hover: #30b898;
+          --pf-global--active-color--100:  #3bd6b0;  /* PF v4 focus ring */
 
           /* PF v5 variants (introduced in authentik 2025.12) */
-          --pf-v5-global--focus-ring--Color:                hsl(165.3, 65.4%, 28%);
-          --pf-c-form-control--focus--BorderBottomColor:    hsl(165.3, 65.4%, 28%);
-          --pf-v5-c-form-control--focus--BorderBottomColor: hsl(165.3, 65.4%, 28%);
+          --pf-v5-global--focus-ring--Color:                #3bd6b0;
+          --pf-c-form-control--focus--BorderBottomColor:    #3bd6b0;
+          --pf-v5-c-form-control--focus--BorderBottomColor: #3bd6b0;
 
           /* Disable the right-panel decorative media at xl (>1200px) viewport widths */
           --pf-c-login--xl--BackgroundImage: none;
@@ -1244,16 +1244,16 @@ entries:
          * (Issue #19506)
          */
         ak-flow-executor::part(locale-select) {
-          color: hsl(165.3, 65.4%, 28%);
+          color: #3bd6b0;
         }
 
         ak-flow-executor::part(locale-select-label) {
-          color: hsl(165.3, 65.4%, 28%);
+          color: #3bd6b0;
         }
 
         ak-flow-executor::part(locale-select-select) {
-          color: hsl(165.3, 65.4%, 28%);
-          border-color: hsl(165.3, 65.4%, 28%);
+          color: #3bd6b0;
+          border-color: #3bd6b0;
         }
 
         /* ── Shadow DOM element rules ───────────────────────────────────────────────── */
@@ -1263,14 +1263,19 @@ entries:
         select:focus-visible,
         textarea:focus,
         textarea:focus-visible {
-          outline: 2px solid hsl(165.3, 65.4%, 28%) !important;
+          outline: 2px solid #3bd6b0 !important;
           outline-offset: 2px;
           box-shadow: none !important;
         }
 
         .pf-c-brand {
-          background: linear-gradient(180deg, hsl(165.3, 65.4%, 28%) 0%, hsl(165.3, 65.4%, 22%) 100%);
+          background: #3bd6b0 !important;
           padding: 1.5rem 2rem;
+        }
+
+        /* Logo is white PNG — invert to dark for visibility on the teal banner */
+        .pf-c-brand img {
+          filter: brightness(0) !important;
         }
 
         ak-brand-links {
