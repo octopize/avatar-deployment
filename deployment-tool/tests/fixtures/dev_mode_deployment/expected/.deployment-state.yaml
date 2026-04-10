@@ -35,11 +35,11 @@ config:
   AUTHENTIK_DATABASE_NAME: authentik
   AUTHENTIK_DATABASE_USER: authentik
   AUTHENTIK_BOOTSTRAP_EMAIL: dev@example.com
-  AUTHENTIK_BOOTSTRAP_PASSWORD: O23reoE3Bd3J5D-5E7EJKpslFZ-2IjzSUUOBjrtTm3w
-  AUTHENTIK_BOOTSTRAP_TOKEN: rcIQLEdy8vk08cY0_RtBJK4X9fC8xVCFm-ZAb1PZxhQ
+  AUTHENTIK_BOOTSTRAP_PASSWORD: xktGEqnaocHpfV0xLrATP_To-qgku_VVUNcB_UNyRAg
+  AUTHENTIK_BOOTSTRAP_TOKEN: rXMxBwjIbQEQNSUtq9d8va2F-qF34LE8urAC9YctME4
   AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN: avatar-dev.example.com
-  AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID: 4a8b9cfd1e8e2d7c783a55b4adefe4c3c17804991f8e7abf0759ddfe3ecfda22
-  AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET: fa7917dee51819d169833f466678177c63b84f13cc88e483030442b225be8519
+  AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID: c30697a3fce57d15363acd1feb21948cee83ebeeaec87417cb72b96fdb698974
+  AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET: 9cf68aff5c1cd3efc206992dd1443c00b65ccb29c5b69ecbc9168e67ea7f0add
   AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI: https://avatar-dev.example.com/api/login/sso/auth
   AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE: demo
   SSO_PROVIDER_URL: https://avatar-dev.example.com/sso
@@ -51,12 +51,12 @@ config:
   SMTP_VERIFY: 'true'
   SMTP_SENDER_EMAIL: dev@example.com
   ADMIN_EMAILS: dev@example.com
-  WEB_SOURCE_PATH: /tmp/tmp2vr9odii/test-avatar-website
-  NPMRC_PATH: /tmp/tmp2vr9odii/test-.npmrc
-  API_SOURCE_PATH: /tmp/tmp2vr9odii/test-avatar-repo/services/api
-  API_CONTEXT_AVATAR: /tmp/tmp2vr9odii/test-avatar-repo/avatar
-  API_CONTEXT_CORE: /tmp/tmp2vr9odii/test-avatar-repo/core
-  API_CONTEXT_DP: /tmp/tmp2vr9odii/test-avatar-repo/dp
+  WEB_SOURCE_PATH: /tmp/tmpzal4ltg5/test-avatar-website
+  NPMRC_PATH: /tmp/tmpzal4ltg5/test-.npmrc
+  API_SOURCE_PATH: /tmp/tmpzal4ltg5/test-avatar-repo/services/api
+  API_CONTEXT_AVATAR: /tmp/tmpzal4ltg5/test-avatar-repo/avatar
+  API_CONTEXT_CORE: /tmp/tmpzal4ltg5/test-avatar-repo/core
+  API_CONTEXT_DP: /tmp/tmpzal4ltg5/test-avatar-repo/dp
   IS_SENTRY_ENABLED: 'false'
   TELEMETRY_S3_ENDPOINT_URL: ''
   TELEMETRY_S3_REGION: ''
