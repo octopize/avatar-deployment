@@ -440,6 +440,22 @@ entries:
     model: authentik_policies_expression.expressionpolicy
     state: present
   - attrs:
+      execution_logging: false
+      expression: |-
+        # Auto-set username to email so users only need to provide an email address.
+        # Authentik requires a username to create a user, but we hide the username
+        # field from the signup form and derive it from the email instead.
+        email = context.get("prompt_data", {}).get("email")
+        if email:
+            context["prompt_data"]["username"] = email
+        return True
+      name: avatar-set-username-from-email
+    id: avatar-set-username-from-email
+    identifiers:
+      name: avatar-set-username-from-email
+    model: authentik_policies_expression.expressionpolicy
+    state: present
+  - attrs:
       amount_digits: 0
       amount_lowercase: 0
       amount_symbols: 0
@@ -550,7 +566,6 @@ entries:
       show_source_labels: false
       user_fields:
       - email
-      - username
       webauthn_stage: null
     id: default-recovery-identification
     identifiers:
@@ -570,7 +585,6 @@ entries:
       show_matched_user: true
       show_source_labels: false
       user_fields:
-      - username
       - email
       webauthn_stage: null
     id: avatar-authentication-stage
@@ -596,7 +610,6 @@ entries:
   - attrs:
       fields:
       - !KeyOf 'avatar-title-signup-enrollment'
-      - !KeyOf 'avatar-translated-input-field-username'
       - !KeyOf 'avatar-translated-input-field-email'
       name: avatar-source-enrollment-prompt
     id: avatar-source-enrollment-prompt
@@ -958,6 +971,23 @@ entries:
 # ============================================================
 # POLICY BINDINGS
 # ============================================================
+  - attrs:
+      enabled: true
+      failure_result: false
+      group: null
+      negate: false
+      order: 0
+      policy: !KeyOf 'avatar-set-username-from-email'
+      target: !KeyOf 'avatar-self-service-signup-flow-bind-avatar-self-service-user-identity-write-order-20'
+      timeout: 30
+      user: null
+    id: avatar-set-username-from-email-bind-avatar-self-service-signup-flow-bind-avatar-self-service-user-identity-write-order-20-order-0
+    identifiers:
+      order: 0
+      policy: !KeyOf 'avatar-set-username-from-email'
+      target: !KeyOf 'avatar-self-service-signup-flow-bind-avatar-self-service-user-identity-write-order-20'
+    model: authentik_policies.policybinding
+    state: present
   - attrs:
       enabled: true
       failure_result: false
