@@ -22,7 +22,7 @@ data:
   DELETE_FILES_USING_CRONJOB: {{ .Values.api.deleteFilesUsingCronjob | quote }}
   STORAGE_ENDPOINT_HOST: {{ .Values.api.storageEndpointHost | quote }}
   STORAGE_ENDPOINT_PORT: {{ .Values.api.storageEndpointPort | quote }}
-  DASK_SCHEDULER: {{ .Values.api.daskSchedulerUrl | quote }}
+  DASK_SCHEDULER: {{ include "avatar.daskSchedulerUrl" . | quote }}
   ## SSO Configuration ##
   SSO_CLIENT_ID: {{ .Values.api.ssoClientId | quote }}
   SSO_CLIENT_SECRET: {{ .Values.api.ssoClientSecret | quote }}

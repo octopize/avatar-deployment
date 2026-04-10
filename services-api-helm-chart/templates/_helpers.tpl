@@ -55,6 +55,19 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
+Compute the Dask scheduler URL by replicating the dask chart's fullname logic.
+The dask chart names its scheduler service as "<dask.fullname>-scheduler", where
+dask.fullname = "<release-name>-dask" unless the release name already contains "dask".
+*/}}
+{{- define "avatar.daskSchedulerUrl" -}}
+{{- if contains "dask" .Release.Name -}}
+{{- printf "%s-scheduler:8786" .Release.Name -}}
+{{- else -}}
+{{- printf "%s-dask-scheduler:8786" .Release.Name -}}
+{{- end -}}
+{{- end }}
+
+{{/*
 Define the default app env variables
 */}}
 {{- define "avatar.app_env" -}}

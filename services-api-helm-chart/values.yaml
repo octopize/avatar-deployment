@@ -96,8 +96,6 @@ api:
   # It will typically be used to format emails.
   webClientUrl: https://avatar.yourcompany.com/web
 
-  daskSchedulerUrl: "dask-scheduler:8786"
-
   isTelemetryEnabled: true
   isSentryEnabled: true
   logLevel: "INFO"
@@ -290,3 +288,66 @@ authentik:
         mountPath: /media/public/brand_logo.png
         subPath: logo.png
         readOnly: true
+
+dask:
+  enabled: true
+
+  scheduler:
+    image:
+      repository: quay.io/octopize/avatar-service-api
+      # Set to avatarServiceApiVersion
+      tag: ""
+      pullPolicy: IfNotPresent
+      pullSecrets:
+        - name: docker-local-pull-secret
+    env:
+      - name: AVATAR_PDFGENERATOR_URL
+        value: "http://avatar-pdf:8001"
+      - name: AVATAR_API_URL
+        value: "http://avatar-api:8000"
+      - name: DASK_DISTRIBUTED__SCHEDULER__ALLOWED_FAILURES
+        value: "1"
+
+  worker:
+    image:
+      repository: quay.io/octopize/avatar-service-api
+      # Set to avatarServiceApiVersion
+      tag: ""
+      pullPolicy: IfNotPresent
+      pullSecrets:
+        - name: docker-local-pull-secret
+    replicas: 2
+    resources:
+      requests:
+        memory: "2Gi"
+        cpu: "1"
+      limits:
+        memory: "32Gi"
+        cpu: "1"
+    # Uncomment to prevent multiple workers on the same node:
+    # affinity:
+    #   podAntiAffinity:
+    #     requiredDuringSchedulingIgnoredDuringExecution:
+    #       - labelSelector:
+    #           matchLabels:
+    #             app: dask
+    #             component: worker
+    #         topologyKey: kubernetes.io/hostname
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 0
+        maxUnavailable: 1
+    env:
+      - name: AVATAR_PDFGENERATOR_URL
+        value: "http://avatar-pdf:8001"
+      - name: AVATAR_API_URL
+        value: "http://avatar-api:8000"
+      - name: DASK_DISTRIBUTED__SCHEDULER__ALLOWED_FAILURES
+        value: "1"
+    extraArgs:
+      - "--preload"
+      - "api.domain.dask_worker_setup"
+
+  jupyter:
+    enabled: false
