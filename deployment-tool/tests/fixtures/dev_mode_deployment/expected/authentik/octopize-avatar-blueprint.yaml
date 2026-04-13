@@ -11,6 +11,8 @@
 #   AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET         - OAuth2 Client Secret
 #   AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI      - Full redirect URI for API
 #   AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE   - License type for self-service signups
+#   AVATAR_AUTHENTIK_BLUEPRINT_GOOGLE_CLIENT_ID      - Google OAuth Client ID
+#   AVATAR_AUTHENTIK_BLUEPRINT_GOOGLE_CLIENT_SECRET  - Google OAuth Client Secret
 
 context:
   app_name: Avatar API
@@ -95,6 +97,44 @@ entries:
     id: avatar-recovery-flow
     identifiers:
       slug: avatar-recovery-flow
+    model: authentik_flows.flow
+    state: present
+
+  # ── Google OAuth source flows ─────────────────────────────
+  # These replace the default authentik source flows to avoid
+  # the username-prompt screen and to auto-assign groups.
+
+  - attrs:
+      authentication: none
+      background: ''
+      compatibility_mode: false
+      denied_action: message_continue
+      designation: enrollment
+      layout: stacked
+      name: avatar-google-source-enrollment
+      policy_engine_mode: any
+      slug: avatar-google-source-enrollment
+      title: Sign in with Google
+    id: avatar-google-source-enrollment
+    identifiers:
+      slug: avatar-google-source-enrollment
+    model: authentik_flows.flow
+    state: present
+
+  - attrs:
+      authentication: require_unauthenticated
+      background: ''
+      compatibility_mode: false
+      denied_action: message_continue
+      designation: authentication
+      layout: stacked
+      name: avatar-google-source-authentication
+      policy_engine_mode: any
+      slug: avatar-google-source-authentication
+      title: Sign in with Google
+    id: avatar-google-source-authentication
+    identifiers:
+      slug: avatar-google-source-authentication
     model: authentik_flows.flow
     state: present
 
@@ -455,6 +495,71 @@ entries:
       name: avatar-set-username-from-email
     model: authentik_policies_expression.expressionpolicy
     state: present
+
+  # ── Google OAuth source policies ─────────────────────────────
+
+  - attrs:
+      execution_logging: false
+      expression: |-
+        # Map the Google-provided email to the username field so users are
+        # created with their email as username (no username-prompt screen).
+        email = context.get("prompt_data", {}).get("email", "")
+        if email:
+            context["prompt_data"]["username"] = email
+        return True
+      name: avatar-google-source-set-username
+    id: avatar-google-source-set-username
+    identifiers:
+      name: avatar-google-source-set-username
+    model: authentik_policies_expression.expressionpolicy
+    state: present
+
+  - attrs:
+      execution_logging: false
+      expression: |-
+        from authentik.core.models import Group
+
+        GMAIL_DOMAINS = {"gmail.com", "googlemail.com"}
+
+        email = context.get("prompt_data", {}).get("email", "")
+        if not email:
+            ak_logger.warning("avatar-google-source-group-assignment: no email in prompt_data, skipping group assignment")
+            return True
+
+        domain = email.split("@", 1)[-1].lower()
+
+        if domain in GMAIL_DOMAINS:
+            # Personal Gmail account — create a per-user self-service group.
+            group_name = f"self_service-{email}"
+        else:
+            # Company email — strip the TLD (last segment) and use the rest as the
+            # group name so all users from the same domain share one group.
+            # e.g. acme.com -> acme  |  mail.acme.com -> mail.acme
+            parts = domain.rsplit(".", 1)
+            group_name = parts[0] if len(parts) > 1 else domain
+
+        group, created = Group.objects.get_or_create(
+            name=group_name,
+            defaults={"attributes": {"license": "demo"}},
+        )
+
+        if created:
+            ak_logger.info(f"Created new group '{group_name}' for Google OAuth user: {email}")
+        else:
+            ak_logger.info(f"Assigning existing group '{group_name}' to Google OAuth user: {email}")
+
+        # Merge with any groups already in context rather than overwriting them.
+        existing = context["flow_plan"].context.get("groups", [])
+        if group not in existing:
+            context["flow_plan"].context["groups"] = existing + [group]
+
+        return True
+      name: avatar-google-source-group-assignment
+    id: avatar-google-source-group-assignment
+    identifiers:
+      name: avatar-google-source-group-assignment
+    model: authentik_policies_expression.expressionpolicy
+    state: present
   - attrs:
       amount_digits: 0
       amount_lowercase: 0
@@ -727,6 +832,35 @@ entries:
     model: authentik_stages_user_write.userwritestage
     state: present
 
+  # ── Google OAuth source stages ────────────────────────────
+
+  - attrs:
+      create_users_as_inactive: false
+      create_users_group: null
+      name: avatar-google-source-user-write
+      user_creation_mode: always_create
+      user_path_template: ''
+      user_type: external
+    id: avatar-google-source-user-write
+    identifiers:
+      name: avatar-google-source-user-write
+    model: authentik_stages_user_write.userwritestage
+    state: present
+
+  - attrs:
+      geoip_binding: no_binding
+      name: avatar-google-source-user-login
+      network_binding: no_binding
+      remember_device: days=30
+      remember_me_offset: seconds=0
+      session_duration: seconds=0
+      terminate_other_sessions: false
+    id: avatar-google-source-user-login
+    identifiers:
+      name: avatar-google-source-user-login
+    model: authentik_stages_user_login.userloginstage
+    state: present
+
 # ============================================================
 # FLOW STAGE BINDINGS
 # ============================================================
@@ -968,6 +1102,59 @@ entries:
     model: authentik_flows.flowstagebinding
     state: present
 
+  # ========================================
+  # FLOW STAGE BINDINGS - Google Source Enrollment Flow
+  # ========================================
+  - attrs:
+      evaluate_on_plan: false
+      invalid_response_action: retry
+      order: 10
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: !KeyOf 'avatar-google-source-user-write'
+      target: !KeyOf 'avatar-google-source-enrollment'
+    id: avatar-google-source-enrollment-bind-user-write-order-10
+    identifiers:
+      order: 10
+      stage: !KeyOf 'avatar-google-source-user-write'
+      target: !KeyOf 'avatar-google-source-enrollment'
+    model: authentik_flows.flowstagebinding
+    state: present
+  - attrs:
+      evaluate_on_plan: false
+      invalid_response_action: retry
+      order: 20
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: !KeyOf 'avatar-google-source-user-login'
+      target: !KeyOf 'avatar-google-source-enrollment'
+    id: avatar-google-source-enrollment-bind-user-login-order-20
+    identifiers:
+      order: 20
+      stage: !KeyOf 'avatar-google-source-user-login'
+      target: !KeyOf 'avatar-google-source-enrollment'
+    model: authentik_flows.flowstagebinding
+    state: present
+
+  # ========================================
+  # FLOW STAGE BINDINGS - Google Source Authentication Flow
+  # ========================================
+  - attrs:
+      evaluate_on_plan: false
+      invalid_response_action: retry
+      order: 10
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: !KeyOf 'avatar-google-source-user-login'
+      target: !KeyOf 'avatar-google-source-authentication'
+    id: avatar-google-source-authentication-bind-user-login-order-10
+    identifiers:
+      order: 10
+      stage: !KeyOf 'avatar-google-source-user-login'
+      target: !KeyOf 'avatar-google-source-authentication'
+    model: authentik_flows.flowstagebinding
+    state: present
+
 # ============================================================
 # POLICY BINDINGS
 # ============================================================
@@ -1072,6 +1259,124 @@ entries:
       policy: !KeyOf 'avatar-clear-must-reset-password-flag'
       target: !KeyOf 'avatar-recovery-flow-bind-avatar-recovery-user-login-order-100'
     model: authentik_policies.policybinding
+    state: present
+
+  # ── Google source enrollment: SSO guard (flow-level) ──────────────────────
+  - attrs:
+      enabled: true
+      failure_result: false
+      group: null
+      negate: false
+      order: 0
+      policy: !Find [authentik_policies_expression.expressionpolicy, [name, default-source-enrollment-if-sso]]
+      target: !KeyOf 'avatar-google-source-enrollment'
+      timeout: 30
+      user: null
+    id: sso-guard-bind-avatar-google-source-enrollment-order-0
+    identifiers:
+      order: 0
+      policy: !Find [authentik_policies_expression.expressionpolicy, [name, default-source-enrollment-if-sso]]
+      target: !KeyOf 'avatar-google-source-enrollment'
+    model: authentik_policies.policybinding
+    state: present
+
+  # ── Google source authentication: SSO guard (flow-level) ──────────────────
+  - attrs:
+      enabled: true
+      failure_result: false
+      group: null
+      negate: false
+      order: 0
+      policy: !Find [authentik_policies_expression.expressionpolicy, [name, default-source-authentication-if-sso]]
+      target: !KeyOf 'avatar-google-source-authentication'
+      timeout: 30
+      user: null
+    id: sso-guard-bind-avatar-google-source-authentication-order-0
+    identifiers:
+      order: 0
+      policy: !Find [authentik_policies_expression.expressionpolicy, [name, default-source-authentication-if-sso]]
+      target: !KeyOf 'avatar-google-source-authentication'
+    model: authentik_policies.policybinding
+    state: present
+
+  # ── Google source enrollment: set username from email (before UserWrite) ──
+  - attrs:
+      enabled: true
+      failure_result: false
+      group: null
+      negate: false
+      order: 0
+      policy: !KeyOf 'avatar-google-source-set-username'
+      target: !KeyOf 'avatar-google-source-enrollment-bind-user-write-order-10'
+      timeout: 30
+      user: null
+    id: avatar-google-source-set-username-bind-enrollment-user-write-order-0
+    identifiers:
+      order: 0
+      policy: !KeyOf 'avatar-google-source-set-username'
+      target: !KeyOf 'avatar-google-source-enrollment-bind-user-write-order-10'
+    model: authentik_policies.policybinding
+    state: present
+
+  # ── Google source enrollment: assign group from email domain (before UserWrite) ──
+  - attrs:
+      enabled: true
+      failure_result: false
+      group: null
+      negate: false
+      order: 10
+      policy: !KeyOf 'avatar-google-source-group-assignment'
+      target: !KeyOf 'avatar-google-source-enrollment-bind-user-write-order-10'
+      timeout: 30
+      user: null
+    id: avatar-google-source-group-assignment-bind-enrollment-user-write-order-10
+    identifiers:
+      order: 10
+      policy: !KeyOf 'avatar-google-source-group-assignment'
+      target: !KeyOf 'avatar-google-source-enrollment-bind-user-write-order-10'
+    model: authentik_policies.policybinding
+    state: present
+
+# ============================================================
+# GOOGLE OAUTH SOURCE
+# Only applied when both credential env vars are set.
+# On-premise deployments without Google OAuth configured will
+# skip this entry gracefully (conditions evaluate to falsy).
+# ============================================================
+  - attrs:
+      access_token_url: https://oauth2.googleapis.com/token
+      additional_scopes: ''
+      authentication_flow: !KeyOf 'avatar-google-source-authentication'
+      authorization_code_auth_method: basic_auth
+      authorization_url: https://accounts.google.com/o/oauth2/v2/auth
+      consumer_key: !Env ['AVATAR_AUTHENTIK_BLUEPRINT_GOOGLE_CLIENT_ID', '']
+      consumer_secret: !Env ['AVATAR_AUTHENTIK_BLUEPRINT_GOOGLE_CLIENT_SECRET', '']
+      enabled: true
+      enrollment_flow: !KeyOf 'avatar-google-source-enrollment'
+      group_matching_mode: name_link
+      group_property_mappings: []
+      icon: /static/authentik/sources/google.svg
+      name: Google
+      oidc_jwks: {}
+      oidc_jwks_url: https://www.googleapis.com/oauth2/v3/certs
+      oidc_well_known_url: ''
+      pkce: "['plain', 'S256']"
+      policy_engine_mode: any
+      profile_url: https://openidconnect.googleapis.com/v1/userinfo
+      promoted: true
+      provider_type: google
+      request_token_url: null
+      slug: google
+      user_matching_mode: email_link
+      user_path_template: goauthentik.io/sources/%(slug)s
+      user_property_mappings: []
+    conditions:
+      - !Env ['AVATAR_AUTHENTIK_BLUEPRINT_GOOGLE_CLIENT_ID', '']
+      - !Env ['AVATAR_AUTHENTIK_BLUEPRINT_GOOGLE_CLIENT_SECRET', '']
+    id: google-oauth-source
+    identifiers:
+      slug: google
+    model: authentik_sources_oauth.oauthsource
     state: present
 
 # ============================================================

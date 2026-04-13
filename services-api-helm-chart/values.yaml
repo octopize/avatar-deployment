@@ -178,6 +178,14 @@ authentik:
         value: ""
       - name: AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE
         value: "full"
+      # Google OAuth source credentials (optional).
+      # When both are non-empty, the blueprint creates the Google OAuth source.
+      # When either is empty, the Google source entry is skipped (on-premise deployments
+      # without Google OAuth are unaffected).
+      - name: AVATAR_AUTHENTIK_BLUEPRINT_GOOGLE_CLIENT_ID
+        value: ""
+      - name: AVATAR_AUTHENTIK_BLUEPRINT_GOOGLE_CLIENT_SECRET
+        value: ""
 
   authentik:
     secret_key: ""
