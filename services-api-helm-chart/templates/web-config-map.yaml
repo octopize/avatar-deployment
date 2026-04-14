@@ -12,4 +12,5 @@ data:
   AVATAR_WEB_CLIENT_URL: "{{ .Values.web.config.webClientUrl }}"
   AVATAR_SSO_URL: "{{ .Values.web.config.ssoUrl }}"
   AVATAR_SSO_ENABLED: "{{ .Values.web.config.ssoEnabled }}"
+  AVATAR_AUTHENTIK_URL: "{{ .Values.web.config.authentikUrl }}"
   ENV_NAME: "{{ .Values.web.config.envName }}"
