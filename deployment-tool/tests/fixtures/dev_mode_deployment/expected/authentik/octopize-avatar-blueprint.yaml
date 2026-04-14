@@ -1360,7 +1360,7 @@ entries:
       oidc_jwks: {}
       oidc_jwks_url: https://www.googleapis.com/oauth2/v3/certs
       oidc_well_known_url: ''
-      pkce: "['plain', 'S256']"
+      pkce: "S256"
       policy_engine_mode: any
       profile_url: https://openidconnect.googleapis.com/v1/userinfo
       promoted: true
@@ -1569,6 +1569,23 @@ entries:
           --pf-c-login--xl--BackgroundImage: none;
           --pf-v5-c-login--BackgroundImage: none;
           --pf-v5-c-login--xl--BackgroundImage: none;
+        }
+
+        /* ── Button text: dark on our light teal background (both themes) ────────────── */
+        /*
+         * PatternFly primary buttons default to white text. Our teal (#3bd6b0)
+         * background is a light colour in BOTH light and dark themes, making white
+         * text illegible in either. Override to near-black directly on the element.
+         *
+         * Why !important: PatternFly's .pf-c-button.pf-m-primary sets
+         * --pf-c-button--m-primary--Color on the element itself, which overrides
+         * any inherited CSS custom property from the shadow host. Using color:
+         * !important is the only reliable way to win that cascade from an adopted
+         * shadow-root stylesheet.
+         */
+        .pf-c-button.pf-m-primary,
+        .pf-v5-c-button.pf-v5-m-primary {
+          color: #1D1D1B !important;
         }
 
         /* ── Locale selector ────────────────────────────────────────────────────────── */

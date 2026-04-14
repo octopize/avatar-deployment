@@ -1571,6 +1571,23 @@ entries:
           --pf-v5-c-login--xl--BackgroundImage: none;
         }
 
+        /* ── Button text: dark on our light teal background (both themes) ────────────── */
+        /*
+         * PatternFly primary buttons default to white text. Our teal (#3bd6b0)
+         * background is a light colour in BOTH light and dark themes, making white
+         * text illegible in either. Override to near-black directly on the element.
+         *
+         * Why !important: PatternFly's .pf-c-button.pf-m-primary sets
+         * --pf-c-button--m-primary--Color on the element itself, which overrides
+         * any inherited CSS custom property from the shadow host. Using color:
+         * !important is the only reliable way to win that cascade from an adopted
+         * shadow-root stylesheet.
+         */
+        .pf-c-button.pf-m-primary,
+        .pf-v5-c-button.pf-v5-m-primary {
+          color: #1D1D1B !important;
+        }
+
         /* ── Locale selector ────────────────────────────────────────────────────────── */
         /*
          * ak-locale-select renders inside ak-flow-executor's shadow root and exposes:
