@@ -1,7 +1,7 @@
 [project]
 name = "authentik-blueprint"
 version = "0.1.0"
-description = "Convert Authentik blueprint exports from PK references to declarative !Find lookups"
+description = "Tools for working with Authentik blueprints: export, validate, schema-check, and live verification"
 readme = "README.md"
 authors = [
     { name = "Tom Crasset", email = "25140344+tcrasset@users.noreply.github.com" }

@@ -5,6 +5,18 @@ from pathlib import Path
 from typing import List
 
 
+# Known field constraints that can be checked statically.
+# These mirror Authentik model field choices and are updated here when the
+# Authentik version in use changes. Keeping this list here is deliberate:
+# the alternative (running the live importer) requires a running Authentik
+# instance and is covered by `just verify-blueprint-local`.
+KNOWN_FIELD_CHOICES: dict[str, list[str]] = {
+    # authentik_sources_oauth.OAuthSource.pkce
+    # TextField with choices (not MultipleChoiceField — only one value allowed)
+    "pkce": ["none", "plain", "S256"],
+}
+
+
 class BlueprintValidator:
     """Validates Authentik blueprint templates."""
 
@@ -16,6 +28,7 @@ class BlueprintValidator:
             ("All placeholders documented", self.validate_placeholders),
             ("No user entries", self.validate_no_user_entries),
             ("Only Octopize groups", self.validate_no_unwanted_groups),
+            ("Known field choices valid", self.validate_known_field_choices),
         ]
 
     def validate_no_pks(self, content: str) -> List[str]:
@@ -123,6 +136,29 @@ class BlueprintValidator:
                 if re.match(r'^\s+model:', line) or re.match(r'^  - ', line):
                     in_group_entry = False
 
+        return errors
+
+    def validate_known_field_choices(self, content: str) -> List[str]:
+        """Check that single-choice fields contain a valid value.
+
+        Authentik has fields that accept only one value from a fixed set.
+        A list-as-string (e.g. "['plain', 'S256']") looks plausible but is
+        rejected by the serializer at import time, causing silent entry
+        failures while the blueprint still reports status=successful.
+        """
+        errors = []
+        for i, line in enumerate(content.split('\n'), 1):
+            for field, choices in KNOWN_FIELD_CHOICES.items():
+                # Match lines like `      pkce: "S256"` or `      pkce: S256`
+                m = re.match(rf'^\s+{re.escape(field)}:\s+(.+?)\s*$', line)
+                if not m:
+                    continue
+                raw = m.group(1).strip().strip('"\'')
+                if raw not in choices:
+                    errors.append(
+                        f"Line {i}: Field '{field}' has value {m.group(1).strip()!r}, "
+                        f"which is not a valid choice. Valid values: {choices}"
+                    )
         return errors
 
     def validate(self, blueprint_path: Path, verbose: bool = True) -> bool:

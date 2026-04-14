@@ -1360,7 +1360,7 @@ entries:
       oidc_jwks: {}
       oidc_jwks_url: https://www.googleapis.com/oauth2/v3/certs
       oidc_well_known_url: ''
-      pkce: "['plain', 'S256']"
+      pkce: "S256"
       policy_engine_mode: any
       profile_url: https://openidconnect.googleapis.com/v1/userinfo
       promoted: true
