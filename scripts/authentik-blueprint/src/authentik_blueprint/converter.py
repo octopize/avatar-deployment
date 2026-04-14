@@ -447,7 +447,7 @@ class BlueprintConverter:
                     return value.lower().replace(" ", "-")
 
         # Fallback: use model + first 8 chars of pk (should rarely happen)
-        pk = entry.get("identifiers", {}).get("pk", "unknown")
+        pk = str(entry.get("identifiers", {}).get("pk", "unknown"))
         return f"{model.split('.')[-1]}-{pk[:8]}"
 
     def load_blueprint(self, path: Path) -> Dict:
