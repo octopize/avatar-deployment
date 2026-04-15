@@ -495,6 +495,31 @@ entries:
       name: avatar-set-username-from-email
     model: authentik_policies_expression.expressionpolicy
     state: present
+  - attrs:
+      execution_logging: false
+      expression: |-
+        from authentik.core.models import User
+
+        # After the identification stage, authentik places the resolved user in
+        # context["pending_user"]. With pretend_user_exists=True, a virtual
+        # (unsaved) User() is created for unknown emails, so its pk is None.
+        # A real user always has a non-None pk that exists in the database.
+        pending_user = request.context.get("pending_user")
+
+        if not pending_user or not pending_user.pk:
+            # No pending user or unsaved virtual user → new user → redirect to signup
+            return True
+
+        try:
+            return not User.objects.filter(pk=pending_user.pk).exists()
+        except Exception:
+            return False
+      name: avatar-user-does-not-exist
+    id: avatar-user-does-not-exist
+    identifiers:
+      name: avatar-user-does-not-exist
+    model: authentik_policies_expression.expressionpolicy
+    state: present
 
   # ── Google OAuth source policies ─────────────────────────────
 
@@ -770,6 +795,17 @@ entries:
     model: authentik_stages_redirect.redirectstage
     state: present
   - attrs:
+      keep_context: false
+      mode: flow
+      name: avatar-redirect-to-self-service-signup
+      target_flow: !KeyOf 'avatar-self-service-signup-flow'
+      target_static: ''
+    id: avatar-redirect-to-self-service-signup
+    identifiers:
+      name: avatar-redirect-to-self-service-signup
+    model: authentik_stages_redirect.redirectstage
+    state: present
+  - attrs:
       geoip_binding: no_binding
       name: default-recovery-user-login
       network_binding: no_binding
@@ -910,6 +946,21 @@ entries:
     identifiers:
       order: 12
       stage: !KeyOf 'avatar-redirect-to-recovery-flow'
+      target: !KeyOf 'avatar-authentication-flow'
+    model: authentik_flows.flowstagebinding
+    state: present
+  - attrs:
+      evaluate_on_plan: false
+      invalid_response_action: retry
+      order: 15
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: !KeyOf 'avatar-redirect-to-self-service-signup'
+      target: !KeyOf 'avatar-authentication-flow'
+    id: avatar-authentication-flow-bind-avatar-redirect-to-self-service-signup-order-15
+    identifiers:
+      order: 15
+      stage: !KeyOf 'avatar-redirect-to-self-service-signup'
       target: !KeyOf 'avatar-authentication-flow'
     model: authentik_flows.flowstagebinding
     state: present
@@ -1258,6 +1309,24 @@ entries:
       order: 0
       policy: !KeyOf 'avatar-clear-must-reset-password-flag'
       target: !KeyOf 'avatar-recovery-flow-bind-avatar-recovery-user-login-order-100'
+    model: authentik_policies.policybinding
+    state: present
+
+  - attrs:
+      enabled: true
+      failure_result: false
+      group: null
+      negate: false
+      order: 0
+      policy: !KeyOf 'avatar-user-does-not-exist'
+      target: !KeyOf 'avatar-authentication-flow-bind-avatar-redirect-to-self-service-signup-order-15'
+      timeout: 30
+      user: null
+    id: avatar-user-does-not-exist-bind-avatar-authentication-flow-bind-avatar-redirect-to-self-service-signup-order-15-order-0
+    identifiers:
+      order: 0
+      policy: !KeyOf 'avatar-user-does-not-exist'
+      target: !KeyOf 'avatar-authentication-flow-bind-avatar-redirect-to-self-service-signup-order-15'
     model: authentik_policies.policybinding
     state: present
 
