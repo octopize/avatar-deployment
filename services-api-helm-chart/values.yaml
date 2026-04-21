@@ -315,6 +315,11 @@ dask:
         value: "http://avatar-api:8000"
       - name: DASK_DISTRIBUTED__SCHEDULER__ALLOWED_FAILURES
         value: "1"
+      - name: IS_SENTRY_ENABLED
+        valueFrom:
+          configMapKeyRef:
+            name: avatar-api-config
+            key: IS_SENTRY_ENABLED
 
   worker:
     image:
@@ -353,6 +358,11 @@ dask:
         value: "http://avatar-api:8000"
       - name: DASK_DISTRIBUTED__SCHEDULER__ALLOWED_FAILURES
         value: "1"
+      - name: IS_SENTRY_ENABLED
+        valueFrom:
+          configMapKeyRef:
+            name: avatar-api-config
+            key: IS_SENTRY_ENABLED
     extraArgs:
       - "--preload"
       - "api.domain.dask_worker_setup"
