@@ -62,7 +62,10 @@ services:
     logging: *default-logging
     hostname: api
     networks:
-      - default
+      - proxy
+      - dask
+      - storage
+      - database
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 5s
@@ -104,7 +107,8 @@ services:
     logging: *default-logging
     hostname: init-db
     networks:
-      - default
+      - storage
+      - database
     <<: *api-environment
     secrets:
       - db_name
@@ -142,7 +146,7 @@ services:
     logging: *default-logging
     hostname: init-storage
     networks:
-      - default
+      - seaweedfs
     secrets:
       - storage_admin_access_key_id
       - storage_admin_secret_access_key
@@ -160,7 +164,9 @@ services:
     logging: *default-logging
     hostname: my-dask-scheduler
     networks:
-      - default
+      - dask
+      - pdf
+      - storage
     <<: *api-environment
 
     secrets:
@@ -193,7 +199,9 @@ services:
     logging: *default-logging
     hostname: my-dask-worker
     networks:
-      - default
+      - dask
+      - pdf
+      - storage
     <<: *api-environment
     secrets:
       - db_name
@@ -217,7 +225,7 @@ services:
     platform: *default-platform
     hostname: db
     networks:
-      - default
+      - database
     environment:
       # Appending any env variable with '_FILE' allows the file content to
       # be used to create the database
@@ -245,13 +253,14 @@ services:
     platform: *default-platform
     restart: *default-restart
     networks:
-      default:
+      proxy:
         aliases:
           # Fixes Internal DNS Override.
           # Short-circuits the public domain to this container's internal IP.
           # Allows other containers to talk to Authentik via Port 443 on this proxy,
           # satisfying Authentik's strict Host Header validation.
           - ${AVATAR_DOMAIN}
+      storage: {}
     hostname: nginx
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
@@ -282,7 +291,7 @@ services:
     platform: *default-platform
     hostname: pdfgenerator
     networks:
-      - default
+      - pdf
 
   web:
     image: quay.io/octopize/avatar-web:${AVATAR_WEB_VERSION}
@@ -290,7 +299,7 @@ services:
     logging: *default-logging
     restart: *default-restart
     networks:
-      - default
+      - proxy
     depends_on:
       api:
         condition: service_healthy
@@ -310,7 +319,7 @@ services:
     logging: *default-logging
     restart: *default-restart
     networks:
-      - default
+      - seaweedfs
     command: "-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} -logtostderr master -ip=master -mdir=/data -volumeSizeLimitMB=10 -raftBootstrap -raftHashicorp -electionTimeout=1s"
     healthcheck:
       test:
@@ -332,7 +341,7 @@ services:
     logging: *default-logging
     restart: *default-restart
     networks:
-      - default
+      - seaweedfs
     command: "-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} -logtostderr volume -dir=/data -mserver=master:9333 -port=8080 -ip=volume -preStopSeconds=1 -max=10000"
     healthcheck:
       test: ["CMD", "echo", "--fail", "-I", "http://volume:8080/status"]
@@ -351,7 +360,7 @@ services:
     logging: *default-logging
     restart: *default-restart
     networks:
-      - default
+      - seaweedfs
     command: '-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} -logtostderr filer -defaultStoreDir=/data -ip.bind=0.0.0.0 -master="master:9333"'
     healthcheck:
       test: ["CMD", "echo", "--fail", "-I", "http://localhost:8888"]
@@ -372,8 +381,9 @@ services:
     logging: *default-logging
     restart: *default-restart
     networks:
-      - default
-    command: '-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} -logtostderr s3 -filer="filer:8888" -ip.bind=s3 -iam.readOnly=false'
+      - storage
+      - seaweedfs
+    command: '-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} -logtostderr s3 -filer="filer:8888" -ip.bind=0.0.0.0 -iam.readOnly=false'
     healthcheck:
       test: ["CMD", "echo", "--fail", "--get", "http://localhost:8333/healthz"]
       interval: 5s
@@ -395,7 +405,7 @@ services:
     platform: *default-platform
     restart: on-failure:10
     networks:
-      - default
+      - database
     hostname: authentik_init_db
     command: ["sh", "-c"]
     environment:
@@ -463,7 +473,8 @@ services:
     platform: *default-platform
     restart: *default-restart
     networks:
-      - default
+      - proxy
+      - database
     hostname: authentik_server
     command: server
     <<: *authentik-environment
@@ -501,7 +512,7 @@ services:
     restart: *default-restart
     hostname: authentik_worker
     networks:
-      - default
+      - database
     command: worker
     user: root
     <<: *authentik-environment
@@ -579,7 +590,17 @@ secrets:
     file: ${SECRETS_DIR-.secrets}/telemetry_s3_secret_access_key
 
 networks:
-  default:
+  proxy:
+    driver: bridge
+  dask:
+    driver: bridge
+  pdf:
+    driver: bridge
+  storage:
+    driver: bridge
+  seaweedfs:
+    driver: bridge
+  database:
     driver: bridge
 
 volumes:

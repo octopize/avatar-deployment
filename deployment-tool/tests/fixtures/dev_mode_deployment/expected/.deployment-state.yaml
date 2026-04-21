@@ -18,7 +18,7 @@ config:
   PUBLIC_URL: avatar-dev.example.com
   ENV_NAME: development
   ORGANIZATION_NAME: DevCompany
-  AVATAR_API_VERSION: 2.67.0
+  AVATAR_API_VERSION: 2.68.0
   AVATAR_WEB_VERSION: 0.60.0
   AVATAR_PDFGENERATOR_VERSION: 0.2.3
   AVATAR_SEAWEEDFS_VERSION: '4.17'
@@ -35,11 +35,11 @@ config:
   AUTHENTIK_DATABASE_NAME: authentik
   AUTHENTIK_DATABASE_USER: authentik
   AUTHENTIK_BOOTSTRAP_EMAIL: dev@example.com
-  AUTHENTIK_BOOTSTRAP_PASSWORD: e-gZEAnM2o186NLup-_SASxP2-3359ppgUs4BdJzv8s
-  AUTHENTIK_BOOTSTRAP_TOKEN: J4GkdMvMG0R1LizG0gwQlr_F5WsyVvuWJTbYuY5nTAI
+  AUTHENTIK_BOOTSTRAP_PASSWORD: _prerJNm1g9C0TvSBWKussdKhrtH3bkWCOrIPjSJKsc
+  AUTHENTIK_BOOTSTRAP_TOKEN: J9R0GJtQgKzuQY88BDE3djDabQO0vQxsUuHByznZjW4
   AVATAR_AUTHENTIK_BLUEPRINT_DOMAIN: avatar-dev.example.com
-  AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID: 282689c641e085549dcc9702b83693846269fed3782ee6782d2d94c2cfb47996
-  AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET: a60c2211e8812f1eea7c0a4b592081c0dc3b2028bf7caa602c3c9a4ed1abe489
+  AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_ID: a569dabd5497d52f9dff7c9f6ebe00b5b42b05f3cef2ddcfe0c6f3064c86d5c9
+  AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET: 51f65cdd5376f72610862e2c9f1d2459fe1ceefed442780255f52909bec9ea3c
   AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI: https://avatar-dev.example.com/api/login/sso/auth
   AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE: demo
   SSO_PROVIDER_URL: https://avatar-dev.example.com/sso
@@ -51,12 +51,12 @@ config:
   SMTP_VERIFY: 'true'
   SMTP_SENDER_EMAIL: dev@example.com
   ADMIN_EMAILS: dev@example.com
-  WEB_SOURCE_PATH: /tmp/tmp38vlsuq3/test-avatar-website
-  NPMRC_PATH: /tmp/tmp38vlsuq3/test-.npmrc
-  API_SOURCE_PATH: /tmp/tmp38vlsuq3/test-avatar-repo/services/api
-  API_CONTEXT_AVATAR: /tmp/tmp38vlsuq3/test-avatar-repo/avatar
-  API_CONTEXT_CORE: /tmp/tmp38vlsuq3/test-avatar-repo/core
-  API_CONTEXT_DP: /tmp/tmp38vlsuq3/test-avatar-repo/dp
+  WEB_SOURCE_PATH: /tmp/tmp9_760pko/test-avatar-website
+  NPMRC_PATH: /tmp/tmp9_760pko/test-.npmrc
+  API_SOURCE_PATH: /tmp/tmp9_760pko/test-avatar-repo/services/api
+  API_CONTEXT_AVATAR: /tmp/tmp9_760pko/test-avatar-repo/avatar
+  API_CONTEXT_CORE: /tmp/tmp9_760pko/test-avatar-repo/core
+  API_CONTEXT_DP: /tmp/tmp9_760pko/test-avatar-repo/dp
   IS_SENTRY_ENABLED: 'false'
   TELEMETRY_S3_ENDPOINT_URL: ''
   TELEMETRY_S3_REGION: ''
