@@ -6,9 +6,8 @@ metadata:
     {{- include "avatar.labels" . | nindent 4 }}
 
 data:
-  IS_TELEMETRY_ENABLED: {{ .Values.api.isTelemetryEnabled | quote }}
   IS_SENTRY_ENABLED: {{ .Values.api.isSentryEnabled | quote }}
-  DB_HOST: {{- if .Values.gcp.dbInstanceConnectionName }} "127.0.0.1" {{- else }} {{ .Values.dbHost | quote }} {{- end }}
+  DB_HOST: {{ .Values.dbHost | quote }}
   DB_PORT: {{ .Values.dbPort | quote }}
   ENV_NAME: {{ .Values.envName | quote }}
   # Set to externally accessible API url (should be with https)
@@ -19,7 +18,6 @@ data:
   MAX_ALLOWED_DIMENSIONS_PER_DATASET: {{ .Values.api.maxAllowedDimensionsPerDataset | quote }}
   MAX_ALLOWED_LINES_PER_DATASET: {{ .Values.api.maxAllowedLinesPerDataset | quote }}
   LOG_LEVEL: {{ .Values.api.logLevel | quote }}
-  DELETE_FILES_USING_CRONJOB: {{ .Values.api.deleteFilesUsingCronjob | quote }}
   STORAGE_ENDPOINT_HOST: {{ .Values.api.storageEndpointHost | quote }}
   STORAGE_ENDPOINT_PORT: {{ .Values.api.storageEndpointPort | quote }}
   DASK_SCHEDULER: {{ include "avatar.daskSchedulerUrl" . | quote }}

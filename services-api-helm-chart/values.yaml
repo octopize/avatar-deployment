@@ -37,19 +37,6 @@ resources:
 pdfgeneratorHost: "avatar-pdf"
 pdfgeneratorPort: 8001
 
-ingress:
-  useGCP: false
-  gcp:
-    staticIpName: ""
-    managedCertificateName: ""
-
-# GCP-specific configuration
-gcp:
-  useGCP: false
-  # For SQL Proxy
-  ksaName: ""
-  gsaEmail: ""
-  dbInstanceConnectionName: ""
 
 debug:
   storage:
@@ -96,15 +83,15 @@ api:
   # It will typically be used to format emails.
   webClientUrl: https://avatar.yourcompany.com/web
 
-  isTelemetryEnabled: true
+
   isSentryEnabled: true
   logLevel: "INFO"
-  deleteFilesUsingCronjob: false
+
 
   pepper: TODO # python -c "import secrets; print(secrets.token_hex(), end='')"
   authjwtSecretKey: TODO # python -c "import secrets; print(secrets.token_hex(), end='')"
   # python -c "import base64; import os; print(str(base64.urlsafe_b64encode(os.urandom(32)), encoding='utf-8'), end='')"
-  fileEncryptionKey: TODO
+
 
   organizationName: ""
   adminEmails:
