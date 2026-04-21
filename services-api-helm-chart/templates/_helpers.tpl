@@ -91,11 +91,6 @@ Define the default app env variables
     configMapKeyRef:
       name: avatar-api-config
       key: IS_SENTRY_ENABLED
-- name: IS_TELEMETRY_ENABLED
-  valueFrom:
-    configMapKeyRef:
-      name: avatar-api-config
-      key: IS_TELEMETRY_ENABLED
 - name: DB_HOST
   valueFrom:
     configMapKeyRef:
