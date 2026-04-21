@@ -320,6 +320,11 @@ dask:
           configMapKeyRef:
             name: avatar-api-config
             key: IS_SENTRY_ENABLED
+      - name: ENV_NAME
+        valueFrom:
+          configMapKeyRef:
+            name: avatar-api-config
+            key: ENV_NAME
 
   worker:
     image:
@@ -363,6 +368,11 @@ dask:
           configMapKeyRef:
             name: avatar-api-config
             key: IS_SENTRY_ENABLED
+      - name: ENV_NAME
+        valueFrom:
+          configMapKeyRef:
+            name: avatar-api-config
+            key: ENV_NAME
     extraArgs:
       - "--preload"
       - "api.domain.dask_worker_setup"
