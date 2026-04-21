@@ -138,11 +138,6 @@ Define the default app env variables
     configMapKeyRef:
       name: avatar-api-config
       key: LOG_LEVEL
-- name: DELETE_FILES_USING_CRONJOB
-  valueFrom:
-    configMapKeyRef:
-      name: avatar-api-config
-      key: DELETE_FILES_USING_CRONJOB
 - name: DASK_SCHEDULER
   valueFrom:
     configMapKeyRef:
