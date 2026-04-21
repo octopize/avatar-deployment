@@ -17,7 +17,7 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/api-config-map.yaml") . | sha256sum }}
         checksum/secret: {{ include (print $.Template.BasePath "/api-secrets.yaml") . | sha256sum }}
       labels:
-        {{- include "avatar.selectorLabels" . | nindent 8 }}
+        {{- include "avatar.labels" . | nindent 8 }}
         # Do not modify the following label without modifying the `podAffinity` of other objects.
         app.kubernetes.io/component: api
     spec:

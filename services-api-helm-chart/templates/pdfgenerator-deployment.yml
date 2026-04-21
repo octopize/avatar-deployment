@@ -14,7 +14,7 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "avatar.selectorLabels" . | nindent 8 }}
+        {{- include "avatar.labels" . | nindent 8 }}
         app.kubernetes.io/component: pdfgenerator
     spec:
 

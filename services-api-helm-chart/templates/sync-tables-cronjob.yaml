@@ -20,7 +20,7 @@ spec:
       template:
         metadata:
           labels:
-            {{- include "avatar.selectorLabels" . | nindent 12 }}
+            {{- include "avatar.labels" . | nindent 12 }}
             app.kubernetes.io/component: sync-tables
         spec:
           restartPolicy: Never

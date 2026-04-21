@@ -16,7 +16,7 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/web-config-map.yaml") . | sha256sum }}
       labels:
-        {{- include "avatar.selectorLabels" . | nindent 8 }}
+        {{- include "avatar.labels" . | nindent 8 }}
         app.kubernetes.io/component: web
     spec:
       containers:
