@@ -1,9 +1,9 @@
 version: 1.0.0
 images:
-  api: 2.68.0
+  api: 2.71.0
   web: 0.60.0
   pdfgenerator: 0.2.3
-  seaweedfs: '4.17'
+  seaweedfs: '4.21'
   authentik: 2026.2.2
 email:
   smtp:
