@@ -40,7 +40,7 @@ Generating Configuration Files
 
 ✓ Configuration files generated successfully!
 
-Writing 20 secrets to .secrets/ directory...
+Writing 21 secrets to .secrets/ directory...
 ✓ Secrets written successfully
 
 ✓ Configuration saved to {{OUTPUT_DIR}}/deployment-config.yaml

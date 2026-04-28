@@ -367,7 +367,11 @@ services:
     networks:
       - storage
       - seaweedfs
-    command: '-v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} -logtostderr s3 -filer="filer:8888" -ip.bind=0.0.0.0 -iam.readOnly=false'
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      [
+        'WEED_S3_SSE_KEK=$(cat /run/secrets/storage_encryption_key) exec weed -v=${AVATAR_SEAWEEDFS_LOG_VERBOSITY} -logtostderr s3 -filer="filer:8888" -ip.bind=0.0.0.0 -iam.readOnly=false',
+      ]
     healthcheck:
       test: ["CMD", "echo", "--fail", "--get", "http://localhost:8333/healthz"]
       interval: 5s
@@ -382,6 +386,8 @@ services:
       - /tmp
     volumes:
       - ./tls:/etc/seaweedfs/tls
+    secrets:
+      - storage_encryption_key
 
   authentik_init_db:
     image: *postgres-image
@@ -544,6 +550,8 @@ secrets:
     file: ${SECRETS_DIR-.secrets}/storage_admin_access_key_id
   storage_admin_secret_access_key:
     file: ${SECRETS_DIR-.secrets}/storage_admin_secret_access_key
+  storage_encryption_key:
+    file: ${SECRETS_DIR-.secrets}/storage_encryption_key
 
   # If using email-password authentication, you should have the following secrets present
   admin_emails:
