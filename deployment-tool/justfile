@@ -114,6 +114,21 @@ help:
 show-defaults:
     @cat src/octopize_avatar_deploy/defaults.yaml
 
+# Build the Docker image locally (uses current version from pyproject.toml)
+docker-build:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    VERSION=$(just get-version)
+    docker build -t "quay.io/octopize/deploy-tool:$VERSION" -t "quay.io/octopize/deploy-tool:latest" .
+
+# Push the Docker image to quay.io (requires prior `docker login quay.io`)
+docker-push:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    VERSION=$(just get-version)
+    docker push "quay.io/octopize/deploy-tool:$VERSION"
+    docker push "quay.io/octopize/deploy-tool:latest"
+
 # Publish package to PyPI
 release: build
     uv publish

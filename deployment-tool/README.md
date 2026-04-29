@@ -16,6 +16,35 @@ Then verify the CLI is available:
 octopize-deploy-tool --help
 ```
 
+## Docker
+
+If you don't have Python installed, you can use the published Docker image instead.
+
+### Interactive mode
+
+Mount a local directory to receive the generated files and pass `-it` for the interactive prompts:
+
+```bash
+docker run -it --rm \
+  -v "$(pwd)/avatar:/output" \
+  quay.io/octopize/deploy-tool:latest deploy --output-dir /output
+```
+
+### Non-interactive mode
+
+Provide a config file via the mounted volume:
+
+```bash
+docker run --rm \
+  -v "$(pwd)/avatar:/output" \
+  quay.io/octopize/deploy-tool:latest deploy \
+    --output-dir /output/config \
+    --config /output/config.yaml \
+    --non-interactive
+```
+
+> **Note:** Generated files are written by the container's root user. You may need to adjust ownership afterwards with `sudo chown -R $(id -u):$(id -g) ./avatar`.
+
 ## Quick Start
 
 Generate a Docker deployment configuration interactively:
