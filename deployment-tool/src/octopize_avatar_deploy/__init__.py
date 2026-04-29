@@ -10,7 +10,7 @@ from .version_compat import (
     validate_template_version,
 )
 
-__version__ = "1.6.2"
+__version__ = "1.6.3"
 __all__ = [
     "main",
     "DeploymentRunner",
