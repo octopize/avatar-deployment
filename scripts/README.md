@@ -2,6 +2,55 @@
 
 Automation scripts for the Avatar deployment repository.
 
+## authentik-db-cleanup.sh / authentik-db-cleanup.py
+
+Removes non-default authentik objects from a staging environment to prevent
+configuration drift. Keeps providers, applications, users, groups, sources, and
+all authentik built-in defaults. After cleanup, restarting the worker re-applies
+the production blueprint so all Octopize-specific objects are recreated from source.
+
+`authentik-db-cleanup.sh` is the entry point — it auto-detects the worker
+container, copies the Python script in, and runs it. `authentik-db-cleanup.py`
+is the Django shell script that does the actual work; it must run inside the
+authentik container and should not be invoked directly.
+
+### Usage
+
+```bash
+# Dry run — safe, shows what would be deleted, makes no changes
+./scripts/authentik-db-cleanup.sh
+
+# Live run — actually delete
+./scripts/authentik-db-cleanup.sh --live
+
+# Live run + restart worker to re-apply blueprint immediately
+./scripts/authentik-db-cleanup.sh --live --restart
+
+# Against Kubernetes staging
+./scripts/authentik-db-cleanup.sh \
+    --kubeconfig avatar/infra/envs/scaleway/staging-kubeconfig.yml
+
+# Against Kubernetes staging — live + restart
+./scripts/authentik-db-cleanup.sh \
+    --kubeconfig avatar/infra/envs/scaleway/staging-kubeconfig.yml \
+    --live --restart
+
+# Full option list
+./scripts/authentik-db-cleanup.sh --help
+```
+
+### What it deletes
+
+- Flows not starting with `default-` or `initial-setup`
+- Stages not starting with `default-`, `initial-setup-`, or `stage-default-`
+- Policies not starting with `default-`
+- Prompts not starting with `default-` or `initial-setup-`
+- Non-default brands (keeps the `default=True` brand)
+- Blueprint instances that are not system/default/migrations and not `octopize-avatar-sso-configuration`
+- Property/scope mappings with no `managed` field (user-created)
+
+---
+
 ## sync-templates.py
 
 Synchronizes Authentik email templates and branding assets from the source of truth (`common/authentik-templates/` and `common/authentik-branding/`) to deployment targets (Helm chart and Docker Compose).
