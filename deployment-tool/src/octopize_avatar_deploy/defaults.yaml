@@ -1,7 +1,7 @@
 version: 1.0.0
 images:
   api: 2.72.0
-  web: 0.60.0
+  web: 0.63.0
   pdfgenerator: 0.2.3
   seaweedfs: '4.22'
   authentik: 2026.2.2
