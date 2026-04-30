@@ -56,22 +56,6 @@ entries:
       background: ''
       compatibility_mode: true
       denied_action: message_continue
-      designation: enrollment
-      layout: stacked
-      name: avatar-self-service-signup-flow
-      policy_engine_mode: any
-      slug: avatar-self-service-signup-flow
-      title: Self-service signup for Avatar
-    id: avatar-self-service-signup-flow
-    identifiers:
-      slug: avatar-self-service-signup-flow
-    model: authentik_flows.flow
-    state: present
-  - attrs:
-      authentication: none
-      background: ''
-      compatibility_mode: true
-      denied_action: message_continue
       designation: authentication
       layout: stacked
       name: avatar-authentication-flow
@@ -81,6 +65,38 @@ entries:
     id: avatar-authentication-flow
     identifiers:
       slug: avatar-authentication-flow
+    model: authentik_flows.flow
+    state: present
+  - attrs:
+      authentication: require_unauthenticated
+      background: ''
+      compatibility_mode: false
+      denied_action: message_continue
+      designation: authentication
+      layout: stacked
+      name: avatar-google-source-authentication
+      policy_engine_mode: any
+      slug: avatar-google-source-authentication
+      title: Sign in with Google
+    id: avatar-google-source-authentication
+    identifiers:
+      slug: avatar-google-source-authentication
+    model: authentik_flows.flow
+    state: present
+  - attrs:
+      authentication: none
+      background: ''
+      compatibility_mode: false
+      denied_action: message_continue
+      designation: enrollment
+      layout: stacked
+      name: avatar-google-source-enrollment
+      policy_engine_mode: any
+      slug: avatar-google-source-enrollment
+      title: Sign in with Google
+    id: avatar-google-source-enrollment
+    identifiers:
+      slug: avatar-google-source-enrollment
     model: authentik_flows.flow
     state: present
   - attrs:
@@ -99,62 +115,29 @@ entries:
       slug: avatar-recovery-flow
     model: authentik_flows.flow
     state: present
-
-  # ── Google OAuth source flows ─────────────────────────────
-  # These replace the default authentik source flows to avoid
-  # the username-prompt screen and to auto-assign groups.
-
   - attrs:
       authentication: none
       background: ''
-      compatibility_mode: false
+      compatibility_mode: true
       denied_action: message_continue
       designation: enrollment
       layout: stacked
-      name: avatar-google-source-enrollment
+      name: avatar-self-service-signup-flow
       policy_engine_mode: any
-      slug: avatar-google-source-enrollment
-      title: Sign in with Google
-    id: avatar-google-source-enrollment
+      slug: avatar-self-service-signup-flow
+      title: Self-service signup for Avatar
+    id: avatar-self-service-signup-flow
     identifiers:
-      slug: avatar-google-source-enrollment
-    model: authentik_flows.flow
-    state: present
-
-  - attrs:
-      authentication: require_unauthenticated
-      background: ''
-      compatibility_mode: false
-      denied_action: message_continue
-      designation: authentication
-      layout: stacked
-      name: avatar-google-source-authentication
-      policy_engine_mode: any
-      slug: avatar-google-source-authentication
-      title: Sign in with Google
-    id: avatar-google-source-authentication
-    identifiers:
-      slug: avatar-google-source-authentication
+      slug: avatar-self-service-signup-flow
     model: authentik_flows.flow
     state: present
 
 # ============================================================
 # PROMPTS
 # ============================================================
-
-  # ── Translated input prompts ──────────────────────────────
-  # Each prompt uses a get_translation() helper that reads
-  # /templates/translations.json and selects the string matching
-  # the user's current locale (LANGUAGE_CODE).
-
   - attrs:
-      field_key: password
-      initial_value: ''
-      initial_value_expression: false
-      label: '​'
-      name: avatar-translated-input-field-password
-      order: 100
-      placeholder: |-
+      field_key: title_migration
+      initial_value: |-
         import json, pathlib
         def get_translation(key, default=""):
             try:
@@ -163,26 +146,25 @@ entries:
                 return data.get(lang, data.get("en", {})).get(key, default)
             except Exception:
                 return default
-        return get_translation("placeholder_password", "Password")
-      placeholder_expression: true
+        return get_translation("title_migration", "Account migration required")
+      initial_value_expression: true
+      label: ​
+      name: avatar-title-migration
+      order: 0
+      placeholder: ''
+      placeholder_expression: false
       required: true
       sub_text: ''
-      type: password
-    id: avatar-translated-input-field-password
+      type: static
+    id: avatar-title-migration
     identifiers:
-      field_key: password
-      name: avatar-translated-input-field-password
+      field_key: title_migration
+      name: avatar-title-migration
     model: authentik_stages_prompt.prompt
     state: present
-
   - attrs:
-      field_key: password_repeat
-      initial_value: ''
-      initial_value_expression: false
-      label: '​'
-      name: avatar-translated-input-field-password-repeat
-      order: 101
-      placeholder: |-
+      field_key: title_password_recovery
+      initial_value: |-
         import json, pathlib
         def get_translation(key, default=""):
             try:
@@ -191,26 +173,25 @@ entries:
                 return data.get(lang, data.get("en", {})).get(key, default)
             except Exception:
                 return default
-        return get_translation("placeholder_password_repeat", "Password (repeat)")
-      placeholder_expression: true
+        return get_translation("title_password_recovery", "Reset your password")
+      initial_value_expression: true
+      label: ​
+      name: avatar-title-password-recovery
+      order: 0
+      placeholder: ''
+      placeholder_expression: false
       required: true
       sub_text: ''
-      type: password
-    id: avatar-translated-input-field-password-repeat
+      type: static
+    id: avatar-title-password-recovery
     identifiers:
-      field_key: password_repeat
-      name: avatar-translated-input-field-password-repeat
+      field_key: title_password_recovery
+      name: avatar-title-password-recovery
     model: authentik_stages_prompt.prompt
     state: present
-
   - attrs:
-      field_key: username
-      initial_value: ''
-      initial_value_expression: false
-      label: '​'
-      name: avatar-translated-input-field-username
-      order: 100
-      placeholder: |-
+      field_key: title_password_signup
+      initial_value: |-
         import json, pathlib
         def get_translation(key, default=""):
             try:
@@ -219,18 +200,49 @@ entries:
                 return data.get(lang, data.get("en", {})).get(key, default)
             except Exception:
                 return default
-        return get_translation("placeholder_username", "Username")
-      placeholder_expression: true
+        return get_translation("title_password_signup", "Choose a password")
+      initial_value_expression: true
+      label: ​
+      name: avatar-title-password-signup
+      order: 0
+      placeholder: ''
+      placeholder_expression: false
       required: true
       sub_text: ''
-      type: text
-    id: avatar-translated-input-field-username
+      type: static
+    id: avatar-title-password-signup
     identifiers:
-      field_key: username
-      name: avatar-translated-input-field-username
+      field_key: title_password_signup
+      name: avatar-title-password-signup
     model: authentik_stages_prompt.prompt
     state: present
-
+  - attrs:
+      field_key: title_signup
+      initial_value: |-
+        import json, pathlib
+        def get_translation(key, default=""):
+            try:
+                data = json.loads(pathlib.Path("/templates/translations.json").read_text())
+                lang = request.http_request.LANGUAGE_CODE[:2]
+                return data.get(lang, data.get("en", {})).get(key, default)
+            except Exception:
+                return default
+        return get_translation("title_signup", "Sign up for Avatar")
+      initial_value_expression: true
+      label: ​
+      name: avatar-title-signup-enrollment
+      order: 0
+      placeholder: ''
+      placeholder_expression: false
+      required: true
+      sub_text: ''
+      type: static
+    id: avatar-title-signup-enrollment
+    identifiers:
+      field_key: title_signup
+      name: avatar-title-signup-enrollment
+    model: authentik_stages_prompt.prompt
+    state: present
   - attrs:
       field_key: email
       initial_value: |-
@@ -239,7 +251,7 @@ entries:
         except Exception:
             return ""
       initial_value_expression: true
-      label: '​'
+      label: ​
       name: avatar-translated-input-field-email
       order: 101
       placeholder: |-
@@ -262,7 +274,6 @@ entries:
       name: avatar-translated-input-field-email
     model: authentik_stages_prompt.prompt
     state: present
-
   - attrs:
       field_key: migration_consent
       initial_value: |-
@@ -276,7 +287,7 @@ entries:
                 return default
         return get_translation("message_migration_consent", "Your account needs migration, we will proceed to a password reset. Click continue to validate.")
       initial_value_expression: true
-      label: '​'
+      label: ​
       name: avatar-translated-input-field-migration-consent
       order: 100
       placeholder: ''
@@ -290,14 +301,14 @@ entries:
       name: avatar-translated-input-field-migration-consent
     model: authentik_stages_prompt.prompt
     state: present
-
-  # ── Title prompts (static, one per PromptStage) ───────────
-  # These replace the hidden flow .pf-c-title with a translated
-  # heading rendered inside the PromptStage itself.
-
   - attrs:
-      field_key: title_signup
-      initial_value: |-
+      field_key: password
+      initial_value: ''
+      initial_value_expression: false
+      label: ​
+      name: avatar-translated-input-field-password
+      order: 100
+      placeholder: |-
         import json, pathlib
         def get_translation(key, default=""):
             try:
@@ -306,26 +317,25 @@ entries:
                 return data.get(lang, data.get("en", {})).get(key, default)
             except Exception:
                 return default
-        return get_translation("title_signup", "Sign up for Avatar")
-      initial_value_expression: true
-      label: '​'
-      name: avatar-title-signup-enrollment
-      order: 0
-      placeholder: ''
-      placeholder_expression: false
+        return get_translation("placeholder_password", "Password")
+      placeholder_expression: true
       required: true
       sub_text: ''
-      type: static
-    id: avatar-title-signup-enrollment
+      type: password
+    id: avatar-translated-input-field-password
     identifiers:
-      field_key: title_signup
-      name: avatar-title-signup-enrollment
+      field_key: password
+      name: avatar-translated-input-field-password
     model: authentik_stages_prompt.prompt
     state: present
-
   - attrs:
-      field_key: title_password_signup
-      initial_value: |-
+      field_key: password_repeat
+      initial_value: ''
+      initial_value_expression: false
+      label: ​
+      name: avatar-translated-input-field-password-repeat
+      order: 101
+      placeholder: |-
         import json, pathlib
         def get_translation(key, default=""):
             try:
@@ -334,97 +344,57 @@ entries:
                 return data.get(lang, data.get("en", {})).get(key, default)
             except Exception:
                 return default
-        return get_translation("title_password_signup", "Choose a password")
-      initial_value_expression: true
-      label: '​'
-      name: avatar-title-password-signup
-      order: 0
-      placeholder: ''
-      placeholder_expression: false
+        return get_translation("placeholder_password_repeat", "Password (repeat)")
+      placeholder_expression: true
       required: true
       sub_text: ''
-      type: static
-    id: avatar-title-password-signup
+      type: password
+    id: avatar-translated-input-field-password-repeat
     identifiers:
-      field_key: title_password_signup
-      name: avatar-title-password-signup
+      field_key: password_repeat
+      name: avatar-translated-input-field-password-repeat
     model: authentik_stages_prompt.prompt
     state: present
-
   - attrs:
-      field_key: title_password_recovery
-      initial_value: |-
-        import json, pathlib
-        def get_translation(key, default=""):
-            try:
-                data = json.loads(pathlib.Path("/templates/translations.json").read_text())
-                lang = request.http_request.LANGUAGE_CODE[:2]
-                return data.get(lang, data.get("en", {})).get(key, default)
-            except Exception:
-                return default
-        return get_translation("title_password_recovery", "Reset your password")
-      initial_value_expression: true
-      label: '​'
-      name: avatar-title-password-recovery
+      field_key: password
+      initial_value: ''
+      initial_value_expression: false
+      label: Password
+      name: default-recovery-field-password
       order: 0
-      placeholder: ''
+      placeholder: Password
       placeholder_expression: false
       required: true
       sub_text: ''
-      type: static
-    id: avatar-title-password-recovery
+      type: password
+    id: default-recovery-field-password
     identifiers:
-      field_key: title_password_recovery
-      name: avatar-title-password-recovery
+      field_key: password
+      name: default-recovery-field-password
     model: authentik_stages_prompt.prompt
     state: present
-
   - attrs:
-      field_key: title_migration
-      initial_value: |-
-        import json, pathlib
-        def get_translation(key, default=""):
-            try:
-                data = json.loads(pathlib.Path("/templates/translations.json").read_text())
-                lang = request.http_request.LANGUAGE_CODE[:2]
-                return data.get(lang, data.get("en", {})).get(key, default)
-            except Exception:
-                return default
-        return get_translation("title_migration", "Account migration required")
-      initial_value_expression: true
-      label: '​'
-      name: avatar-title-migration
-      order: 0
-      placeholder: ''
+      field_key: password_repeat
+      initial_value: ''
+      initial_value_expression: false
+      label: Password (repeat)
+      name: default-recovery-field-password-repeat
+      order: 1
+      placeholder: Password (repeat)
       placeholder_expression: false
       required: true
       sub_text: ''
-      type: static
-    id: avatar-title-migration
+      type: password
+    id: default-recovery-field-password-repeat
     identifiers:
-      field_key: title_migration
-      name: avatar-title-migration
+      field_key: password_repeat
+      name: default-recovery-field-password-repeat
     model: authentik_stages_prompt.prompt
     state: present
 
 # ============================================================
 # POLICIES
 # ============================================================
-  - attrs:
-      execution_logging: false
-      expression: |-
-        if not request.user:
-            return False
-
-        must_reset_password = request.user.attributes.get('must_reset_password')
-
-        return bool(must_reset_password)
-      name: avatar-is-existing-non-migrated-account
-    id: avatar-is-existing-non-migrated-account
-    identifiers:
-      name: avatar-is-existing-non-migrated-account
-    model: authentik_policies_expression.expressionpolicy
-    state: present
   - attrs:
       execution_logging: false
       expression: |-
@@ -442,36 +412,102 @@ entries:
   - attrs:
       execution_logging: false
       expression: |-
-        from authentik.core.models import User
+        from authentik.core.models import Group
 
-        email = context.get("prompt_data", {}).get("email")
-        user_exists = User.objects.filter(email__iexact=email).exists()
+        GMAIL_DOMAINS = {"gmail.com", "googlemail.com"}
 
-        # Store the result in the flow context for the next stages to use
-        context["user_already_exists"] = user_exists
+        email = context.get("prompt_data", {}).get("email", "")
+        if not email:
+            ak_logger.warning("avatar-google-source-group-assignment: no email in prompt_data, skipping group assignment")
+            return True
 
-        # Always return True so the attacker doesn't get an error message
+        domain = email.split("@", 1)[-1].lower()
+
+        if domain in GMAIL_DOMAINS:
+            # Personal Gmail account — create a per-user self-service group.
+            group_name = f"self_service-{email}"
+        else:
+            # Company email — strip the TLD (last segment) and use the rest as the
+            # group name so all users from the same domain share one group.
+            # e.g. acme.com -> acme  |  mail.acme.com -> mail.acme
+            parts = domain.rsplit(".", 1)
+            group_name = parts[0] if len(parts) > 1 else domain
+
+        group, created = Group.objects.get_or_create(
+            name=group_name,
+            defaults={"attributes": {"license": "demo"}},
+        )
+
+        if created:
+            ak_logger.info(f"Created new group '{group_name}' for Google OAuth user: {email}")
+        else:
+            ak_logger.info(f"Assigning existing group '{group_name}' to Google OAuth user: {email}")
+
+        # Merge with any groups already in context rather than overwriting them.
+        existing = context["flow_plan"].context.get("groups", [])
+        if group not in existing:
+            context["flow_plan"].context["groups"] = existing + [group]
+
         return True
-      name: check-email-exists-silently
-    id: check-email-exists-silently
+      name: avatar-google-source-group-assignment
+    id: avatar-google-source-group-assignment
     identifiers:
-      name: check-email-exists-silently
+      name: avatar-google-source-group-assignment
     model: authentik_policies_expression.expressionpolicy
     state: present
   - attrs:
       execution_logging: false
       expression: |-
-        # Check if the 'user_already_exists' flag was set to False
-        user_exists = context.get("user_already_exists", False)
-
-        return user_exists
-      name: policy-user-already-exists
-    id: policy-user-already-exists
+        # Map the Google-provided email to the username field so users are
+        # created with their email as username (no username-prompt screen).
+        email = context.get("prompt_data", {}).get("email", "")
+        if email:
+            context["prompt_data"]["username"] = email
+        return True
+      name: avatar-google-source-set-username
+    id: avatar-google-source-set-username
     identifiers:
-      name: policy-user-already-exists
+      name: avatar-google-source-set-username
     model: authentik_policies_expression.expressionpolicy
     state: present
   - attrs:
+      execution_logging: false
+      expression: |-
+        if not request.user:
+            return False
+
+        must_reset_password = request.user.attributes.get('must_reset_password')
+
+        return bool(must_reset_password)
+      name: avatar-is-existing-non-migrated-account
+    id: avatar-is-existing-non-migrated-account
+    identifiers:
+      name: avatar-is-existing-non-migrated-account
+    model: authentik_policies_expression.expressionpolicy
+    state: present
+  - attrs:
+      amount_digits: 0
+      amount_lowercase: 0
+      amount_symbols: 0
+      amount_uppercase: 0
+      check_have_i_been_pwned: false
+      check_static_rules: true
+      check_zxcvbn: false
+      error_message: Password must be at least 12 characters long.
+      execution_logging: false
+      hibp_allowed_count: 0
+      length_min: 12
+      name: avatar-password-length-policy
+      password_field: password
+      symbol_charset: '!\"#$%&''()*+,-./:;<=>?@[]^_`{|}~'
+      zxcvbn_score_threshold: 2
+    id: avatar-password-length-policy
+    identifiers:
+      name: avatar-password-length-policy
+    model: authentik_policies_password.passwordpolicy
+    state: present
+  - attrs:
+      execution_logging: false
       expression: !Format ["from authentik.core.models import Group\n\n# Get the email from the prompt data collected in the first stage\nemail = context.get(\"prompt_data\", {}).get(\"email\")\n\nif email:\n    # Get or create a group with the same suffix as the email\n    group, created = Group.objects.get_or_create(name=f\"self_service-{email}\")\n\n    # Update the attributes for the group\n    # We use a dictionary update to ensure we don't overwrite other existing attributes\n    if not group.attributes:\n        group.attributes = {}\n\n    group.attributes[\"license\"] = \"%s\"\n    group.save()\n\n    # Assign the group object to the flow context\n    # Authentik expects a list of Group objects in the ['groups'] key\n    context[\"flow_plan\"].context[\"groups\"] = [group]\n\n    if created:\n        ak_logger.info(f\"Created new personal group with demo license for user: {email}\")\n    else:\n        ak_logger.info(f\"Updated existing group attributes for user: {email}\")\n\nreturn True", !Env 'AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE']
       name: avatar-self-service-per-user-organization-creation
     id: avatar-self-service-per-user-organization-creation
@@ -520,125 +556,74 @@ entries:
       name: avatar-user-does-not-exist
     model: authentik_policies_expression.expressionpolicy
     state: present
-
-  # ── Google OAuth source policies ─────────────────────────────
-
   - attrs:
       execution_logging: false
       expression: |-
-        # Map the Google-provided email to the username field so users are
-        # created with their email as username (no username-prompt screen).
-        email = context.get("prompt_data", {}).get("email", "")
-        if email:
-            context["prompt_data"]["username"] = email
+        from authentik.core.models import User
+
+        email = context.get("prompt_data", {}).get("email")
+        user_exists = User.objects.filter(email__iexact=email).exists()
+
+        # Store the result in the flow context for the next stages to use
+        context["user_already_exists"] = user_exists
+
+        # Always return True so the attacker doesn't get an error message
         return True
-      name: avatar-google-source-set-username
-    id: avatar-google-source-set-username
+      name: check-email-exists-silently
+    id: check-email-exists-silently
     identifiers:
-      name: avatar-google-source-set-username
+      name: check-email-exists-silently
     model: authentik_policies_expression.expressionpolicy
     state: present
-
   - attrs:
       execution_logging: false
       expression: |-
-        from authentik.core.models import Group
+        # Check if the 'user_already_exists' flag was set to False
+        user_exists = context.get("user_already_exists", False)
 
-        GMAIL_DOMAINS = {"gmail.com", "googlemail.com"}
-
-        email = context.get("prompt_data", {}).get("email", "")
-        if not email:
-            ak_logger.warning("avatar-google-source-group-assignment: no email in prompt_data, skipping group assignment")
-            return True
-
-        domain = email.split("@", 1)[-1].lower()
-
-        if domain in GMAIL_DOMAINS:
-            # Personal Gmail account — create a per-user self-service group.
-            group_name = f"self_service-{email}"
-        else:
-            # Company email — strip the TLD (last segment) and use the rest as the
-            # group name so all users from the same domain share one group.
-            # e.g. acme.com -> acme  |  mail.acme.com -> mail.acme
-            parts = domain.rsplit(".", 1)
-            group_name = parts[0] if len(parts) > 1 else domain
-
-        group, created = Group.objects.get_or_create(
-            name=group_name,
-            defaults={"attributes": {"license": "demo"}},
-        )
-
-        if created:
-            ak_logger.info(f"Created new group '{group_name}' for Google OAuth user: {email}")
-        else:
-            ak_logger.info(f"Assigning existing group '{group_name}' to Google OAuth user: {email}")
-
-        # Merge with any groups already in context rather than overwriting them.
-        existing = context["flow_plan"].context.get("groups", [])
-        if group not in existing:
-            context["flow_plan"].context["groups"] = existing + [group]
-
-        return True
-      name: avatar-google-source-group-assignment
-    id: avatar-google-source-group-assignment
+        return user_exists
+      name: policy-user-already-exists
+    id: policy-user-already-exists
     identifiers:
-      name: avatar-google-source-group-assignment
+      name: policy-user-already-exists
     model: authentik_policies_expression.expressionpolicy
-    state: present
-  - attrs:
-      amount_digits: 0
-      amount_lowercase: 0
-      amount_symbols: 0
-      amount_uppercase: 0
-      check_have_i_been_pwned: false
-      check_static_rules: true
-      check_zxcvbn: false
-      error_message: Password must be at least 12 characters long.
-      execution_logging: false
-      hibp_allowed_count: 0
-      length_min: 12
-      name: avatar-password-length-policy
-      password_field: password
-      symbol_charset: '!\"#$%&''()*+,-./:;<=>?@[]^_`{|}~'
-      zxcvbn_score_threshold: 2
-    id: avatar-password-length-policy
-    identifiers:
-      name: avatar-password-length-policy
-    model: authentik_policies_password.passwordpolicy
     state: present
 
 # ============================================================
 # STAGES
 # ============================================================
   - attrs:
-      consent_expire_in: weeks=4
-      mode: permanent
-      name: avatar-should-migrate-account
-    id: avatar-should-migrate-account
+      geoip_binding: no_binding
+      name: avatar-authentication-login
+      network_binding: no_binding
+      remember_device: days=30
+      remember_me_offset: seconds=0
+      session_duration: hours=2
+      terminate_other_sessions: false
+    id: avatar-authentication-login
     identifiers:
-      name: avatar-should-migrate-account
-    model: authentik_stages_consent.consentstage
+      name: avatar-authentication-login
+    model: authentik_stages_user_login.userloginstage
     state: present
   - attrs:
-      activate_user_on_success: false
-      from_address: system@authentik.local
-      host: localhost
-      name: avatar-email-someone-tried-to-register-with-your-mail
-      port: 25
-      recovery_cache_timeout: minutes=5
-      recovery_max_attempts: 5
-      subject: Someone tried to register with your mail
-      template: email/email_account_exists.html
-      timeout: 10
-      token_expiry: minutes=0
-      use_global_settings: true
-      use_ssl: false
-      use_tls: false
-      username: ''
-    id: avatar-email-someone-tried-to-register-with-your-mail
+      captcha_stage: null
+      case_insensitive_matching: true
+      enable_remember_me: false
+      enrollment_flow: !KeyOf 'avatar-self-service-signup-flow'
+      name: avatar-authentication-stage
+      password_stage: null
+      passwordless_flow: null
+      pretend_user_exists: true
+      recovery_flow: !KeyOf 'avatar-recovery-flow'
+      show_matched_user: true
+      show_source_labels: false
+      user_fields:
+      - email
+      webauthn_stage: null
+    id: avatar-authentication-stage
     identifiers:
-      name: avatar-email-someone-tried-to-register-with-your-mail
-    model: authentik_stages_email.emailstage
+      name: avatar-authentication-stage
+    model: authentik_stages_identification.identificationstage
     state: present
   - attrs:
       activate_user_on_success: true
@@ -662,6 +647,56 @@ entries:
     model: authentik_stages_email.emailstage
     state: present
   - attrs:
+      geoip_binding: no_binding
+      name: avatar-google-source-user-login
+      network_binding: no_binding
+      remember_device: days=30
+      remember_me_offset: seconds=0
+      session_duration: seconds=0
+      terminate_other_sessions: false
+    id: avatar-google-source-user-login
+    identifiers:
+      name: avatar-google-source-user-login
+    model: authentik_stages_user_login.userloginstage
+    state: present
+  - attrs:
+      create_users_as_inactive: false
+      create_users_group: null
+      name: avatar-google-source-user-write
+      user_creation_mode: always_create
+      user_path_template: ''
+      user_type: external
+    id: avatar-google-source-user-write
+    identifiers:
+      name: avatar-google-source-user-write
+    model: authentik_stages_user_write.userwritestage
+    state: present
+  - attrs:
+      fields:
+      - !KeyOf 'avatar-title-migration'
+      - !KeyOf 'avatar-translated-input-field-migration-consent'
+      name: avatar-migration-stage
+    id: avatar-migration-stage
+    identifiers:
+      name: avatar-migration-stage
+    model: authentik_stages_prompt.promptstage
+    state: present
+  - attrs:
+      allow_show_password: true
+      backends:
+      - authentik.core.auth.InbuiltBackend
+      - authentik.core.auth.TokenBackend
+      - authentik.sources.ldap.auth.LDAPBackend
+      - authentik.sources.kerberos.auth.KerberosBackend
+      configure_flow: !Find [authentik_flows.flow, [slug, default-password-change]]
+      failed_attempts_before_cancel: 5
+      name: avatar-password-stage
+    id: avatar-password-stage
+    identifiers:
+      name: avatar-password-stage
+    model: authentik_stages_password.passwordstage
+    state: present
+  - attrs:
       activate_user_on_success: true
       from_address: system@authentik.local
       host: localhost
@@ -683,84 +718,6 @@ entries:
     model: authentik_stages_email.emailstage
     state: present
   - attrs:
-      captcha_stage: null
-      case_insensitive_matching: true
-      enable_remember_me: false
-      enrollment_flow: null
-      name: default-recovery-identification
-      password_stage: null
-      passwordless_flow: null
-      pretend_user_exists: true
-      recovery_flow: null
-      show_matched_user: true
-      show_source_labels: false
-      user_fields:
-      - email
-      webauthn_stage: null
-    id: default-recovery-identification
-    identifiers:
-      name: default-recovery-identification
-    model: authentik_stages_identification.identificationstage
-    state: present
-  - attrs:
-      captcha_stage: null
-      case_insensitive_matching: true
-      enable_remember_me: false
-      enrollment_flow: !KeyOf 'avatar-self-service-signup-flow'
-      name: avatar-authentication-stage
-      password_stage: null
-      passwordless_flow: null
-      pretend_user_exists: true
-      recovery_flow: !KeyOf 'avatar-recovery-flow'
-      show_matched_user: true
-      show_source_labels: false
-      user_fields:
-      - email
-      webauthn_stage: null
-    id: avatar-authentication-stage
-    identifiers:
-      name: avatar-authentication-stage
-    model: authentik_stages_identification.identificationstage
-    state: present
-  - attrs:
-      allow_show_password: true
-      backends:
-      - authentik.core.auth.InbuiltBackend
-      - authentik.core.auth.TokenBackend
-      - authentik.sources.ldap.auth.LDAPBackend
-      - authentik.sources.kerberos.auth.KerberosBackend
-      configure_flow: !Find [authentik_flows.flow, [slug, default-password-change]]
-      failed_attempts_before_cancel: 5
-      name: avatar-password-stage
-    id: avatar-password-stage
-    identifiers:
-      name: avatar-password-stage
-    model: authentik_stages_password.passwordstage
-    state: present
-  - attrs:
-      fields:
-      - !KeyOf 'avatar-title-signup-enrollment'
-      - !KeyOf 'avatar-translated-input-field-email'
-      name: avatar-source-enrollment-prompt
-    id: avatar-source-enrollment-prompt
-    identifiers:
-      name: avatar-source-enrollment-prompt
-    model: authentik_stages_prompt.promptstage
-    state: present
-  - attrs:
-      fields:
-      - !KeyOf 'avatar-title-password-signup'
-      - !KeyOf 'avatar-translated-input-field-password'
-      - !KeyOf 'avatar-translated-input-field-password-repeat'
-      name: avatar-signup-password-stage
-      validation_policies:
-      - !KeyOf 'avatar-password-length-policy'
-    id: avatar-signup-password-stage
-    identifiers:
-      name: avatar-signup-password-stage
-    model: authentik_stages_prompt.promptstage
-    state: present
-  - attrs:
       fields:
       - !KeyOf 'avatar-title-password-recovery'
       - !KeyOf 'avatar-translated-input-field-password'
@@ -774,14 +731,17 @@ entries:
     model: authentik_stages_prompt.promptstage
     state: present
   - attrs:
-      fields:
-      - !KeyOf 'avatar-title-migration'
-      - !KeyOf 'avatar-translated-input-field-migration-consent'
-      name: avatar-migration-stage
-    id: avatar-migration-stage
+      geoip_binding: bind_continent
+      name: avatar-recovery-user-login
+      network_binding: bind_asn
+      remember_device: days=30
+      remember_me_offset: seconds=0
+      session_duration: seconds=0
+      terminate_other_sessions: false
+    id: avatar-recovery-user-login
     identifiers:
-      name: avatar-migration-stage
-    model: authentik_stages_prompt.promptstage
+      name: avatar-recovery-user-login
+    model: authentik_stages_user_login.userloginstage
     state: present
   - attrs:
       keep_context: false
@@ -804,32 +764,6 @@ entries:
     identifiers:
       name: avatar-redirect-to-self-service-signup
     model: authentik_stages_redirect.redirectstage
-    state: present
-  - attrs:
-      geoip_binding: no_binding
-      name: default-recovery-user-login
-      network_binding: no_binding
-      remember_device: days=30
-      remember_me_offset: seconds=0
-      session_duration: seconds=0
-      terminate_other_sessions: false
-    id: default-recovery-user-login
-    identifiers:
-      name: default-recovery-user-login
-    model: authentik_stages_user_login.userloginstage
-    state: present
-  - attrs:
-      geoip_binding: bind_continent
-      name: avatar-recovery-user-login
-      network_binding: bind_asn
-      remember_device: days=30
-      remember_me_offset: seconds=0
-      session_duration: seconds=0
-      terminate_other_sessions: false
-    id: avatar-recovery-user-login
-    identifiers:
-      name: avatar-recovery-user-login
-    model: authentik_stages_user_login.userloginstage
     state: present
   - attrs:
       create_users_as_inactive: true
@@ -856,6 +790,73 @@ entries:
     model: authentik_stages_user_write.userwritestage
     state: present
   - attrs:
+      fields:
+      - !KeyOf 'default-recovery-field-password'
+      name: avatar-signup-password-ask
+      validation_policies:
+      - !KeyOf 'avatar-password-length-policy'
+    id: avatar-signup-password-ask
+    identifiers:
+      name: avatar-signup-password-ask
+    model: authentik_stages_prompt.promptstage
+    state: present
+  - attrs:
+      fields:
+      - !KeyOf 'avatar-title-password-signup'
+      - !KeyOf 'avatar-translated-input-field-password'
+      - !KeyOf 'avatar-translated-input-field-password-repeat'
+      name: avatar-signup-password-stage
+      validation_policies:
+      - !KeyOf 'avatar-password-length-policy'
+    id: avatar-signup-password-stage
+    identifiers:
+      name: avatar-signup-password-stage
+    model: authentik_stages_prompt.promptstage
+    state: present
+  - attrs:
+      fields:
+      - !KeyOf 'avatar-translated-input-field-email'
+      - !KeyOf 'avatar-title-signup-enrollment'
+      name: avatar-source-enrollment-prompt
+    id: avatar-source-enrollment-prompt
+    identifiers:
+      name: avatar-source-enrollment-prompt
+    model: authentik_stages_prompt.promptstage
+    state: present
+  - attrs:
+      captcha_stage: null
+      case_insensitive_matching: true
+      enable_remember_me: false
+      enrollment_flow: null
+      name: default-recovery-identification
+      password_stage: null
+      passwordless_flow: null
+      pretend_user_exists: true
+      recovery_flow: null
+      show_matched_user: true
+      show_source_labels: false
+      user_fields:
+      - email
+      webauthn_stage: null
+    id: default-recovery-identification
+    identifiers:
+      name: default-recovery-identification
+    model: authentik_stages_identification.identificationstage
+    state: present
+  - attrs:
+      geoip_binding: no_binding
+      name: default-recovery-user-login
+      network_binding: no_binding
+      remember_device: days=30
+      remember_me_offset: seconds=0
+      session_duration: seconds=0
+      terminate_other_sessions: false
+    id: default-recovery-user-login
+    identifiers:
+      name: default-recovery-user-login
+    model: authentik_stages_user_login.userloginstage
+    state: present
+  - attrs:
       create_users_as_inactive: false
       create_users_group: null
       name: default-recovery-user-write
@@ -868,35 +869,6 @@ entries:
     model: authentik_stages_user_write.userwritestage
     state: present
 
-  # ── Google OAuth source stages ────────────────────────────
-
-  - attrs:
-      create_users_as_inactive: false
-      create_users_group: null
-      name: avatar-google-source-user-write
-      user_creation_mode: always_create
-      user_path_template: ''
-      user_type: external
-    id: avatar-google-source-user-write
-    identifiers:
-      name: avatar-google-source-user-write
-    model: authentik_stages_user_write.userwritestage
-    state: present
-
-  - attrs:
-      geoip_binding: no_binding
-      name: avatar-google-source-user-login
-      network_binding: no_binding
-      remember_device: days=30
-      remember_me_offset: seconds=0
-      session_duration: seconds=0
-      terminate_other_sessions: false
-    id: avatar-google-source-user-login
-    identifiers:
-      name: avatar-google-source-user-login
-    model: authentik_stages_user_login.userloginstage
-    state: present
-
 # ============================================================
 # FLOW STAGE BINDINGS
 # ============================================================
@@ -904,6 +876,21 @@ entries:
   # ========================================
   # FLOW STAGE BINDINGS - Authentication Flow
   # ========================================
+  - attrs:
+      evaluate_on_plan: false
+      invalid_response_action: retry
+      order: 30
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: !KeyOf 'avatar-authentication-login'
+      target: !KeyOf 'avatar-authentication-flow'
+    id: avatar-authentication-flow-bind-avatar-authentication-login-order-30
+    identifiers:
+      order: 30
+      stage: !KeyOf 'avatar-authentication-login'
+      target: !KeyOf 'avatar-authentication-flow'
+    model: authentik_flows.flowstagebinding
+    state: present
   - attrs:
       evaluate_on_plan: false
       invalid_response_action: retry
@@ -937,6 +924,21 @@ entries:
   - attrs:
       evaluate_on_plan: false
       invalid_response_action: retry
+      order: 20
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: !KeyOf 'avatar-password-stage'
+      target: !KeyOf 'avatar-authentication-flow'
+    id: avatar-authentication-flow-bind-avatar-password-stage-order-20
+    identifiers:
+      order: 20
+      stage: !KeyOf 'avatar-password-stage'
+      target: !KeyOf 'avatar-authentication-flow'
+    model: authentik_flows.flowstagebinding
+    state: present
+  - attrs:
+      evaluate_on_plan: false
+      invalid_response_action: retry
       order: 12
       policy_engine_mode: any
       re_evaluate_policies: true
@@ -964,55 +966,63 @@ entries:
       target: !KeyOf 'avatar-authentication-flow'
     model: authentik_flows.flowstagebinding
     state: present
+
+  # ========================================
+  # FLOW STAGE BINDINGS - Google Source Authentication
+  # ========================================
+  - attrs:
+      evaluate_on_plan: false
+      invalid_response_action: retry
+      order: 10
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: !KeyOf 'avatar-google-source-user-login'
+      target: !KeyOf 'avatar-google-source-authentication'
+    id: avatar-google-source-authentication-bind-avatar-google-source-user-login-order-10
+    identifiers:
+      order: 10
+      stage: !KeyOf 'avatar-google-source-user-login'
+      target: !KeyOf 'avatar-google-source-authentication'
+    model: authentik_flows.flowstagebinding
+    state: present
+
+  # ========================================
+  # FLOW STAGE BINDINGS - Google Source Enrollment
+  # ========================================
   - attrs:
       evaluate_on_plan: false
       invalid_response_action: retry
       order: 20
       policy_engine_mode: any
       re_evaluate_policies: true
-      stage: !KeyOf 'avatar-password-stage'
-      target: !KeyOf 'avatar-authentication-flow'
-    id: avatar-authentication-flow-bind-avatar-password-stage-order-20
+      stage: !KeyOf 'avatar-google-source-user-login'
+      target: !KeyOf 'avatar-google-source-enrollment'
+    id: avatar-google-source-enrollment-bind-avatar-google-source-user-login-order-20
     identifiers:
       order: 20
-      stage: !KeyOf 'avatar-password-stage'
-      target: !KeyOf 'avatar-authentication-flow'
+      stage: !KeyOf 'avatar-google-source-user-login'
+      target: !KeyOf 'avatar-google-source-enrollment'
     model: authentik_flows.flowstagebinding
     state: present
   - attrs:
       evaluate_on_plan: false
       invalid_response_action: retry
-      order: 30
+      order: 10
       policy_engine_mode: any
       re_evaluate_policies: true
-      stage: !Find [authentik_stages_user_login.userloginstage, [name, default-authentication-login]]
-      target: !KeyOf 'avatar-authentication-flow'
-    id: avatar-authentication-flow-bind-default-authentication-login-order-30
+      stage: !KeyOf 'avatar-google-source-user-write'
+      target: !KeyOf 'avatar-google-source-enrollment'
+    id: avatar-google-source-enrollment-bind-avatar-google-source-user-write-order-10
     identifiers:
-      order: 30
-      stage: !Find [authentik_stages_user_login.userloginstage, [name, default-authentication-login]]
-      target: !KeyOf 'avatar-authentication-flow'
+      order: 10
+      stage: !KeyOf 'avatar-google-source-user-write'
+      target: !KeyOf 'avatar-google-source-enrollment'
     model: authentik_flows.flowstagebinding
     state: present
 
   # ========================================
   # FLOW STAGE BINDINGS - Recovery Flow
   # ========================================
-  - attrs:
-      evaluate_on_plan: true
-      invalid_response_action: retry
-      order: 10
-      policy_engine_mode: any
-      re_evaluate_policies: true
-      stage: !KeyOf 'default-recovery-identification'
-      target: !KeyOf 'avatar-recovery-flow'
-    id: avatar-recovery-flow-bind-default-recovery-identification-order-10
-    identifiers:
-      order: 10
-      stage: !KeyOf 'default-recovery-identification'
-      target: !KeyOf 'avatar-recovery-flow'
-    model: authentik_flows.flowstagebinding
-    state: present
   - attrs:
       evaluate_on_plan: true
       invalid_response_action: retry
@@ -1046,21 +1056,6 @@ entries:
   - attrs:
       evaluate_on_plan: false
       invalid_response_action: retry
-      order: 40
-      policy_engine_mode: any
-      re_evaluate_policies: true
-      stage: !KeyOf 'default-recovery-user-write'
-      target: !KeyOf 'avatar-recovery-flow'
-    id: avatar-recovery-flow-bind-default-recovery-user-write-order-40
-    identifiers:
-      order: 40
-      stage: !KeyOf 'default-recovery-user-write'
-      target: !KeyOf 'avatar-recovery-flow'
-    model: authentik_flows.flowstagebinding
-    state: present
-  - attrs:
-      evaluate_on_plan: false
-      invalid_response_action: retry
       order: 100
       policy_engine_mode: any
       re_evaluate_policies: true
@@ -1073,6 +1068,51 @@ entries:
       target: !KeyOf 'avatar-recovery-flow'
     model: authentik_flows.flowstagebinding
     state: present
+  - attrs:
+      evaluate_on_plan: false
+      invalid_response_action: retry
+      order: 30
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: !KeyOf 'avatar-signup-password-ask'
+      target: !KeyOf 'avatar-recovery-flow'
+    id: avatar-recovery-flow-bind-avatar-signup-password-ask-order-30
+    identifiers:
+      order: 30
+      stage: !KeyOf 'avatar-signup-password-ask'
+      target: !KeyOf 'avatar-recovery-flow'
+    model: authentik_flows.flowstagebinding
+    state: present
+  - attrs:
+      evaluate_on_plan: true
+      invalid_response_action: retry
+      order: 10
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: !KeyOf 'default-recovery-identification'
+      target: !KeyOf 'avatar-recovery-flow'
+    id: avatar-recovery-flow-bind-default-recovery-identification-order-10
+    identifiers:
+      order: 10
+      stage: !KeyOf 'default-recovery-identification'
+      target: !KeyOf 'avatar-recovery-flow'
+    model: authentik_flows.flowstagebinding
+    state: present
+  - attrs:
+      evaluate_on_plan: false
+      invalid_response_action: retry
+      order: 40
+      policy_engine_mode: any
+      re_evaluate_policies: true
+      stage: !KeyOf 'default-recovery-user-write'
+      target: !KeyOf 'avatar-recovery-flow'
+    id: avatar-recovery-flow-bind-default-recovery-user-write-order-40
+    identifiers:
+      order: 40
+      stage: !KeyOf 'default-recovery-user-write'
+      target: !KeyOf 'avatar-recovery-flow'
+    model: authentik_flows.flowstagebinding
+    state: present
 
   # ========================================
   # FLOW STAGE BINDINGS - Self Service Signup Flow
@@ -1080,15 +1120,15 @@ entries:
   - attrs:
       evaluate_on_plan: false
       invalid_response_action: retry
-      order: 10
+      order: 30
       policy_engine_mode: any
       re_evaluate_policies: true
-      stage: !KeyOf 'avatar-source-enrollment-prompt'
+      stage: !KeyOf 'avatar-email-account-confirmation'
       target: !KeyOf 'avatar-self-service-signup-flow'
-    id: avatar-self-service-signup-flow-bind-avatar-source-enrollment-prompt-order-10
+    id: avatar-self-service-signup-flow-bind-avatar-email-account-confirmation-order-30
     identifiers:
-      order: 10
-      stage: !KeyOf 'avatar-source-enrollment-prompt'
+      order: 30
+      stage: !KeyOf 'avatar-email-account-confirmation'
       target: !KeyOf 'avatar-self-service-signup-flow'
     model: authentik_flows.flowstagebinding
     state: present
@@ -1110,15 +1150,15 @@ entries:
   - attrs:
       evaluate_on_plan: false
       invalid_response_action: retry
-      order: 30
-      policy_engine_mode: any
+      order: 40
+      policy_engine_mode: all
       re_evaluate_policies: true
-      stage: !KeyOf 'avatar-email-account-confirmation'
+      stage: !KeyOf 'avatar-self-service-user-password-write'
       target: !KeyOf 'avatar-self-service-signup-flow'
-    id: avatar-self-service-signup-flow-bind-avatar-email-account-confirmation-order-30
+    id: avatar-self-service-signup-flow-bind-avatar-self-service-user-password-write-order-40
     identifiers:
-      order: 30
-      stage: !KeyOf 'avatar-email-account-confirmation'
+      order: 40
+      stage: !KeyOf 'avatar-self-service-user-password-write'
       target: !KeyOf 'avatar-self-service-signup-flow'
     model: authentik_flows.flowstagebinding
     state: present
@@ -1140,69 +1180,16 @@ entries:
   - attrs:
       evaluate_on_plan: false
       invalid_response_action: retry
-      order: 40
-      policy_engine_mode: all
+      order: 10
+      policy_engine_mode: any
       re_evaluate_policies: true
-      stage: !KeyOf 'avatar-self-service-user-password-write'
+      stage: !KeyOf 'avatar-source-enrollment-prompt'
       target: !KeyOf 'avatar-self-service-signup-flow'
-    id: avatar-self-service-signup-flow-bind-avatar-self-service-user-password-write-order-40
+    id: avatar-self-service-signup-flow-bind-avatar-source-enrollment-prompt-order-10
     identifiers:
-      order: 40
-      stage: !KeyOf 'avatar-self-service-user-password-write'
+      order: 10
+      stage: !KeyOf 'avatar-source-enrollment-prompt'
       target: !KeyOf 'avatar-self-service-signup-flow'
-    model: authentik_flows.flowstagebinding
-    state: present
-
-  # ========================================
-  # FLOW STAGE BINDINGS - Google Source Enrollment Flow
-  # ========================================
-  - attrs:
-      evaluate_on_plan: false
-      invalid_response_action: retry
-      order: 10
-      policy_engine_mode: any
-      re_evaluate_policies: true
-      stage: !KeyOf 'avatar-google-source-user-write'
-      target: !KeyOf 'avatar-google-source-enrollment'
-    id: avatar-google-source-enrollment-bind-user-write-order-10
-    identifiers:
-      order: 10
-      stage: !KeyOf 'avatar-google-source-user-write'
-      target: !KeyOf 'avatar-google-source-enrollment'
-    model: authentik_flows.flowstagebinding
-    state: present
-  - attrs:
-      evaluate_on_plan: false
-      invalid_response_action: retry
-      order: 20
-      policy_engine_mode: any
-      re_evaluate_policies: true
-      stage: !KeyOf 'avatar-google-source-user-login'
-      target: !KeyOf 'avatar-google-source-enrollment'
-    id: avatar-google-source-enrollment-bind-user-login-order-20
-    identifiers:
-      order: 20
-      stage: !KeyOf 'avatar-google-source-user-login'
-      target: !KeyOf 'avatar-google-source-enrollment'
-    model: authentik_flows.flowstagebinding
-    state: present
-
-  # ========================================
-  # FLOW STAGE BINDINGS - Google Source Authentication Flow
-  # ========================================
-  - attrs:
-      evaluate_on_plan: false
-      invalid_response_action: retry
-      order: 10
-      policy_engine_mode: any
-      re_evaluate_policies: true
-      stage: !KeyOf 'avatar-google-source-user-login'
-      target: !KeyOf 'avatar-google-source-authentication'
-    id: avatar-google-source-authentication-bind-user-login-order-10
-    identifiers:
-      order: 10
-      stage: !KeyOf 'avatar-google-source-user-login'
-      target: !KeyOf 'avatar-google-source-authentication'
     model: authentik_flows.flowstagebinding
     state: present
 
@@ -1215,15 +1202,15 @@ entries:
       group: null
       negate: false
       order: 0
-      policy: !KeyOf 'avatar-set-username-from-email'
-      target: !KeyOf 'avatar-self-service-signup-flow-bind-avatar-self-service-user-identity-write-order-20'
+      policy: !KeyOf 'avatar-clear-must-reset-password-flag'
+      target: !KeyOf 'avatar-recovery-flow-bind-avatar-recovery-user-login-order-100'
       timeout: 30
       user: null
-    id: avatar-set-username-from-email-bind-avatar-self-service-signup-flow-bind-avatar-self-service-user-identity-write-order-20-order-0
+    id: avatar-clear-must-reset-password-flag-bind-avatar-recovery-flow-bind-avatar-recovery-user-login-order-100-order-0
     identifiers:
       order: 0
-      policy: !KeyOf 'avatar-set-username-from-email'
-      target: !KeyOf 'avatar-self-service-signup-flow-bind-avatar-self-service-user-identity-write-order-20'
+      policy: !KeyOf 'avatar-clear-must-reset-password-flag'
+      target: !KeyOf 'avatar-recovery-flow-bind-avatar-recovery-user-login-order-100'
     model: authentik_policies.policybinding
     state: present
   - attrs:
@@ -1232,15 +1219,32 @@ entries:
       group: null
       negate: false
       order: 10
-      policy: !KeyOf 'avatar-self-service-per-user-organization-creation'
-      target: !KeyOf 'avatar-self-service-signup-flow-bind-avatar-self-service-user-password-write-order-40'
+      policy: !KeyOf 'avatar-google-source-group-assignment'
+      target: !KeyOf 'avatar-google-source-enrollment-bind-avatar-google-source-user-write-order-10'
       timeout: 30
       user: null
-    id: avatar-self-service-per-user-organization-creation-bind-avatar-self-service-signup-flow-bind-avatar-self-service-user-password-write-order-40-order-10
+    id: avatar-google-source-group-assignment-bind-avatar-google-source-enrollment-bind-avatar-google-source-user-write-order-10-order-10
     identifiers:
       order: 10
-      policy: !KeyOf 'avatar-self-service-per-user-organization-creation'
-      target: !KeyOf 'avatar-self-service-signup-flow-bind-avatar-self-service-user-password-write-order-40'
+      policy: !KeyOf 'avatar-google-source-group-assignment'
+      target: !KeyOf 'avatar-google-source-enrollment-bind-avatar-google-source-user-write-order-10'
+    model: authentik_policies.policybinding
+    state: present
+  - attrs:
+      enabled: true
+      failure_result: false
+      group: null
+      negate: false
+      order: 0
+      policy: !KeyOf 'avatar-google-source-set-username'
+      target: !KeyOf 'avatar-google-source-enrollment-bind-avatar-google-source-user-write-order-10'
+      timeout: 30
+      user: null
+    id: avatar-google-source-set-username-bind-avatar-google-source-enrollment-bind-avatar-google-source-user-write-order-10-order-0
+    identifiers:
+      order: 0
+      policy: !KeyOf 'avatar-google-source-set-username'
+      target: !KeyOf 'avatar-google-source-enrollment-bind-avatar-google-source-user-write-order-10'
     model: authentik_policies.policybinding
     state: present
   - attrs:
@@ -1258,23 +1262,6 @@ entries:
       order: 10
       policy: !KeyOf 'avatar-is-existing-non-migrated-account'
       target: !KeyOf 'avatar-authentication-flow-bind-avatar-migration-stage-order-11'
-    model: authentik_policies.policybinding
-    state: present
-  - attrs:
-      enabled: true
-      failure_result: false
-      group: null
-      negate: false
-      order: 10
-      policy: !KeyOf 'avatar-is-existing-non-migrated-account'
-      target: !KeyOf 'avatar-authentication-flow-bind-avatar-redirect-to-recovery-flow-order-12'
-      timeout: 30
-      user: null
-    id: avatar-is-existing-non-migrated-account-bind-avatar-authentication-flow-bind-avatar-redirect-to-recovery-flow-order-12-order-10
-    identifiers:
-      order: 10
-      policy: !KeyOf 'avatar-is-existing-non-migrated-account'
-      target: !KeyOf 'avatar-authentication-flow-bind-avatar-redirect-to-recovery-flow-order-12'
     model: authentik_policies.policybinding
     state: present
   - attrs:
@@ -1299,19 +1286,52 @@ entries:
       failure_result: false
       group: null
       negate: false
-      order: 0
-      policy: !KeyOf 'avatar-clear-must-reset-password-flag'
-      target: !KeyOf 'avatar-recovery-flow-bind-avatar-recovery-user-login-order-100'
+      order: 10
+      policy: !KeyOf 'avatar-is-existing-non-migrated-account'
+      target: !KeyOf 'avatar-authentication-flow-bind-avatar-redirect-to-recovery-flow-order-12'
       timeout: 30
       user: null
-    id: avatar-clear-must-reset-password-flag-bind-avatar-recovery-flow-bind-avatar-recovery-user-login-order-100-order-0
+    id: avatar-is-existing-non-migrated-account-bind-avatar-authentication-flow-bind-avatar-redirect-to-recovery-flow-order-12-order-10
     identifiers:
-      order: 0
-      policy: !KeyOf 'avatar-clear-must-reset-password-flag'
-      target: !KeyOf 'avatar-recovery-flow-bind-avatar-recovery-user-login-order-100'
+      order: 10
+      policy: !KeyOf 'avatar-is-existing-non-migrated-account'
+      target: !KeyOf 'avatar-authentication-flow-bind-avatar-redirect-to-recovery-flow-order-12'
     model: authentik_policies.policybinding
     state: present
-
+  - attrs:
+      enabled: true
+      failure_result: false
+      group: null
+      negate: false
+      order: 10
+      policy: !KeyOf 'avatar-self-service-per-user-organization-creation'
+      target: !KeyOf 'avatar-self-service-signup-flow-bind-avatar-self-service-user-password-write-order-40'
+      timeout: 30
+      user: null
+    id: avatar-self-service-per-user-organization-creation-bind-avatar-self-service-signup-flow-bind-avatar-self-service-user-password-write-order-40-order-10
+    identifiers:
+      order: 10
+      policy: !KeyOf 'avatar-self-service-per-user-organization-creation'
+      target: !KeyOf 'avatar-self-service-signup-flow-bind-avatar-self-service-user-password-write-order-40'
+    model: authentik_policies.policybinding
+    state: present
+  - attrs:
+      enabled: true
+      failure_result: false
+      group: null
+      negate: false
+      order: 0
+      policy: !KeyOf 'avatar-set-username-from-email'
+      target: !KeyOf 'avatar-self-service-signup-flow-bind-avatar-self-service-user-identity-write-order-20'
+      timeout: 30
+      user: null
+    id: avatar-set-username-from-email-bind-avatar-self-service-signup-flow-bind-avatar-self-service-user-identity-write-order-20-order-0
+    identifiers:
+      order: 0
+      policy: !KeyOf 'avatar-set-username-from-email'
+      target: !KeyOf 'avatar-self-service-signup-flow-bind-avatar-self-service-user-identity-write-order-20'
+    model: authentik_policies.policybinding
+    state: present
   - attrs:
       enabled: true
       failure_result: false
@@ -1329,27 +1349,6 @@ entries:
       target: !KeyOf 'avatar-authentication-flow-bind-avatar-redirect-to-self-service-signup-order-15'
     model: authentik_policies.policybinding
     state: present
-
-  # ── Google source enrollment: SSO guard (flow-level) ──────────────────────
-  - attrs:
-      enabled: true
-      failure_result: false
-      group: null
-      negate: false
-      order: 0
-      policy: !Find [authentik_policies_expression.expressionpolicy, [name, default-source-enrollment-if-sso]]
-      target: !KeyOf 'avatar-google-source-enrollment'
-      timeout: 30
-      user: null
-    id: sso-guard-bind-avatar-google-source-enrollment-order-0
-    identifiers:
-      order: 0
-      policy: !Find [authentik_policies_expression.expressionpolicy, [name, default-source-enrollment-if-sso]]
-      target: !KeyOf 'avatar-google-source-enrollment'
-    model: authentik_policies.policybinding
-    state: present
-
-  # ── Google source authentication: SSO guard (flow-level) ──────────────────
   - attrs:
       enabled: true
       failure_result: false
@@ -1360,92 +1359,29 @@ entries:
       target: !KeyOf 'avatar-google-source-authentication'
       timeout: 30
       user: null
-    id: sso-guard-bind-avatar-google-source-authentication-order-0
+    id: default-source-authentication-if-sso-bind-avatar-google-source-authentication-order-0
     identifiers:
       order: 0
       policy: !Find [authentik_policies_expression.expressionpolicy, [name, default-source-authentication-if-sso]]
       target: !KeyOf 'avatar-google-source-authentication'
     model: authentik_policies.policybinding
     state: present
-
-  # ── Google source enrollment: set username from email (before UserWrite) ──
   - attrs:
       enabled: true
       failure_result: false
       group: null
       negate: false
       order: 0
-      policy: !KeyOf 'avatar-google-source-set-username'
-      target: !KeyOf 'avatar-google-source-enrollment-bind-user-write-order-10'
+      policy: !Find [authentik_policies_expression.expressionpolicy, [name, default-source-enrollment-if-sso]]
+      target: !KeyOf 'avatar-google-source-enrollment'
       timeout: 30
       user: null
-    id: avatar-google-source-set-username-bind-enrollment-user-write-order-0
+    id: default-source-enrollment-if-sso-bind-avatar-google-source-enrollment-order-0
     identifiers:
       order: 0
-      policy: !KeyOf 'avatar-google-source-set-username'
-      target: !KeyOf 'avatar-google-source-enrollment-bind-user-write-order-10'
+      policy: !Find [authentik_policies_expression.expressionpolicy, [name, default-source-enrollment-if-sso]]
+      target: !KeyOf 'avatar-google-source-enrollment'
     model: authentik_policies.policybinding
-    state: present
-
-  # ── Google source enrollment: assign group from email domain (before UserWrite) ──
-  - attrs:
-      enabled: true
-      failure_result: false
-      group: null
-      negate: false
-      order: 10
-      policy: !KeyOf 'avatar-google-source-group-assignment'
-      target: !KeyOf 'avatar-google-source-enrollment-bind-user-write-order-10'
-      timeout: 30
-      user: null
-    id: avatar-google-source-group-assignment-bind-enrollment-user-write-order-10
-    identifiers:
-      order: 10
-      policy: !KeyOf 'avatar-google-source-group-assignment'
-      target: !KeyOf 'avatar-google-source-enrollment-bind-user-write-order-10'
-    model: authentik_policies.policybinding
-    state: present
-
-# ============================================================
-# GOOGLE OAUTH SOURCE
-# Only applied when both credential env vars are set.
-# On-premise deployments without Google OAuth configured will
-# skip this entry gracefully (conditions evaluate to falsy).
-# ============================================================
-  - attrs:
-      access_token_url: https://oauth2.googleapis.com/token
-      additional_scopes: ''
-      authentication_flow: !KeyOf 'avatar-google-source-authentication'
-      authorization_code_auth_method: basic_auth
-      authorization_url: https://accounts.google.com/o/oauth2/v2/auth
-      consumer_key: !Env ['AVATAR_AUTHENTIK_BLUEPRINT_GOOGLE_CLIENT_ID', '']
-      consumer_secret: !Env ['AVATAR_AUTHENTIK_BLUEPRINT_GOOGLE_CLIENT_SECRET', '']
-      enabled: true
-      enrollment_flow: !KeyOf 'avatar-google-source-enrollment'
-      group_matching_mode: name_link
-      group_property_mappings: []
-      icon: /static/authentik/sources/google.svg
-      name: Google
-      oidc_jwks: {}
-      oidc_jwks_url: https://www.googleapis.com/oauth2/v3/certs
-      oidc_well_known_url: ''
-      pkce: "S256"
-      policy_engine_mode: any
-      profile_url: https://openidconnect.googleapis.com/v1/userinfo
-      promoted: true
-      provider_type: google
-      request_token_url: null
-      slug: google
-      user_matching_mode: email_link
-      user_path_template: goauthentik.io/sources/%(slug)s
-      user_property_mappings: []
-    conditions:
-      - !Env ['AVATAR_AUTHENTIK_BLUEPRINT_GOOGLE_CLIENT_ID', '']
-      - !Env ['AVATAR_AUTHENTIK_BLUEPRINT_GOOGLE_CLIENT_SECRET', '']
-    id: google-oauth-source
-    identifiers:
-      slug: google
-    model: authentik_sources_oauth.oauthsource
     state: present
 
 # ============================================================
@@ -1462,6 +1398,16 @@ entries:
     model: authentik_providers_oauth2.scopemapping
     state: present
   - attrs:
+      description: Grab the role destined for the Avatar API.
+      expression: 'return { "role": request.user.group_attributes().get(''role'', ''user'') }'
+      name: GrabAvatarRole
+      scope_name: profile
+    id: grabavatarrole
+    identifiers:
+      name: GrabAvatarRole
+    model: authentik_providers_oauth2.scopemapping
+    state: present
+  - attrs:
       description: Grab license from the user group
       expression: |-
         license = request.user.group_attributes().get('license', None)
@@ -1473,16 +1419,6 @@ entries:
     id: grablicense
     identifiers:
       name: GrabLicense
-    model: authentik_providers_oauth2.scopemapping
-    state: present
-  - attrs:
-      description: Grab the role destined for the Avatar API.
-      expression: 'return { "role": request.user.group_attributes().get(''role'', ''user'') }'
-      name: GrabAvatarRole
-      scope_name: profile
-    id: grabavatarrole
-    identifiers:
-      name: GrabAvatarRole
     model: authentik_providers_oauth2.scopemapping
     state: present
 
@@ -1507,15 +1443,15 @@ entries:
       property_mappings:
       - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
       - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
-      - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
       - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-offline_access]]
+      - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
       - !KeyOf 'grabauthentiksuperuserstatus'
       - !KeyOf 'grablicense'
       - !KeyOf 'grabavatarrole'
       redirect_uris:
       - matching_mode: strict
         url: !Env 'AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI'
-      refresh_token_threshold: seconds=0 # always recreate it after use
+      refresh_token_threshold: seconds=0
       refresh_token_validity: days=7
       signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
       sub_mode: user_uuid
@@ -1745,6 +1681,7 @@ entries:
           line-height: 1.3 !important;
           color: var(--pf-global--Color--100, #151515) !important;
         }
+      branding_default_flow_background: /static/dist/assets/images/flow_background.jpg
       branding_favicon: favicon.ico
       branding_logo: brand_logo.png
       branding_title: Avatar
@@ -1762,4 +1699,40 @@ entries:
     identifiers:
       domain: !Context 'domain'
     model: authentik_brands.brand
+    state: present
+
+# ============================================================
+# OTHER
+# ============================================================
+  - attrs:
+      access_token_url: https://oauth2.googleapis.com/token
+      additional_scopes: ''
+      authentication_flow: !KeyOf 'avatar-google-source-authentication'
+      authorization_code_auth_method: basic_auth
+      authorization_url: https://accounts.google.com/o/oauth2/v2/auth
+      consumer_key: !Env 'AVATAR_AUTHENTIK_BLUEPRINT_GOOGLE_CLIENT_ID'
+      consumer_secret: !Env 'AVATAR_AUTHENTIK_BLUEPRINT_GOOGLE_CLIENT_SECRET'
+      enabled: true
+      enrollment_flow: !KeyOf 'avatar-google-source-enrollment'
+      group_matching_mode: name_link
+      icon: /static/authentik/sources/google.svg
+      name: Google
+      oidc_jwks_url: https://www.googleapis.com/oauth2/v3/certs
+      oidc_well_known_url: ''
+      pkce: S256
+      policy_engine_mode: any
+      profile_url: https://openidconnect.googleapis.com/v1/userinfo
+      promoted: true
+      provider_type: google
+      request_token_url: null
+      slug: google
+      user_matching_mode: email_link
+      user_path_template: goauthentik.io/sources/%(slug)s
+    conditions:
+    - !Env 'AVATAR_AUTHENTIK_BLUEPRINT_GOOGLE_CLIENT_ID'
+    - !Env 'AVATAR_AUTHENTIK_BLUEPRINT_GOOGLE_CLIENT_SECRET'
+    id: google
+    identifiers:
+      name: Google
+    model: authentik_sources_oauth.oauthsource
     state: present

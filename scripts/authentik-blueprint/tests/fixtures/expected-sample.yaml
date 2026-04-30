@@ -124,8 +124,8 @@ entries:
     state: present
   - attrs:
       fields:
-      - !Find [authentik_stages_prompt.prompt, [field_key, email, name, default-user-settings-field-email]]
-      - !Find [authentik_stages_prompt.prompt, [field_key, username, name, default-source-enrollment-field-username]]
+      - !Find [authentik_stages_prompt.prompt, [name, default-user-settings-field-email, field_key, email]]
+      - !Find [authentik_stages_prompt.prompt, [name, default-source-enrollment-field-username, field_key, username]]
       name: avatar-source-enrollment-prompt
     id: avatar-source-enrollment-prompt
     identifiers:

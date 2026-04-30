@@ -296,6 +296,36 @@ class TestBlueprintConverter:
         assert converter.pk_to_id.get("11111111-1111-1111-1111-111111111111") == "avatar-authentication-flow"
         assert converter.pk_to_id.get("22222222-2222-2222-2222-222222222222") == "avatar-authentication-stage"
 
+    def test_integer_pk_no_collision(self, converter):
+        """Test that integer PKs from SKIP_MODELS don't overwrite kept entries.
+
+        Authentik uses per-table integer auto-increment PKs for some models, so
+        oauth2provider pk=2 and useroauthsourceconnection pk=2 are different objects
+        that share the same integer key.  SKIP_MODELS entries must not be indexed
+        in pk_to_entry/pk_to_id, otherwise they clobber the provider's generated id
+        and the Application entry ends up pointing at a user connection instead.
+        """
+        test_blueprint = {
+            "version": 1,
+            "entries": [
+                {
+                    "model": "authentik_providers_oauth2.oauth2provider",
+                    "identifiers": {"pk": 2},
+                    "attrs": {"name": "Provider for Avatar API", "client_id": "x", "client_secret": "y"},
+                },
+                {
+                    # Same integer PK 2 but a SKIP_MODELS model — must not overwrite above.
+                    "model": "authentik_sources_oauth.useroauthsourceconnection",
+                    "identifiers": {"pk": 2},
+                    "attrs": {"identifier": "123456"},
+                },
+            ],
+        }
+        converter.build_pk_index(test_blueprint)
+        # Provider id must survive; useroauthsourceconnection must not clobber it
+        assert converter.pk_to_id.get("2") == "provider-for-avatar-api"
+        assert converter.pk_to_entry.get("2", {}).get("model") == "authentik_providers_oauth2.oauth2provider"
+
     def test_id_generation_bindings(self, converter):
         """Test that binding entries get descriptive composite IDs instead of UUIDs."""
         test_blueprint = {
@@ -398,6 +428,90 @@ class TestBlueprintConverter:
         finally:
             tmp_path.unlink()
 
+
+    def test_sso_guard_binding_kept(self, converter):
+        """Test that default policy bindings on custom-flow targets are kept.
+
+        SSO guard policies like default-source-enrollment-if-sso are Authentik
+        built-ins that must be bound to our custom Google source flows.  The
+        converter must not drop these bindings just because the policy itself
+        is a default object.
+        """
+        custom_flow_pk = "11111111-1111-1111-1111-111111111111"
+        default_policy_pk = "22222222-2222-2222-2222-222222222222"
+
+        test_blueprint = {
+            "version": 1,
+            "entries": [
+                {
+                    "model": "authentik_flows.flow",
+                    "identifiers": {"pk": custom_flow_pk},
+                    "attrs": {"slug": "avatar-google-source-enrollment", "name": "Google Source Enrollment"},
+                },
+                {
+                    "model": "authentik_policies_expression.expressionpolicy",
+                    "identifiers": {"pk": default_policy_pk},
+                    "attrs": {"name": "default-source-enrollment-if-sso"},
+                },
+                {
+                    "model": "authentik_policies.policybinding",
+                    "identifiers": {"pk": "33333333-3333-3333-3333-333333333333"},
+                    "attrs": {
+                        "target": custom_flow_pk,
+                        "policy": default_policy_pk,
+                        "order": 0,
+                        "enabled": True,
+                        "negate": False,
+                        "failure_result": False,
+                        "timeout": 30,
+                        "user": None,
+                        "group": None,
+                    },
+                },
+            ],
+        }
+
+        converter.build_pk_index(test_blueprint)
+        binding_entry = test_blueprint["entries"][2]
+        assert not converter.should_skip_entry(binding_entry), (
+            "SSO guard binding on a custom flow target must NOT be skipped"
+        )
+
+    def test_identification_stage_sources_stripped(self, converter):
+        """Test that sources are stripped from the identification stage.
+
+        A live deployment may have Google OAuth listed in the identification
+        stage sources.  The converted blueprint must not include this list
+        because a dangling !KeyOf 'google' breaks application on deployments
+        that have no Google OAuth configured.
+        """
+        test_blueprint = {
+            "version": 1,
+            "metadata": {"name": "test", "labels": {}},
+            "entries": [
+                {
+                    "model": "authentik_stages_identification.identificationstage",
+                    "identifiers": {"pk": "11111111-1111-1111-1111-111111111111"},
+                    "attrs": {
+                        "name": "avatar-authentication-stage",
+                        "user_fields": ["email"],
+                        "sources": ["aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"],
+                    },
+                    "conditions": [],
+                    "permissions": [],
+                    "state": "present",
+                }
+            ],
+        }
+        converted = converter.convert_blueprint(test_blueprint)
+        stage_entries = [
+            e for e in converted["entries"]
+            if e.get("model") == "authentik_stages_identification.identificationstage"
+        ]
+        assert len(stage_entries) == 1
+        assert "sources" not in stage_entries[0]["attrs"], (
+            "sources must be stripped from the identification stage"
+        )
 
     def test_self_service_signup_enrollment_prompt(self, converter):
         """Regression test: the enrollment prompt stage must include BOTH username and email fields.
@@ -750,13 +864,73 @@ class TestEnvTag:
 
     def test_env_placeholders_constant(self):
         """Test that ENV_PLACEHOLDERS mapping covers all expected keys."""
-        expected_keys = {"DOMAIN", "CLIENT_ID", "CLIENT_SECRET", "API_REDIRECT_URI", "SELF_SERVICE_LICENSE"}
+        expected_keys = {
+            "DOMAIN", "CLIENT_ID", "CLIENT_SECRET", "API_REDIRECT_URI",
+            "SELF_SERVICE_LICENSE", "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET",
+        }
         assert set(BlueprintConverter.ENV_PLACEHOLDERS.keys()) == expected_keys
 
-        # All env vars should be prefixed with AVATAR_AUTHENTIK_
+        # All env vars should be prefixed with AVATAR_AUTHENTIK_BLUEPRINT_
         for env_var in BlueprintConverter.ENV_PLACEHOLDERS.values():
             assert env_var.startswith("AVATAR_AUTHENTIK_BLUEPRINT_"), \
                 f"Env var {env_var} should start with AVATAR_AUTHENTIK_BLUEPRINT_"
+
+    def test_oauth_source_transform(self):
+        """Test that OAuth source credentials are replaced with !Env placeholders."""
+        converter = BlueprintConverter(verbose=False)
+        attrs = {
+            "consumer_key": "245688082870-hardcoded.apps.googleusercontent.com",
+            "consumer_secret": "GOCSPX-hardcoded-secret",
+            "oidc_jwks": {"keys": [{"kid": "abc", "kty": "RSA", "n": "xyz"}]},
+            "name": "Google",
+        }
+        result = converter.transform_oauth_source_attrs(attrs)
+        assert result["consumer_key"] == "[[GOOGLE_CLIENT_ID]]"
+        assert result["consumer_secret"] == "[[GOOGLE_CLIENT_SECRET]]"
+        # JWKS popped entirely (fetched at runtime from oidc_jwks_url)
+        assert "oidc_jwks" not in result
+        # Non-credential fields are left untouched
+        assert result["name"] == "Google"
+
+    def test_oauth_source_conditions_guard(self):
+        """Test that Google OAuth source gets conditions guard injected."""
+        converter = BlueprintConverter(verbose=False)
+        test_blueprint = {
+            "version": 1,
+            "metadata": {"name": "test", "labels": {}},
+            "entries": [
+                {
+                    "model": "authentik_sources_oauth.oauthsource",
+                    "identifiers": {"slug": "google"},
+                    "attrs": {
+                        "name": "Google",
+                        "slug": "google",
+                        "consumer_key": "hardcoded-client-id",
+                        "consumer_secret": "hardcoded-secret",
+                        "oidc_jwks": {"keys": [{"kid": "abc"}]},
+                        "enabled": True,
+                    },
+                    "conditions": [],
+                    "permissions": [],
+                    "state": "present",
+                }
+            ],
+        }
+        converted = converter.convert_blueprint(test_blueprint)
+        source_entries = [
+            e for e in converted["entries"]
+            if e.get("model") == "authentik_sources_oauth.oauthsource"
+        ]
+        assert len(source_entries) == 1
+        entry = source_entries[0]
+        # Credentials replaced
+        assert entry["attrs"]["consumer_key"] == "[[GOOGLE_CLIENT_ID]]"
+        assert entry["attrs"]["consumer_secret"] == "[[GOOGLE_CLIENT_SECRET]]"
+        # JWKS absent (popped; fetched at runtime)
+        assert "oidc_jwks" not in entry["attrs"]
+        # Conditions guard injected
+        assert "conditions" in entry
+        assert entry["conditions"] == ["[[GOOGLE_CLIENT_ID]]", "[[GOOGLE_CLIENT_SECRET]]"]
 
 
 if __name__ == "__main__":

@@ -266,6 +266,40 @@ class BlueprintConverter:
         ("BRAND", ["authentik_brands.brand"], False),
     ]
 
+    # Models to skip entirely (never needed in portable templates)
+    SKIP_MODELS = {
+        # Infrastructure (outposts, tokens, RBAC, scheduled tasks)
+        'authentik_outposts.outpost',
+        'authentik_outposts.kubernetesserviceconnection',
+        'authentik_core.token',
+        'authentik_rbac.role',
+        'authentik_tasks_schedules.schedule',
+
+        # Blueprint metadata (internal Authentik tracking)
+        'authentik_blueprints.blueprintinstance',
+
+        # Live instance data (user OAuth connections, TOTP devices)
+        'authentik_sources_oauth.useroauthsourceconnection',
+        'authentik_stages_authenticator_totp.totpdevice',
+
+        # Provider mappings (not used in OAuth2-only Avatar setup)
+        'authentik_sources_ldap.ldapsourcepropertymapping',
+        'authentik_providers_saml.samlpropertymapping',
+        'authentik_sources_kerberos.kerberossourcepropertymapping',
+        'authentik_providers_google_workspace.googleworkspaceprovidermapping',
+        'authentik_providers_microsoft_entra.microsoftentraprovidermapping',
+        'authentik_providers_scim.scimmapping',
+        'authentik_providers_rac.racpropertymapping',
+
+        # Notification system (default infrastructure)
+        'authentik_events.notificationtransport',
+        'authentik_events.notificationrule',
+        'authentik_policies_event_matcher.eventmatcherpolicy',
+
+        # Certificates (referenced via !Find, not created)
+        'authentik_crypto.certificatekeypair',
+    }
+
     # Model-specific identifier fields (used for !Find lookups)
     IDENTIFIER_FIELDS = {
         "authentik_core.group": ["name"],
@@ -274,7 +308,7 @@ class BlueprintConverter:
         "authentik_stages_email.emailstage": ["name"],
         "authentik_stages_identification.identificationstage": ["name"],
         "authentik_stages_password.passwordstage": ["name"],
-        "authentik_stages_prompt.prompt": ["field_key", "name"],
+        "authentik_stages_prompt.prompt": ["name", "field_key"],
         "authentik_stages_prompt.promptstage": ["name"],
         "authentik_stages_user_write.userwritestage": ["name"],
         "authentik_stages_user_login.userloginstage": ["name"],
@@ -493,6 +527,8 @@ class BlueprintConverter:
 #   AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET         - OAuth2 Client Secret
 #   AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI      - Full redirect URI for API
 #   AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE   - License type for self-service signups
+#   AVATAR_AUTHENTIK_BLUEPRINT_GOOGLE_CLIENT_ID      - Google OAuth Client ID
+#   AVATAR_AUTHENTIK_BLUEPRINT_GOOGLE_CLIENT_SECRET  - Google OAuth Client Secret
 
 """
             f.write(header)
@@ -641,12 +677,19 @@ class BlueprintConverter:
 
             if "pk" in identifiers:
                 pk = str(identifiers["pk"])
-                self.pk_to_entry[pk] = {
-                    "model": model,
-                    "identifiers": identifiers,
-                    "attrs": attrs,
-                }
-                self.log(f"  Indexed {model} with pk={pk}")
+                # Don't index SKIP_MODELS entries whose PK is an integer to
+                # prevent per-table auto-increment collisions (e.g. oauth2provider
+                # pk=2 vs useroauthsourceconnection pk=2 are different objects).
+                # UUID PKs are globally unique so they are always safe to index;
+                # skipping them would break !Find resolution for certificates,
+                # event-matcher policies, notification rules, etc.
+                if model not in self.SKIP_MODELS or not isinstance(identifiers["pk"], int):
+                    self.pk_to_entry[pk] = {
+                        "model": model,
+                        "identifiers": identifiers,
+                        "attrs": attrs,
+                    }
+                    self.log(f"  Indexed {model} with pk={pk}")
 
                 # Check if this is a custom entry (will be defined in the blueprint)
                 name = attrs.get("name", "")
@@ -948,6 +991,36 @@ class BlueprintConverter:
 
         return attrs
 
+    def transform_identification_stage_attrs(self, attrs: Dict) -> Dict:
+        """Strip sources list from identification stage.
+
+        The identification stage may list OAuth sources (e.g. Google) that
+        were configured in the live deployment.  We strip the sources list
+        here because:
+        - The Google source is conditional on env vars being set.
+        - A dangling !KeyOf 'google' reference breaks blueprint application
+          on deployments where the source was never created (on-premise
+          installs without Google OAuth configured).
+        """
+        attrs.pop("sources", None)
+        return attrs
+
+    def transform_oauth_source_attrs(self, attrs: Dict) -> Dict:
+        """Transform OAuth source (e.g. Google) attributes.
+
+        Replaces hardcoded credentials with !Env placeholders, clears the
+        cached JWKS block (keys are fetched at runtime from oidc_jwks_url),
+        and drops consumer_secret if the export omitted it (it will be
+        re-injected via the conditions guard).
+        """
+        if "consumer_key" in attrs:
+            attrs["consumer_key"] = "[[GOOGLE_CLIENT_ID]]"
+        # Always emit consumer_secret so the !Env placeholder is present
+        attrs["consumer_secret"] = "[[GOOGLE_CLIENT_SECRET]]"
+        # Clear cached JWKS — authentik fetches these from oidc_jwks_url at runtime
+        attrs.pop("oidc_jwks", None)
+        return attrs
+
     def transform_email_stage_attrs(self, attrs: Dict) -> Dict:
         """Transform email stage attributes - remap custom template paths.
 
@@ -988,6 +1061,10 @@ class BlueprintConverter:
             converted_attrs = self.transform_brand_attrs(converted_attrs)
         elif model == "authentik_stages_email.emailstage":
             converted_attrs = self.transform_email_stage_attrs(converted_attrs)
+        elif model == "authentik_stages_identification.identificationstage":
+            converted_attrs = self.transform_identification_stage_attrs(converted_attrs)
+        elif model == "authentik_sources_oauth.oauthsource":
+            converted_attrs = self.transform_oauth_source_attrs(converted_attrs)
 
         # Remove forbidden fields from attrs recursively
         cleaned_attrs = self._remove_forbidden_fields(converted_attrs)
@@ -1032,6 +1109,13 @@ class BlueprintConverter:
             else:
                 # Skip unknown fields
                 self.log(f"  Skipping unknown field: {key}")
+
+        # For OAuth sources, restore the conditions guard that makes the source
+        # opt-in: it is applied only when both credential env vars are set.
+        # This field is not exported from the DB so we inject it after the loop
+        # (injecting before would be overwritten by the conditions: [] from the export).
+        if model == "authentik_sources_oauth.oauthsource":
+            cleaned["conditions"] = ["[[GOOGLE_CLIENT_ID]]", "[[GOOGLE_CLIENT_SECRET]]"]
 
         return cleaned
 
@@ -1084,37 +1168,7 @@ class BlueprintConverter:
         # PHASE 1: MODEL-LEVEL FILTERS (entire model types to skip)
         # ========================================================================
 
-        # Models to skip entirely (never needed in templates)
-        SKIP_MODELS = {
-            # Infrastructure (outposts, tokens, RBAC, scheduled tasks)
-            'authentik_outposts.outpost',
-            'authentik_outposts.kubernetesserviceconnection',
-            'authentik_core.token',
-            'authentik_rbac.role',
-            'authentik_tasks_schedules.schedule',
-
-            # Blueprint metadata (internal Authentik tracking)
-            'authentik_blueprints.blueprintinstance',
-
-            # Provider mappings (not used in OAuth2-only Avatar setup)
-            'authentik_sources_ldap.ldapsourcepropertymapping',
-            'authentik_providers_saml.samlpropertymapping',
-            'authentik_sources_kerberos.kerberossourcepropertymapping',
-            'authentik_providers_google_workspace.googleworkspaceprovidermapping',
-            'authentik_providers_microsoft_entra.microsoftentraprovidermapping',
-            'authentik_providers_scim.scimmapping',
-            'authentik_providers_rac.racpropertymapping',
-
-            # Notification system (default infrastructure)
-            'authentik_events.notificationtransport',
-            'authentik_events.notificationrule',
-            'authentik_policies_event_matcher.eventmatcherpolicy',
-
-            # Certificates (referenced via !Find, not created)
-            'authentik_crypto.certificatekeypair',
-        }
-
-        if model in SKIP_MODELS:
+        if model in self.SKIP_MODELS:
             self.log(f"  Skipping unwanted model type: {model} ({name or slug or 'unnamed'})")
             return True
 
@@ -1243,11 +1297,27 @@ class BlueprintConverter:
             # If policy is a string UUID, try to resolve it
             if isinstance(policy_ref, str) and self.UUID_PATTERN.match(policy_ref):
                 policy_entry = self.pk_to_entry.get(policy_ref)
-                if policy_entry:
-                    policy_name = policy_entry.get('attrs', {}).get('name', '')
-                    if policy_name.lower().startswith(("default-", "authentik")):
-                        self.log(f"  Skipping binding for default policy: {policy_name}")
-                        return True
+                if policy_entry is None:
+                    # Policy UUID can't be resolved (entry was skipped or deleted).
+                    # Binding is orphaned and unusable — drop it.
+                    self.log(f"  Skipping binding with unresolvable policy: {policy_ref}")
+                    return True
+                policy_name = policy_entry.get('attrs', {}).get('name', '')
+                if policy_name.lower().startswith(("default-", "authentik")):
+                    # Exception: keep bindings where the target is a custom flow.
+                    # This preserves SSO guard policies (e.g.
+                    # default-source-enrollment-if-sso) that are intentionally
+                    # attached to custom Google source flows in production.
+                    target_ref = attrs.get('target')
+                    if isinstance(target_ref, str) and self.UUID_PATTERN.match(target_ref):
+                        if target_ref in self.custom_entry_pks:
+                            self.log(
+                                f"  Keeping default-policy binding on custom flow target: "
+                                f"{policy_name}"
+                            )
+                            return False
+                    self.log(f"  Skipping binding for default policy: {policy_name}")
+                    return True
 
         # Brands - keep only Avatar brand with context variables
         if model == 'authentik_brands.brand':
@@ -1297,6 +1367,27 @@ class BlueprintConverter:
             separator = "=" * 60
             return f"\n# {separator}\n# {title}\n# {separator}\n"
 
+    def _entry_sort_key(self, entry: Dict) -> str:
+        """Return a stable, deterministic sort key for a blueprint entry.
+
+        Custom entries always have an 'id' field (a plain string built from
+        the entry's name/slug/field_key).  Default entries that have no 'id'
+        are referenced via !Find and carry only semantic identifiers.
+        In both cases we produce a plain string so sorting is consistent
+        regardless of the underlying DB row order in the export.
+        """
+        entry_id = entry.get("id")
+        if isinstance(entry_id, str):
+            return entry_id
+        # Fall back to the first plain-string identifier value
+        identifiers = entry.get("identifiers", {})
+        for key in ("name", "slug", "field_key", "domain"):
+            val = identifiers.get(key)
+            if isinstance(val, str):
+                return val
+        # Last resort: stringify all identifier values
+        return str(sorted(str(v) for v in identifiers.values()))
+
     def _group_entries_by_section(self, entries: List[Dict]) -> List[Tuple[str, List[Dict], bool]]:
         """Group entries by section based on ENTRY_GROUPS configuration.
 
@@ -1320,11 +1411,13 @@ class BlueprintConverter:
                     used_entries.add(i)
 
             if section_entries:
+                section_entries.sort(key=self._entry_sort_key)
                 grouped_sections.append((section_name, section_entries, requires_sub_grouping))
 
         # Collect any remaining entries not matched by patterns
         remaining_entries = [entry for i, entry in enumerate(entries) if i not in used_entries]
         if remaining_entries:
+            remaining_entries.sort(key=self._entry_sort_key)
             grouped_sections.append(("OTHER", remaining_entries, False))
 
         return grouped_sections
@@ -1411,9 +1504,11 @@ class BlueprintConverter:
                 flow_groups[flow_name] = []
             flow_groups[flow_name].append(binding)
 
-        # Sort by flow name for consistent output
-        # Return with full sub-header names
-        return [(f"FLOW STAGE BINDINGS - {flow_name}", entries) for flow_name, entries in sorted(flow_groups.items())]
+        # Sort flow groups alphabetically, and sort bindings within each flow by id
+        return [
+            (f"FLOW STAGE BINDINGS - {flow_name}", sorted(group_entries, key=self._entry_sort_key))
+            for flow_name, group_entries in sorted(flow_groups.items())
+        ]
 
     # Mapping from [[PLACEHOLDER]] names to !Env variable names
     ENV_PLACEHOLDERS = {
@@ -1422,6 +1517,8 @@ class BlueprintConverter:
         "CLIENT_SECRET": "AVATAR_AUTHENTIK_BLUEPRINT_CLIENT_SECRET",
         "API_REDIRECT_URI": "AVATAR_AUTHENTIK_BLUEPRINT_API_REDIRECT_URI",
         "SELF_SERVICE_LICENSE": "AVATAR_AUTHENTIK_BLUEPRINT_SELF_SERVICE_LICENSE",
+        "GOOGLE_CLIENT_ID": "AVATAR_AUTHENTIK_BLUEPRINT_GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET": "AVATAR_AUTHENTIK_BLUEPRINT_GOOGLE_CLIENT_SECRET",
     }
 
     def _convert_to_env_placeholders(self, obj):
