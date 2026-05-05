@@ -39,6 +39,6 @@ AUTHENTIK_BOOTSTRAP_TOKEN={{ AUTHENTIK_BOOTSTRAP_TOKEN }}
 # --- Service URLs ---
 AVATAR_DOMAIN={{ PUBLIC_URL }}
 # Defines the URL where the web client is served.
-AVATAR_WEB_CLIENT_URL=https://{{ PUBLIC_URL }}
+AVATAR_WEB_CLIENT_URL=https://{{ PUBLIC_URL }}/web/
 # Defines the URL where the PDF generator is served.
 AVATAR_PDFGENERATOR_URL=http://pdfgenerator:8000

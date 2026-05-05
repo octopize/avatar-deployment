@@ -35,7 +35,7 @@ def test_docker_web_local_topology_uses_gateway_web_url():
     )
 
     assert resolved.api_internal_url == "http://api:8000"
-    assert resolved.web_client_url == "http://localhost:8080/web"
+    assert resolved.web_client_url == "http://localhost:8080/web/"
 
 
 def test_external_public_base_derives_web_url_from_shared_base():
@@ -51,7 +51,7 @@ def test_external_public_base_derives_web_url_from_shared_base():
     )
 
     assert resolved.api_public_url == "https://avatar.example.com/api"
-    assert resolved.web_client_url == "https://avatar.example.com/web"
+    assert resolved.web_client_url == "https://avatar.example.com/web/"
 
 
 def test_host_client_storage_uses_direct_host_url_when_api_runs_on_host():

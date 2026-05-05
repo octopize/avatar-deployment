@@ -436,7 +436,7 @@ class TargetEnvironmentStep(DeploymentStep):
             and api_public_url == resolved.api_public_url
         ):
             return resolved.web_client_url
-        return join_base_url(public_base_url, "/web")
+        return join_base_url(public_base_url, "/web/")
 
     @classmethod
     def _resolve_default_storage_public_url(

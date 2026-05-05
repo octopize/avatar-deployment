@@ -31,9 +31,7 @@ class EmailStep(DeploymentStep):
             prompt_key="email.smtp_port",
             parse_and_validate=parse_str,
         )
-        config["SMTP_USE_TLS"] = self.get_config(
-            "SMTP_USE_TLS", DefaultKey("email.smtp.use_tls")
-        )
+        config["SMTP_USE_TLS"] = self.get_config("SMTP_USE_TLS", DefaultKey("email.smtp.use_tls"))
         config["SMTP_START_TLS"] = self.get_config(
             "SMTP_START_TLS", DefaultKey("email.smtp.start_tls")
         )

@@ -1,6 +1,5 @@
 """Tests for UserStep email validation."""
 
-import pytest
 
 from octopize_avatar_deploy.steps.base import ValidationError, ValidationSuccess
 from octopize_avatar_deploy.steps.user import UserStep, validate_comma_separated_emails
@@ -116,9 +115,7 @@ class TestUserStepWithValidation:
 
         assert config["ADMIN_EMAILS"] == "admin@example.com,user@test.org"
 
-    def test_collect_config_invalid_then_valid_email(
-        self, tmp_path, monkeypatch
-    ):
+    def test_collect_config_invalid_then_valid_email(self, tmp_path, monkeypatch):
         """Test that invalid emails are rejected and user is re-prompted."""
 
         # Mock user input: first invalid, then valid
@@ -137,9 +134,7 @@ class TestUserStepWithValidation:
         # Verify we used both responses
         assert len(responses) == 0
 
-    def test_collect_config_empty_email_is_accepted(
-        self, tmp_path, monkeypatch
-    ):
+    def test_collect_config_empty_email_is_accepted(self, tmp_path, monkeypatch):
         """Test that empty email list is allowed (optional field)."""
 
         # Mock user input with empty response (using default)

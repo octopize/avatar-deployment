@@ -12,7 +12,7 @@ LOCAL_API_URL = f"{LOCAL_GATEWAY_BASE_URL}/api"
 LOCAL_STORAGE_URL = f"{LOCAL_GATEWAY_BASE_URL}/storage"
 LOCAL_HOST_STORAGE_URL = "http://localhost:8333"
 LOCAL_SSO_URL = f"{LOCAL_GATEWAY_BASE_URL}/sso"
-LOCAL_DOCKER_WEB_URL = f"{LOCAL_GATEWAY_BASE_URL}/web"
+LOCAL_DOCKER_WEB_URL = f"{LOCAL_GATEWAY_BASE_URL}/web/"
 LOCAL_HOST_WEB_URL = "http://localhost:3000"
 
 DOCKER_API_URL = "http://api:8000"
@@ -140,7 +140,7 @@ def resolve_generate_env_urls(topology: GenerateEnvTopology) -> ResolvedTopology
             LOCAL_HOST_WEB_URL
             if topology.web_runtime is ServiceLocation.HOST
             and not topology.requires_public_base_url()
-            else join_base_url(public_base_url, "/web")
+            else join_base_url(public_base_url, "/web/")
         )
     )
 

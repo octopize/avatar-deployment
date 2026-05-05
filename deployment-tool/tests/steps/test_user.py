@@ -1,6 +1,5 @@
 """Tests for UserStep."""
 
-import pytest
 
 from octopize_avatar_deploy.steps.user import UserStep
 

@@ -124,7 +124,7 @@ class TestGenerateEnvWebOnly:
                 "AVATAR_API_INTERNAL_URL": "https://myapp.example.com/api",
                 "AVATAR_STORAGE_ENDPOINT_INTERNAL_URL": "https://myapp.example.com/storage",
                 "AVATAR_STORAGE_ENDPOINT_PUBLIC_URL": "https://myapp.example.com/storage",
-                "AVATAR_WEB_CLIENT_URL": "https://myapp.example.com/web",
+                "AVATAR_WEB_CLIENT_URL": "https://myapp.example.com/web/",
                 "AVATAR_SSO_URL": "https://myapp.example.com/api/login/sso",
                 "AVATAR_AUTHENTIK_URL": "https://myapp.example.com/sso",
                 "AVATAR_SSO_ENABLED": "true",
@@ -266,7 +266,7 @@ class TestGenerateEnvWebOnly:
                 "AVATAR_API_INTERNAL_URL": "https://myapp.example.com/api",
                 "AVATAR_STORAGE_ENDPOINT_INTERNAL_URL": "https://myapp.example.com/storage",
                 "AVATAR_STORAGE_ENDPOINT_PUBLIC_URL": "https://myapp.example.com/storage",
-                "AVATAR_WEB_CLIENT_URL": "https://myapp.example.com/web",
+                "AVATAR_WEB_CLIENT_URL": "https://myapp.example.com/web/",
                 "AVATAR_SSO_URL": "https://myapp.example.com/api/login/sso",
                 "AVATAR_AUTHENTIK_URL": "https://myapp.example.com/sso",
                 "AVATAR_SSO_ENABLED": "true",
@@ -375,7 +375,7 @@ class TestGenerateEnvApiOnly:
             api_env,
             {
                 "AVATAR_API_URL": "https://api.example.com/api",
-                "AVATAR_WEB_CLIENT_URL": "https://api.example.com/web",
+                "AVATAR_WEB_CLIENT_URL": "https://api.example.com/web/",
                 "SSO_PROVIDER_URL": "https://api.example.com/sso",
             },
         )
@@ -486,7 +486,7 @@ class TestGenerateEnvBothComponents:
             api_env,
             {
                 "AVATAR_API_URL": "https://staging.example.com/api",
-                "AVATAR_WEB_CLIENT_URL": "https://staging.example.com/web",
+                "AVATAR_WEB_CLIENT_URL": "https://staging.example.com/web/",
                 "SSO_PROVIDER_URL": "https://staging.example.com/sso",
             },
         )
@@ -501,7 +501,7 @@ class TestGenerateEnvBothComponents:
                 "AVATAR_API_INTERNAL_URL": "https://staging.example.com/api",
                 "AVATAR_STORAGE_ENDPOINT_INTERNAL_URL": "https://staging.example.com/internal-storage",
                 "AVATAR_STORAGE_ENDPOINT_PUBLIC_URL": "https://staging.example.com/storage",
-                "AVATAR_WEB_CLIENT_URL": "https://staging.example.com/web",
+                "AVATAR_WEB_CLIENT_URL": "https://staging.example.com/web/",
                 "AVATAR_SSO_URL": "https://staging.example.com/api/login/sso",
                 "AVATAR_AUTHENTIK_URL": "https://staging.example.com/sso",
                 "AVATAR_SSO_ENABLED": "true",
@@ -558,7 +558,7 @@ class TestGenerateEnvOverrides:
                 "AVATAR_API_INTERNAL_URL": "http://override:1234/api",
                 "AVATAR_STORAGE_ENDPOINT_INTERNAL_URL": "http://localhost:8333",
                 "AVATAR_STORAGE_ENDPOINT_PUBLIC_URL": "https://prod.example.com/storage",
-                "AVATAR_WEB_CLIENT_URL": "http://override:1234/web",
+                "AVATAR_WEB_CLIENT_URL": "http://override:1234/web/",
                 "AVATAR_SSO_URL": "http://override:1234/api/login/sso",
                 "AVATAR_AUTHENTIK_URL": "https://prod.example.com/sso",
                 "AVATAR_SSO_ENABLED": "true",
