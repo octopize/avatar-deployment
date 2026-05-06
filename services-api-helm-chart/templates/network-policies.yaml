@@ -1,0 +1,306 @@
+{{- if .Values.networkPolicy.enabled }}
+# =============================================================================
+# Kubernetes NetworkPolicies
+#
+# These policies implement the same network segregation as the Docker Compose
+# network configuration (proxy, dask, pdf, storage, database networks).
+#
+# Isolation summary:
+#   proxy   → api, web, and authentik-server accept ingress from the ingress
+#             controller. Web also calls api server-side; api calls authentik.
+#   dask    → api ↔ dask-scheduler ↔ dask-workers (internal cluster traffic)
+#   pdf     → ONLY dask-scheduler/workers can reach pdfgenerator. Pdfgenerator
+#             has no outbound egress except DNS (mirrors docker-compose exactly).
+#   storage / database → external services; egress from all pods is unrestricted.
+# =============================================================================
+
+---
+# Policy: api
+# Equivalent Docker Compose networks: proxy, dask, storage, database
+# Ingress: ingress controller (proxy), web→api (proxy), dask scheduler/workers→api (dask)
+# Egress:  unrestricted — external DB, storage, SMTP, authentik SSO, DNS all reachable
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: avatar-api
+  labels:
+    {{- include "avatar.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: api
+  policyTypes:
+    - Ingress
+  ingress:
+    # proxy network: ingress controller → api
+    - from:
+        - podSelector:
+            {{- toYaml .Values.networkPolicy.ingressController.podSelector | nindent 12 }}
+          {{- with .Values.networkPolicy.ingressController.namespaceSelector }}
+          namespaceSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      ports:
+        - port: 8000
+          protocol: TCP
+    # proxy network: web → api (server-side internal API calls via AVATAR_API_INTERNAL_URL)
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: web
+      ports:
+        - port: 8000
+          protocol: TCP
+    # dask network: dask scheduler and workers → api (job result callbacks)
+    - from:
+        - podSelector:
+            matchLabels:
+              app: dask
+              release: {{ .Release.Name | quote }}
+              component: scheduler
+        - podSelector:
+            matchLabels:
+              app: dask
+              release: {{ .Release.Name | quote }}
+              component: worker
+      ports:
+        - port: 8000
+          protocol: TCP
+
+---
+# Policy: pdfgenerator
+# Equivalent Docker Compose networks: pdf (only)
+# Ingress: ONLY dask scheduler and workers — mirrors the Docker Compose pdf network
+#          exactly (api is NOT on the pdf network and cannot reach pdfgenerator directly)
+# Egress:  DNS only — pdfgenerator has no legitimate outbound connections
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: avatar-pdfgenerator
+  labels:
+    {{- include "avatar.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: pdfgenerator
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # pdf network: dask scheduler and workers → pdfgenerator
+    - from:
+        - podSelector:
+            matchLabels:
+              app: dask
+              release: {{ .Release.Name | quote }}
+              component: scheduler
+        - podSelector:
+            matchLabels:
+              app: dask
+              release: {{ .Release.Name | quote }}
+              component: worker
+      ports:
+        - port: 8000
+          protocol: TCP
+  egress:
+    # Allow DNS resolution (required for any outbound hostname lookup)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+
+---
+# Policy: web
+# Equivalent Docker Compose networks: proxy (only)
+# Ingress: ingress controller only
+# Egress:  unrestricted — api internal calls, authentik SSO, external public URLs
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: avatar-web
+  labels:
+    {{- include "avatar.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: web
+  policyTypes:
+    - Ingress
+  ingress:
+    # proxy network: ingress controller → web
+    - from:
+        - podSelector:
+            {{- toYaml .Values.networkPolicy.ingressController.podSelector | nindent 12 }}
+          {{- with .Values.networkPolicy.ingressController.namespaceSelector }}
+          namespaceSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      ports:
+        - port: 3000
+          protocol: TCP
+
+{{- if .Values.dask.enabled }}
+---
+# Policy: dask-scheduler
+# Equivalent Docker Compose networks: dask, pdf, storage
+# Ingress: api (dask — submit jobs on 8786), dask workers (dask cluster comms)
+# Egress:  unrestricted — pdfgenerator (pdf), api callbacks (dask), external storage
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: avatar-dask-scheduler
+  labels:
+    {{- include "avatar.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app: dask
+      release: {{ .Release.Name | quote }}
+      component: scheduler
+  policyTypes:
+    - Ingress
+  ingress:
+    # dask network: api → scheduler (job submission on port 8786)
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: api
+      ports:
+        - port: 8786
+          protocol: TCP
+    # dask cluster internal: workers → scheduler (registration, heartbeats, results)
+    - from:
+        - podSelector:
+            matchLabels:
+              app: dask
+              release: {{ .Release.Name | quote }}
+              component: worker
+
+---
+# Policy: dask-worker
+# Equivalent Docker Compose networks: dask, pdf, storage
+# Ingress: dask scheduler only (task distribution and cluster management)
+# Egress:  unrestricted — pdfgenerator (pdf), api callbacks (dask), external storage
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: avatar-dask-worker
+  labels:
+    {{- include "avatar.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app: dask
+      release: {{ .Release.Name | quote }}
+      component: worker
+  policyTypes:
+    - Ingress
+  ingress:
+    # dask cluster internal: scheduler → workers (task dispatch, heartbeats)
+    - from:
+        - podSelector:
+            matchLabels:
+              app: dask
+              release: {{ .Release.Name | quote }}
+              component: scheduler
+{{- end }}
+
+{{- if .Values.authentik.enabled }}
+---
+# Policy: authentik-server
+# Equivalent Docker Compose networks: proxy, database
+# Ingress: ingress controller (proxy), api (proxy — OAuth2/OIDC token calls),
+#          web (proxy — SSO redirect flows), authentik worker (internal coordination)
+# Egress:  unrestricted — external DB, SMTP, external OAuth providers, GeoIP
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: avatar-authentik-server
+  labels:
+    {{- include "avatar.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: authentik
+      app.kubernetes.io/instance: {{ .Release.Name | quote }}
+      app.kubernetes.io/component: server
+  policyTypes:
+    - Ingress
+  ingress:
+    # proxy network: ingress controller → authentik server
+    - from:
+        - podSelector:
+            {{- toYaml .Values.networkPolicy.ingressController.podSelector | nindent 12 }}
+          {{- with .Values.networkPolicy.ingressController.namespaceSelector }}
+          namespaceSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      ports:
+        - port: 9000
+          protocol: TCP
+        - port: 9443
+          protocol: TCP
+    # proxy network: api → authentik server (OAuth2/OIDC token validation and SSO calls)
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: api
+      ports:
+        - port: 9000
+          protocol: TCP
+    # proxy network: web → authentik server (server-side SSO flows)
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: web
+      ports:
+        - port: 9000
+          protocol: TCP
+    # authentik internal: worker → server (task coordination via HTTP API)
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: authentik
+              app.kubernetes.io/instance: {{ .Release.Name | quote }}
+              app.kubernetes.io/component: worker
+      ports:
+        - port: 9000
+          protocol: TCP
+
+---
+# Policy: authentik-worker
+# Equivalent Docker Compose networks: database (only)
+# Ingress: authentik server only (internal task delegation)
+# Egress:  unrestricted — external DB, SMTP, blueprint downloads
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: avatar-authentik-worker
+  labels:
+    {{- include "avatar.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: authentik
+      app.kubernetes.io/instance: {{ .Release.Name | quote }}
+      app.kubernetes.io/component: worker
+  policyTypes:
+    - Ingress
+  ingress:
+    # authentik internal: server → worker (task delegation)
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: authentik
+              app.kubernetes.io/instance: {{ .Release.Name | quote }}
+              app.kubernetes.io/component: server
+{{- end }}
+{{- end }}

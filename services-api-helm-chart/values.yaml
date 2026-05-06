@@ -290,6 +290,39 @@ authentik:
         subPath: logo.png
         readOnly: true
 
+networkPolicy:
+  # Enable Kubernetes NetworkPolicies for all components.
+  # Requires a CNI plugin that supports NetworkPolicy (e.g. Calico, Cilium).
+  # Disabled by default to avoid breaking existing deployments.
+  enabled: false
+
+  ingressController:
+    # Pod selector labels for the ingress controller.
+    # Used to allow the ingress controller to reach api, web, and authentik-server
+    # (equivalent to the Docker Compose "proxy" network).
+    #
+    # When empty ({}) all pods in the same namespace are allowed.
+    # Set this to the labels of your ingress controller pods.
+    #
+    # Example for ingress-nginx (same namespace as avatar, as on staging):
+    #   podSelector:
+    #     matchLabels:
+    #       app.kubernetes.io/name: ingress-nginx
+    #       app.kubernetes.io/instance: ingress-nginx
+    podSelector: {}
+
+    # Namespace selector for the ingress controller.
+    # Only needed when the ingress controller runs in a DIFFERENT namespace.
+    # When empty ({}) (the default), the podSelector above is scoped to the
+    # same namespace as the avatar release -- which is correct for staging
+    # where ingress-nginx runs in the same `default` namespace.
+    #
+    # Example for ingress-nginx in a dedicated namespace:
+    #   namespaceSelector:
+    #     matchLabels:
+    #       kubernetes.io/metadata.name: ingress-nginx
+    namespaceSelector: {}
+
 dask:
   enabled: true
 
