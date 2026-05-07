@@ -1,4 +1,9 @@
-# avatar-deployment
+# ARCHIVED
+
+⚠️ This repo is now read-only. Development continues in an internal repo. ⚠️
+
+
+## avatar-deployment
 
 This repo contains deployment configurations for the avatar software.
 
